@@ -92,7 +92,7 @@ router.post(
   resolveParentConflict
 );
 
-router.put(
+router.patch(
   "/:id",
   authMiddleware,
   roleMiddleware(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),

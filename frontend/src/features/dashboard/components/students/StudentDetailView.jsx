@@ -468,7 +468,7 @@ const StudentDetailView = () => {
           {/* Basic Info */}
           <DetailCard title="Basic Info" subtitle="Basic contact information of the Student">
             <div className="space-y-1">
-              <DetailRow icon={<Badge className="w-4 h-4" />} label="Admission No" value={student.studentId || "N/A"} />
+              <DetailRow icon={<Badge className="w-4 h-4" />} label="Admission No" value={student.admissionNo || "N/A"} />
               <DetailRow icon={<User className="w-4 h-4" />} label="Full Name" value={student.name || "N/A"} />
               <DetailRow icon={<User className="w-4 h-4" />} label="Gender" value={student.gender || "N/A"} />
               <DetailRow icon={<Calendar className="w-4 h-4" />} label="Date Of Birth" value={student.dob ? formatDateStandard(student.dob) : "N/A"} />
@@ -477,7 +477,7 @@ const StudentDetailView = () => {
                 label="Status"
                 value={
                   <span className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
+                    <span className={`w-2 h-2 rounded-full ${isActive ? "bg-success" : "bg-danger"}`} />
                     {isActive ? "Active" : "Inactive"}
                   </span>
                 }
@@ -782,7 +782,7 @@ const StudentDetailView = () => {
             }
           >
             <div className="space-y-1">
-              <DetailRow icon={<Badge className="w-4 h-4" />} label="Admission No" value={student.studentId || "N/A"} />
+              <DetailRow icon={<Badge className="w-4 h-4" />} label="Admission No" value={student.admissionNo || "N/A"} />
               <DetailRow icon={<User className="w-4 h-4" />} label="Full Name" value={student.name || "N/A"} />
               <DetailRow icon={<Users className="w-4 h-4" />} label="Gender" value={student.gender || "N/A"} />
               <DetailRow

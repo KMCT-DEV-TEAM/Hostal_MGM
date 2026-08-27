@@ -318,6 +318,10 @@ export const getStudentsService = async ({
     organizationId: student.organizationId,
     name: student.name,
     email: student.email,
+    phone: student.phone,
+    gender: student.gender,
+    dob: student.dob,
+    address: student.address,
     isActive: student.isActive,
     createdAt: student.createdAt,
     organization: student.organization ? {

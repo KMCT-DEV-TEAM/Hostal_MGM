@@ -2,12 +2,12 @@ import api from '@/services/axios';
 
 const leaveApi = {
   // Student endpoints
-  createLeave: (payload) => api.post("/student/passes/", payload),
-  getMyLeaves: (params) => api.get("/student/passes/my-passes", { params }),
-  getUnifiedPasses: (params) => api.get("/student/passes/passes", { params }),
-  updateLeave: (id, payload) => api.put(`/student/passes/${id}`, payload),
-  cancelLeave: (id, payload) => api.patch(`/student/passes/${id}/cancel`, payload),
-  getLeaveById: (id) => api.get(`/student/passes/${id}`),
+  createLeave: (payload) => api.post("/passes/", payload),
+  getMyLeaves: (params) => api.get("/passes", { params }),
+  getUnifiedPasses: (params) => api.get("/passes/passes", { params }),
+  updateLeave: (id, payload) => api.put(`/passes/${id}`, payload),
+  cancelLeave: (id, payload) => api.patch(`/passes/${id}/cancel`, payload),
+  getLeaveById: (id) => api.get(`/passes/${id}`),
 
   // Admin
   getAdminHostels: (params) => api.get("/admin/passes", { params }),

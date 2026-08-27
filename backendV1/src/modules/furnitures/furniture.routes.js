@@ -116,7 +116,7 @@ router.patch(
 router.post(
   "/assets/allocate",
   authMiddleware,
-  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   validateAllocate,
   allocateFurniture
 );
@@ -124,7 +124,7 @@ router.post(
 router.post(
   "/students/:studentId/assets/:assetId/return",
   authMiddleware,
-  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
+  roleMiddleware(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN),
   validateReturn,
   returnFurniture
 );

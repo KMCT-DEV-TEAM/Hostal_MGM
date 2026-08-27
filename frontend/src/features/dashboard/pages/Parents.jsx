@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
 import { useParents } from '@/features/dashboard/hooks/parent/useParents';
 import { useDebounce } from '@/hooks/useDebounce';
-import { createParent, toggleParentStatus, updateParent, bulkUpdateParentStatus, exportParents } from '@/services/parent.service';
+import { createParent, toggleParentStatus, updateParent, updateParentByRole, bulkUpdateParentStatus, exportParents } from '@/services/parent.service';
 import { getOrganizations } from '@/services/organization.service';
 import { ROLES } from '@/constants/roles';
 import ParentsHeader from '../components/parents/ParentsHeader';
@@ -148,10 +148,10 @@ export default function Parents() {
         setIsSubmitting(true);
         try {
             if (editingParent) {
-                await updateParent(getParentId(editingParent), payload || pendingPayload);
+                await updateParentByRole(role, getParentId(editingParent), payload || pendingPayload);
                 showSuccessToast('Parent updated successfully');
             } else {
-                await createParent(payload || pendingPayload);
+                await createParent(role, payload || pendingPayload);
                 showSuccessToast('Parent created successfully');
             }
             setActiveModal(null);

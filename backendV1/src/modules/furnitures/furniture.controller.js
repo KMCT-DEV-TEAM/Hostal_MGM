@@ -5,6 +5,8 @@ import { prisma } from "../../config/prisma.js";
 import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 
+const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 const resolveUserScope = async (user) => {
   let organizationId = null;
   let hostelId = null;
