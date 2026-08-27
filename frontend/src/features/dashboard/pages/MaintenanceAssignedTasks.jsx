@@ -41,8 +41,7 @@ export default function MaintenanceAssignedTasks() {
             const res = await ComplaintService.getAssignedComplaints(params);
             const rawData = res.data || [];
             const formatted = rawData.map(c => ({
-                id: c.id,
-                id: c.id,
+                id: c.id || c._id,
                 student: c.studentId?.name || 'Unknown',
                 roomNo: c.roomNo || 'N/A',
                 category: c.category?.name || 'Unknown',
