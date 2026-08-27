@@ -41,9 +41,10 @@ export async function updateEmail(id, payload) {
 /**
  * Toggle Admin active/inactive status
  * @param {string} id 
+ * @param {Object} [payload]
  */
-export async function toggleStatus(id) {
-  const response = await adminApi.toggleStatus(id);
+export async function toggleStatus(id, payload) {
+  const response = await adminApi.toggleStatus(id, payload);
   return response.data;
 }
 

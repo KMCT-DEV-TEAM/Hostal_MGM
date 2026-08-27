@@ -112,7 +112,7 @@ export const toggleComplaintCategoryStatus = asyncHandler(async (req, res) => {
     return sendError(res, 400, 'Invalid Complaint Category ID');
   }
 
-  const category = await toggleComplaintCategoryStatusDb(id);
+  const category = await toggleComplaintCategoryStatusDb(id, req.body);
 
   return sendSuccess(res, 200, `Complaint Category ${category.isActive ? 'activated' : 'deactivated'} successfully`, {
     category,

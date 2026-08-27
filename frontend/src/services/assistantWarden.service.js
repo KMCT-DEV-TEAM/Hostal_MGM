@@ -51,8 +51,8 @@ export async function updateAssistantWardenHostel(id, payload) {
  * Toggle Warden active/inactive status
  * @param {string} id 
  */
-export async function toggleStatus(id) {
-  const response = await assistantWardenApi.toggleStatus(id);
+export async function toggleStatus(id, payload) {
+  const response = await assistantWardenApi.toggleStatus(id, payload);
   return response.data;
 }
 

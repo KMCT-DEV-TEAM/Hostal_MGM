@@ -15,8 +15,8 @@ const updateComplaintCategory = async (id, data) => {
   return response.data;
 };
 
-const toggleStatus = async (id) => {
-  const response = await apiClient.patch(`/complaint-categories/${id}/status`);
+const toggleStatus = async (id, data) => {
+  const response = await apiClient.patch(`/complaint-categories/${id}/status`, data);
   return response.data;
 };
 

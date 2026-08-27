@@ -132,8 +132,8 @@ const OrganizationManagement = () => {
         };
     }, []);
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -141,13 +141,21 @@ const OrganizationManagement = () => {
         if (!statusToUpdate) return;
         setIsStatusUpdating(true);
         try {
-            await organizationService.toggleStatus(statusToUpdate.id);
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            await organizationService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
             // Re-fetch or locally update the status
             setOrgs((prevOrgs) =>
                 prevOrgs.map((org) =>
-                    org.id === statusToUpdate.id ? { ...org, isActive: !org.isActive } : org
+                    org.id === statusToUpdate.id ? { ...org, isActive: isTargetActive } : org
                 )
             );
+            fetchOrganizations();
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
             showSuccessToast('Status Updated', 'Organization status changed successfully');
@@ -456,7 +464,7 @@ const OrganizationManagement = () => {
                 onConfirm={confirmStatusChange}
                 isSubmitting={isStatusUpdating}
                 title="Change Status"
-                message="Are you sure you want to change the status of this organization?"
+                message={`Are you sure you want to change the status of this organization to ${statusToUpdate?.targetStatus || 'the new status'}?`}
             />
 
 

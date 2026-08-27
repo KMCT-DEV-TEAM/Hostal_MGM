@@ -205,8 +205,8 @@ export default function MaintenanceStaffManagement() {
         }
     };
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -214,11 +214,19 @@ export default function MaintenanceStaffManagement() {
         if (!statusToUpdate) return;
         setIsConfirming(true);
         try {
-            const res = await maintenanceStaffService.toggleStatus(statusToUpdate.id);
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            const res = await maintenanceStaffService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
             if (res && res.data) {
-                const newIsActive = statusToUpdate.currentStatus !== 'Active';
-                setStaff(staff.map(w => w.id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
-                showSuccessToast('Status Updated', res?.message || `Maintenance staff status changed to ${newIsActive ? 'Active' : 'Inactive'}`);
+                const newStatus = isTargetActive ? 'Active' : 'Inactive';
+                setStaff(staff.map(w => w.id === statusToUpdate.id ? { ...w, isActive: isTargetActive } : w));
+                fetchStaff();
+                showSuccessToast('Status Updated', res?.message || `Maintenance staff status changed to ${newStatus}`);
             }
         } catch (error) {
             console.error("Failed to update status:", error);
@@ -676,7 +684,7 @@ export default function MaintenanceStaffManagement() {
                     <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status of this staff member?
+                            Are you sure you want to set the status of this staff member to <strong>{statusToUpdate?.targetStatus || 'the new status'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button

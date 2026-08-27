@@ -20,8 +20,8 @@ export async function updateEmail(id, payload) {
   return response.data;
 }
 
-export async function toggleStatus(id) {
-  const response = await maintenanceStaffApi.toggleStatus(id);
+export async function toggleStatus(id, payload) {
+  const response = await maintenanceStaffApi.toggleStatus(id, payload);
   return response.data;
 }
 

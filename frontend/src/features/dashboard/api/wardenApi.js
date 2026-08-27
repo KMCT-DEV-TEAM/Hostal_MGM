@@ -19,8 +19,8 @@ const wardenApi = {
   updateWardenHostel: (id, payload) =>
     api.patch(`/super-admin/wardens/${id}/hostel`, payload),
 
-  toggleStatus: (id) =>
-    api.patch(`/super-admin/wardens/${id}/toggle-status`),
+  toggleStatus: (id, payload) =>
+    api.patch(`/super-admin/wardens/${id}/toggle-status`, payload),
 
   bulkToggleStatus: (payload) =>
     api.post("/super-admin/wardens/bulk-toggle-status", payload),
