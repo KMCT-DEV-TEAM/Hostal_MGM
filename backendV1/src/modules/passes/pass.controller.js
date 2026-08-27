@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb } from "./pass.service.js";
+import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb } from "./pass.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
@@ -97,7 +97,6 @@ export const createPass = asyncHandler(async (req, res) => {
   });
 
   const passTypeLabel = passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
-  const passTypeSlug = passType === 'home_pass' ? 'home-pass' : 'out-pass';
   const link = "/dashboard/leaves/";
 
   await orchestratorService.triggerNotification({
@@ -143,4 +142,129 @@ export const getPassDetails = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, 200, "Pass details loaded successfully.", pass);
+});
+
+const getPassApproverRecipients = async (studentId, organizationId) => {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { batchId: true }
+  });
+
+  const admins = await prisma.user.findMany({
+    where: {
+      role: "ADMIN",
+      organizationId: organizationId,
+      isActive: true
+    },
+    select: { id: true }
+  });
+
+  const recipientIds = admins.map((admin) => admin.id);
+
+  if (student?.batchId) {
+    const assignment = await prisma.mentorAssignment.findFirst({
+      where: {
+        batchId: student.batchId,
+        status: "ACTIVE",
+      },
+      select: { mentorId: true }
+    });
+
+    if (assignment?.mentorId) {
+      recipientIds.push(assignment.mentorId);
+    }
+  }
+
+  return {
+    type: "USER",
+    filter: {
+      userIds: [...new Set(recipientIds.map(String))],
+    },
+  };
+};
+
+export const updatePass = asyncHandler(async (req, res) => {
+  const updatedPass = await updatePassDb({
+    passId: req.params.id,
+    actor: req.user,
+    data: req.body,
+  });
+
+  const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
+  const link = `/dashboard/leaves/${passTypeSlug}`;
+
+  const studentName = updatedPass.studentId?.name || "";
+
+  if (req.user.role === "student") {
+    await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'PASS_MODIFIED',
+      target: { type: 'PARENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
+      data: { passTypeLabel, studentName, link }
+    }).catch(err => console.error("Notification Error:", err));
+  } else if (req.user.role === "parent") {
+    const studentDoc = await prisma.student.findUnique({
+      where: { id: updatedPass.studentId?.id || updatedPass.studentId }
+    });
+    if (studentDoc) {
+      const target = await getPassApproverRecipients(studentDoc.id, studentDoc.organizationId);
+      await orchestratorService.triggerNotification({
+        sender: buildSender(req.user),
+        eventName: 'PASS_MODIFIED',
+        target,
+        data: { passTypeLabel, studentName, link }
+      }).catch(err => console.error("Notification Error:", err));
+    }
+  }
+
+  await createLogDb({
+    action: "Updated Pass Request",
+    entityType: "Pass",
+    entityId: req.params.id,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `${req.user.role} updated a pass request`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, "Your pass has been updated successfully.", updatedPass);
+});
+
+export const cancelPass = asyncHandler(async (req, res) => {
+  const updatedPass = await cancelPassDb({
+    passId: req.params.id,
+    actor: req.user,
+    data: req.body
+  });
+
+  const reason = req.body?.remarks || req.body?.reason || "Cancelled by admin.";
+
+  await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: 'PASS_ADMIN_CANCELLED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
+    data: { reason }
+  }).catch(err => console.error("Notification Error:", err));
+
+  if (updatedPass.parentId) {
+    await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'PASS_ADMIN_CANCELLED',
+      target: { type: 'PARENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
+      data: { reason }
+    }).catch(err => console.error("Notification Error:", err));
+  }
+
+  await createLogDb({
+    action: req.user.role === "student" || req.user.role === "parent" ? "Cancelled Pass" : "Admin Cancelled Pass",
+    entityType: "Pass",
+    entityId: req.params.id,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `${req.user.role} cancelled pass. Reason: ${reason}`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });

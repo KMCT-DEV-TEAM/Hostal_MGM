@@ -141,12 +141,20 @@ export const validateCreatePass = async (req, res, next) => {
         });
       }
 
+      const dayStart = new Date(passDate);
+      dayStart.setUTCHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setUTCHours(23, 59, 59, 999);
+
       const existingOutPass = await prisma.pass.findFirst({
         where: {
           studentId,
           passType: "out_pass",
           status: { notIn: ["rejected", "cancelled", "completed"] },
-          date: passDate,
+          fromDate: {
+            gte: dayStart,
+            lte: dayEnd,
+          },
         },
       });
 
@@ -367,4 +375,307 @@ export const validatePassIdParam = (req, res, next) => {
     });
   }
   next();
+};
+
+export const validateUpdatePass = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const userRole = (req.user.role || "").toLowerCase();
+    const {
+      reason,
+      fromDate,
+      toDate,
+      totalDays,
+      date,
+      outTime,
+      expectedReturnTime,
+      outPassCategory
+    } = req.body;
+
+    if (
+      !reason &&
+      !fromDate &&
+      !toDate &&
+      totalDays === undefined &&
+      !date &&
+      !outTime &&
+      !expectedReturnTime &&
+      !outPassCategory
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide at least one detail to update.",
+      });
+    }
+
+    const existingPass = await prisma.pass.findUnique({
+      where: { id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            organizationId: true,
+            batchId: true,
+            studentParents: true,
+          }
+        }
+      }
+    });
+    if (!existingPass) {
+      return res.status(404).json({ success: false, message: "We couldn't find the pass you're looking for." });
+    }
+
+    // Role-based update permission check
+    if (userRole === "student" && existingPass.studentId !== userId) {
+      return res.status(403).json({ success: false, message: "You don't have permission to edit this pass." });
+    }
+    if (userRole === "parent") {
+      const parentLink = existingPass.student?.studentParents?.some(sp => sp.parentId === userId);
+      if (!parentLink) {
+        return res.status(403).json({ success: false, message: "You don't have permission to edit this pass." });
+      }
+    }
+    if (userRole !== "student" && userRole !== "parent") {
+      return res.status(403).json({ success: false, message: "You don't have permission to edit this pass." });
+    }
+
+    // Check if student left the hostel
+    const leftLog = await prisma.passGateLog.findFirst({
+      where: {
+        passId: id,
+        eventType: "LEFT",
+      },
+    });
+    if (leftLog) {
+      return res.status(422).json({ success: false, message: "You cannot edit this pass because the student has already left the hostel." });
+    }
+
+    if (["cancelled", "rejected", "completed", "returned"].includes(existingPass.status)) {
+      return res.status(422).json({ success: false, message: "You cannot edit this pass because of its current status." });
+    }
+
+    const passType = existingPass.passType;
+
+    if (passType === "home_pass") {
+      const newFromDate = fromDate || existingPass.fromDate;
+      const newToDate = toDate || existingPass.toDate;
+
+      const start = new Date(newFromDate);
+      const end = new Date(newToDate);
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+
+      if (fromDate && start < today) {
+        return res.status(400).json({
+          success: false,
+          message: "The start date cannot be in the past. Please select a valid date.",
+        });
+      }
+
+      if (end < start) {
+        return res.status(400).json({
+          success: false,
+          message: "The end date must be after or the same as the start date.",
+        });
+      }
+
+      if (fromDate || toDate) {
+        const overlappingPass = await prisma.pass.findFirst({
+          where: {
+            id: { not: id },
+            studentId: existingPass.studentId,
+            passType: "home_pass",
+            status: { notIn: ["rejected", "cancelled", "completed"] },
+            fromDate: { lte: end },
+            toDate: { gte: start },
+          },
+        });
+
+        if (overlappingPass) {
+          return res.status(400).json({
+            success: false,
+            message: "The updated dates overlap with another home pass you've already requested.",
+          });
+        }
+      }
+    }
+
+    if (passType === "out_pass") {
+      const existingDate = existingPass.fromDate;
+
+      let existingOutTime = "";
+      if (existingPass.fromDate) {
+        const d = new Date(existingPass.fromDate);
+        existingOutTime = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      }
+
+      let existingReturnTime = "";
+      if (existingPass.expectedReturnAt) {
+        const d = new Date(existingPass.expectedReturnAt);
+        existingReturnTime = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      }
+
+      const newDate = date || existingDate;
+      const newOutTime = outTime || existingOutTime;
+      const newReturnTime = expectedReturnTime || existingReturnTime;
+
+      if (!newDate || !newOutTime || !newReturnTime) {
+        return res.status(400).json({
+          success: false,
+          message: "Please ensure the date, departure time, and expected return time are correctly filled for your Out Pass.",
+        });
+      }
+
+      if (newReturnTime <= newOutTime) {
+        return res.status(400).json({
+          success: false,
+          message: "The expected return time must be later than the departure time.",
+        });
+      }
+
+      const updatedPassDate = new Date(newDate);
+      const [outHour, outMinute] = newOutTime.split(":").map(Number);
+      const [returnHour, returnMinute] = newReturnTime.split(":").map(Number);
+
+      const outDateTime = new Date(updatedPassDate);
+      outDateTime.setHours(outHour, outMinute, 0, 0);
+
+      const returnDateTime = new Date(updatedPassDate);
+      returnDateTime.setHours(returnHour, returnMinute, 0, 0);
+
+      const durationInHours = (returnDateTime - outDateTime) / (1000 * 60 * 60);
+      const MAX_OUT_PASS_HOURS = Number(process.env.MAX_OUT_PASS_HOURS) || 12;
+
+      if (durationInHours > MAX_OUT_PASS_HOURS) {
+        return res.status(400).json({
+          success: false,
+          message: `Out Pass cannot exceed ${MAX_OUT_PASS_HOURS} hours. Please apply for a Home Pass instead.`,
+        });
+      }
+
+      const dayStart = new Date(updatedPassDate);
+      dayStart.setUTCHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setUTCHours(23, 59, 59, 999);
+
+      const existingOutPass = await prisma.pass.findFirst({
+        where: {
+          id: { not: id },
+          studentId: existingPass.studentId,
+          passType: "out_pass",
+          status: { notIn: ["rejected", "cancelled", "completed"] },
+          fromDate: {
+            gte: dayStart,
+            lte: dayEnd,
+          },
+        },
+      });
+
+      if (existingOutPass) {
+        return res.status(400).json({
+          success: false,
+          message: "You already have another Out Pass requested or approved for this date.",
+        });
+      }
+
+      if (outPassCategory) {
+        if (!["in_house", "out_house"].includes(outPassCategory)) {
+          return res.status(400).json({
+            success: false,
+            message: "Out Pass category must be either in_house or out_house.",
+          });
+        }
+      }
+    }
+
+    req.pass = existingPass;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const validateCancelPass = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const role = (req.user.role || "").toLowerCase();
+
+    const existingPass = await prisma.pass.findUnique({
+      where: { id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            organizationId: true,
+            batchId: true,
+            studentParents: true,
+          }
+        }
+      }
+    });
+    if (!existingPass) {
+      return res.status(404).json({ success: false, message: "We couldn't find the pass you're looking for." });
+    }
+
+    // Role-specific cancellation checks
+    if (role === "student" && existingPass.studentId !== userId) {
+      return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
+    }
+    if (role === "parent") {
+      const isLinked = existingPass.student?.studentParents?.some(sp => sp.parentId === userId);
+      if (!isLinked) {
+        return res.status(403).json({ success: false, message: "You do not have permission to cancel this pass." });
+      }
+    }
+    if (role === "warden" || role === "assistant_warden") {
+      const wardenLink = await prisma.hostelWarden.findFirst({
+        where: {
+          userId: userId,
+          hostelId: existingPass.hostelId
+        }
+      });
+      if (!wardenLink) {
+        return res.status(403).json({ success: false, message: "You don't have permission to cancel passes for this hostel." });
+      }
+    }
+    if (role === "mentor") {
+      const activeAssignments = await prisma.mentorAssignment.findMany({
+        where: {
+          mentorId: userId,
+          status: "ACTIVE"
+        },
+        select: { batchId: true }
+      });
+      const batchIds = activeAssignments.map(a => a.batchId);
+      if (!existingPass.student?.batchId || !batchIds.includes(existingPass.student.batchId)) {
+        return res.status(403).json({ success: false, message: "You don't have permission to cancel passes for this student." });
+      }
+    }
+    if (role === "admin") {
+      if (req.user.organizationId !== existingPass.organizationId) {
+        return res.status(403).json({ success: false, message: "You don't have permission to cancel this pass." });
+      }
+    }
+
+    if (["completed", "cancelled", "rejected", "returned"].includes(existingPass.status)) {
+      return res.status(422).json({ success: false, message: "This pass can't be cancelled because of its current status." });
+    }
+
+    const leftLog = await prisma.passGateLog.findFirst({
+      where: {
+        passId: id,
+        eventType: "LEFT"
+      }
+    });
+    if (leftLog) {
+      return res.status(422).json({ success: false, message: "You cannot cancel this pass because the student has already left the hostel." });
+    }
+
+    req.pass = existingPass;
+    next();
+  } catch (error) {
+    next(error);
+  }
 };

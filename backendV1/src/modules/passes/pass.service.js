@@ -147,13 +147,13 @@ export const getPassesDb = async (studentId, query) => {
         student: {
           select: {
             name: true,
-            studentId: true
+            admissionNo: true
           }
         },
         approvals: {
           select: {
             status: true,
-            role: true
+            approvalLevel: true
           }
         }
       }
@@ -163,11 +163,10 @@ export const getPassesDb = async (studentId, query) => {
   const totalPages = Math.ceil(totalRecords / limit);
 
   const formattedPasses = passes.map(pass => {
-    const parentApproval = pass.approvals?.find(a => a.role === 'parent');
-    const adminApproval = pass.approvals?.find(a => ['admin', 'superadmin', 'warden', 'assistant_warden'].includes(a.role));
+    const parentApproval = pass.approvals?.find(a => a.approvalLevel === 'PARENT');
+    const adminApproval = pass.approvals?.find(a => ['ADMIN', 'WARDEN'].includes(a.approvalLevel));
 
     return {
-      _id: pass.id,
       id: pass.id,
       passType: pass.passType,
       outPassCategory: pass.outPassCategory,
@@ -179,7 +178,7 @@ export const getPassesDb = async (studentId, query) => {
       outTime: pass.fromDate,
       expectedReturnTime: pass.expectedReturnAt,
       studentName: pass.student?.name,
-      admissionNumber: pass.student?.studentId,
+      admissionNumber: pass.student?.admissionNo,
       parentApprovalStatus: parentApproval?.status || "pending",
       adminApprovalStatus: adminApproval?.status || "pending",
       createdAt: pass.createdAt
@@ -315,13 +314,17 @@ export const getPassDetails = async ({ passId, actor }) => {
     throw error;
   }
 
-  // Formatting response fields for compatibility
+  return formatPassResponse(pass);
+};
+
+export const formatPassResponse = (pass) => {
+  if (!pass) return null;
+
   const activeAllocation = pass.student?.studentHostels?.find(sh => sh.status === "active");
   const parentRelation = pass.student?.studentParents?.find(sp => sp.parentId === pass.parentId);
 
   const formattedStudent = pass.student ? {
     id: pass.student.id,
-    _id: pass.student.id,
     name: pass.student.name,
     studentId: pass.student.admissionNo,
     admissionNo: pass.student.admissionNo,
@@ -333,7 +336,6 @@ export const getPassDetails = async ({ passId, actor }) => {
 
   const formattedParent = pass.parent ? {
     id: pass.parent.id,
-    _id: pass.parent.id,
     parentName: pass.parent.parentName,
     phone: pass.parent.phone,
     relationship: parentRelation?.relationship || "guardian",
@@ -358,7 +360,6 @@ export const getPassDetails = async ({ passId, actor }) => {
     status: adminApprovalRecord.status.toLowerCase(),
     actionBy: adminApprovalRecord.actionBy ? {
       id: adminApprovalRecord.actionBy.id,
-      _id: adminApprovalRecord.actionBy.id,
       name: adminApprovalRecord.actionBy.name,
     } : null,
     actionAt: adminApprovalRecord.actionAt,
@@ -410,7 +411,6 @@ export const getPassDetails = async ({ passId, actor }) => {
     parentId: formattedParent,
     hostelId: pass.hostel ? {
       id: pass.hostel.id,
-      _id: pass.hostel.id,
       name: pass.hostel.name,
     } : null,
     parentApproval,
@@ -424,4 +424,331 @@ export const getPassDetails = async ({ passId, actor }) => {
     ...formattedPass,
     data: formattedPass
   };
+};
+
+export const updatePass = async ({ passId, actor, data }) => {
+  const userId = actor.id;
+  const userRole = (actor.role || "").toLowerCase();
+
+  const pass = await prisma.pass.findUnique({
+    where: { id: passId },
+    include: {
+      student: true
+    }
+  });
+
+  if (!pass) {
+    const error = new Error("We couldn't find the pass you're looking for.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (userRole === "student" && pass.studentId !== userId) {
+    const error = new Error("You do not have permission to modify this pass.");
+    error.statusCode = 403;
+    throw error;
+  }
+  if (userRole === "parent" && pass.parentId !== userId) {
+    const error = new Error("You do not have permission to modify this pass.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const leftLog = await prisma.passGateLog.findFirst({
+    where: { passId, eventType: "LEFT" }
+  });
+  if (leftLog) {
+    const error = new Error("You cannot edit this pass because the student has already left the hostel.");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  if (["cancelled", "rejected", "completed", "returned"].includes(pass.status)) {
+    const error = new Error("You cannot edit this pass because of its current status.");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  const {
+    reason,
+    fromDate,
+    toDate,
+    date,
+    outTime,
+    expectedReturnTime,
+    outPassCategory
+  } = data;
+
+  const updateData = {};
+
+  if (reason !== undefined) updateData.reason = reason;
+
+  if (pass.passType === "home_pass") {
+    if (fromDate !== undefined) updateData.fromDate = new Date(fromDate);
+    if (toDate !== undefined) updateData.toDate = new Date(toDate);
+  } else if (pass.passType === "out_pass") {
+    const passDate = new Date(date !== undefined ? date : pass.fromDate);
+
+    let outTimeStr = outTime;
+    if (outTimeStr === undefined) {
+      const d = new Date(pass.fromDate);
+      outTimeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    }
+
+    let expectedReturnTimeStr = expectedReturnTime;
+    if (expectedReturnTimeStr === undefined) {
+      const d = new Date(pass.expectedReturnAt);
+      expectedReturnTimeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    }
+
+    const [outHour, outMinute] = outTimeStr.split(":").map(Number);
+    const [returnHour, returnMinute] = expectedReturnTimeStr.split(":").map(Number);
+
+    const outDateTime = new Date(passDate);
+    outDateTime.setHours(outHour, outMinute, 0, 0);
+
+    const returnDateTime = new Date(passDate);
+    returnDateTime.setHours(returnHour, returnMinute, 0, 0);
+
+    updateData.fromDate = outDateTime;
+    updateData.expectedReturnAt = returnDateTime;
+    if (outPassCategory !== undefined) updateData.outPassCategory = outPassCategory;
+  }
+
+  let newStatus = pass.status;
+  let resetParent = false;
+  let resetAdmin = false;
+
+  if (userRole === "student") {
+    if (pass.status === "pending_admin" || pass.status === "approved") {
+      resetParent = true;
+      resetAdmin = true;
+      newStatus = "pending_parent";
+    }
+  } else if (userRole === "parent") {
+    if (pass.status === "approved" || pass.status === "pending_admin") {
+      resetAdmin = true;
+      newStatus = "pending_admin";
+    }
+  }
+
+  updateData.status = newStatus;
+
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    if (resetParent) {
+      await tx.passApproval.deleteMany({
+        where: { passId, approvalLevel: "PARENT" }
+      });
+    }
+    if (resetAdmin) {
+      await tx.passApproval.deleteMany({
+        where: { passId, approvalLevel: { in: ["ADMIN", "WARDEN"] } }
+      });
+    }
+
+    await tx.passTimeline.create({
+      data: {
+        passId,
+        action: userRole === "student" ? "student_edited_leave" : "parent_edited_leave",
+        actorId: userId,
+        actorRole: userRole,
+        remarks: "Leave request modified."
+      }
+    });
+
+    if (resetParent) {
+      await tx.passTimeline.create({
+        data: {
+          passId,
+          action: "approval_reset",
+          actorId: userId,
+          actorRole: "system",
+          remarks: "Approvals reset due to leave modification."
+        }
+      });
+    }
+
+    updatedPass = await tx.pass.update({
+      where: { id: passId },
+      data: updateData,
+      include: {
+        student: {
+          include: {
+            course: { select: { name: true } },
+            department: { select: { name: true } },
+            batch: { select: { name: true } },
+            studentHostels: {
+              where: { status: "active" },
+              select: { roomNumber: true }
+            },
+            studentParents: true
+          }
+        },
+        parent: true,
+        hostel: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        approvals: {
+          include: {
+            actionBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        gateLogs: true,
+        timeline: {
+          orderBy: {
+            timestamp: "asc"
+          }
+        }
+      }
+    });
+  });
+
+  return formatPassResponse(updatedPass);
+};
+
+export const cancelPass = async ({ passId, actor, data }) => {
+  const userId = actor.id;
+  const userRole = (actor.role || "").toLowerCase();
+  const remarks = data?.remarks || data?.reason || "Cancelled by admin.";
+
+  const pass = await prisma.pass.findUnique({
+    where: { id: passId },
+    include: {
+      student: true
+    }
+  });
+
+  if (!pass) {
+    const error = new Error("We couldn't find the pass you're looking for.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const leftLog = await prisma.passGateLog.findFirst({
+    where: { passId, eventType: "LEFT" }
+  });
+  if (leftLog) {
+    const error = new Error("You cannot cancel this pass because the student has already left the hostel.");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  if (["completed", "cancelled", "rejected", "returned"].includes(pass.status)) {
+    const error = new Error("This pass can't be cancelled because of its current status.");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  if (userRole === "student" && pass.studentId !== userId) {
+    const error = new Error("You do not have permission to cancel this pass.");
+    error.statusCode = 403;
+    throw error;
+  }
+  if (userRole === "parent") {
+    const parentLink = await prisma.studentParent.findFirst({
+      where: { parentId: userId, studentId: pass.studentId }
+    });
+    if (!parentLink) {
+      const error = new Error("You do not have permission to cancel this pass.");
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+  if (userRole === "warden" || userRole === "assistant_warden") {
+    const wardenLink = await prisma.hostelWarden.findFirst({
+      where: { userId: userId, hostelId: pass.hostelId }
+    });
+    if (!wardenLink) {
+      const error = new Error("You don't have permission to cancel passes for this hostel.");
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+  if (userRole === "mentor") {
+    const activeAssignments = await prisma.mentorAssignment.findMany({
+      where: { mentorId: userId, status: "ACTIVE" },
+      select: { batchId: true }
+    });
+    const batchIds = activeAssignments.map(a => a.batchId);
+    if (!pass.student?.batchId || !batchIds.includes(pass.student.batchId)) {
+      const error = new Error("You don't have permission to cancel passes for this student.");
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+  if (userRole === "admin") {
+    if (actor.organizationId !== pass.organizationId) {
+      const error = new Error("You don't have permission to cancel this pass.");
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    await tx.passTimeline.create({
+      data: {
+        passId,
+        action: (userRole === "student" || userRole === "parent") ? "cancelled" : "admin_cancelled",
+        actorId: userId,
+        actorRole: userRole,
+        remarks: (userRole === "student" || userRole === "parent") ? "Cancelled by user." : remarks
+      }
+    });
+
+    updatedPass = await tx.pass.update({
+      where: { id: passId },
+      data: { status: "cancelled" },
+      include: {
+        student: {
+          include: {
+            course: { select: { name: true } },
+            department: { select: { name: true } },
+            batch: { select: { name: true } },
+            studentHostels: {
+              where: { status: "active" },
+              select: { roomNumber: true }
+            },
+            studentParents: true
+          }
+        },
+        parent: true,
+        hostel: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        approvals: {
+          include: {
+            actionBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        gateLogs: true,
+        timeline: {
+          orderBy: {
+            timestamp: "asc"
+          }
+        }
+      }
+    });
+  });
+
+  return formatPassResponse(updatedPass);
 };
