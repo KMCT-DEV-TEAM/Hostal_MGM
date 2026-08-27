@@ -94,3 +94,85 @@ export const createMentorDb = async (mentorData, creatorUser) => {
 
   return { mentor: mentorObj };
 };
+
+/**
+ * Get Paginated Mentors (Read-only operation)
+ */
+export const getPaginatedMentorsDb = async ({
+  page = 1,
+  limit = 10,
+  status,
+  search,
+  organizationId,
+  startDate,
+  endDate,
+  requesterUser,
+}) => {
+  const skip = (page - 1) * limit;
+  const where = { role: "MENTOR" };
+
+  if (requesterUser.role === ROLES.ADMIN) {
+    where.organizationId = requesterUser.organizationId || requesterUser.organization;
+  } else if (organizationId) {
+    where.organizationId = organizationId;
+  }
+
+  if (status !== undefined && status !== "All" && status !== "") {
+    if (status === "true" || status === true) {
+      where.isActive = true;
+    } else if (status === "false" || status === false) {
+      where.isActive = false;
+    }
+  }
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { phone: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    if (endDate) where.createdAt.lte = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+  }
+
+  const [mentors, totalCount] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        organizationId: true,
+        createdAt: true,
+        updatedAt: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return {
+    mentors,
+    totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
+  };
+};
