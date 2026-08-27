@@ -35,11 +35,11 @@ export default function WardenComplaints({ hostel, onBack, headerActions }) {
             let rawData = response.data || [];
 
             const formatted = rawData.map(c => ({
-                id: c._id,
+                id: c.id,
                 student: c.studentId?.name || 'Unknown',
                 roomNo: c.roomNo || 'N/A',
                 category: c.category?.name || 'Unknown',
-                categoryId: c.category?._id,
+                categoryId: c.category?.id,
                 subject: c.subject,
                 description: c.description,
                 date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -124,8 +124,8 @@ export default function WardenComplaints({ hostel, onBack, headerActions }) {
         }
     }, [complaints]);
     const handleCategoryChange = (id, newCategoryVal) => {
-        const catObj = categories.find(c => c._id === newCategoryVal || c.name === newCategoryVal);
-        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj._id : newCategoryVal });
+        const catObj = categories.find(c => c.id === newCategoryVal || c.name === newCategoryVal);
+        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj.id : newCategoryVal });
     };
 
     const handlePriorityChange = (id, newPriority) => {

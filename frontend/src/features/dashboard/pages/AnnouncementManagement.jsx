@@ -61,8 +61,8 @@ const AnnouncementManagement = () => {
                 } else {
                     setAnnouncements(prev => {
                         // Prevent duplicates by comparing IDs
-                        const existingIds = new Set(prev.map(a => a._id));
-                        const newItems = res.data.filter(a => !existingIds.has(a._id));
+                        const existingIds = new Set(prev.map(a => a.id));
+                        const newItems = res.data.filter(a => !existingIds.has(a.id));
                         return [...prev, ...newItems];
                     });
                 }
@@ -110,7 +110,7 @@ const AnnouncementManagement = () => {
     const confirmDelete = async () => {
         if (!announcementToDelete) return;
         try {
-            await AnnouncementService.deleteAnnouncement(announcementToDelete._id);
+            await AnnouncementService.deleteAnnouncement(announcementToDelete.id);
             showSuccessToast("Announcement deleted successfully");
             setPage(1);
             fetchAnnouncements(1);

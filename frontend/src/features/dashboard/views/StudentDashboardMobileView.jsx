@@ -192,7 +192,7 @@ export default function StudentDashboardMobileView({
                         {recentAnnouncements.length > 0 ? (
                             recentAnnouncements.map((ann, idx) => (
                                 <AnnouncementCard
-                                    key={ann._id || idx}
+                                    key={ann.id || idx}
                                     announcement={ann}
                                     className="min-w-[300px] w-[300px] h-[120px]  max-h-[130px] min-h-[130px] shrink-0 snap-start"
                                 />
@@ -215,9 +215,9 @@ export default function StudentDashboardMobileView({
                                 if (req.type === 'leave') {
                                     return (
                                         <div
-                                            key={`leave-${req._id}`}
+                                            key={`leave-${req.id}`}
                                             className="bg-white rounded-[20px] p-4 flex items-center justify-between shadow-sm border border-gray-50 cursor-pointer"
-                                            onClick={() => onNavigate(`/dashboard/leaves/details/${req._id}`)}
+                                            onClick={() => onNavigate(`/dashboard/leaves/details/${req.id}`)}
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-[46px] h-[46px] rounded-full bg-[#EEF2FF] flex items-center justify-center shrink-0">
@@ -239,9 +239,9 @@ export default function StudentDashboardMobileView({
                                 } else {
                                     return (
                                         <div
-                                            key={`comp-${req._id}`}
+                                            key={`comp-${req.id}`}
                                             className="bg-white rounded-[20px] p-4 flex items-center justify-between shadow-sm border border-gray-50 cursor-pointer"
-                                            onClick={() => onNavigate(`/dashboard/complaints/details/${req._id}`)}
+                                            onClick={() => onNavigate(`/dashboard/complaints/details/${req.id}`)}
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-[46px] h-[46px] rounded-full bg-[#FFE4E6] flex items-center justify-center shrink-0">

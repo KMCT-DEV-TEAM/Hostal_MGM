@@ -35,7 +35,7 @@ const WardenComplaintDetailView = ({ complaint, onClose, onOpenAssignStaff, onRe
   const handlePriorityChange = async (newPriority) => {
     try {
       setIsProcessing(true);
-      await ComplaintService.updateComplaint(complaint._id || complaint.id, { priority: newPriority });
+      await ComplaintService.updateComplaint(complaint.id || complaint.id, { priority: newPriority });
       showSuccessToast('Success', `Priority updated to ${newPriority}`);
       if (onRefresh) onRefresh();
     } catch (error) {

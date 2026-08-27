@@ -41,7 +41,7 @@ export default function ResolveTaskModal({ isOpen, onClose, complaint, onResolve
         
         setIsSubmitting(true);
         try {
-            await ComplaintService.submitComplaintResolution(complaint._id, {
+            await ComplaintService.submitComplaintResolution(complaint.id, {
                 materialsUsed,
                 resolutionNotes
             });

@@ -17,7 +17,7 @@ export default function AssignStaffModal({ isOpen, onClose, complaint, onAssigne
     // Only set initial selectedStaff and assigneeType when modal opens
     useEffect(() => {
         if (isOpen) {
-            setSelectedStaff(complaint?.assignedStaff?._id || '');
+            setSelectedStaff(complaint?.assignedStaff?.id || '');
             // We don't have the explicit role in complaint.assignedStaff usually, 
             // but we default to 'maintenance'. If a user changes the toggle, it will reset selectedStaff.
             setAssigneeType('maintenance');
@@ -44,7 +44,7 @@ export default function AssignStaffModal({ isOpen, onClose, complaint, onAssigne
                     // Fallback to fetching all and filtering by hostel if hostelId is just a string
                     const res = await getWardens({ limit: 100, status: 'Active' });
                     const allWardens = res.data || [];
-                    const hostelIdStr = complaint?.hostelId?._id || complaint?.hostelId;
+                    const hostelIdStr = complaint?.hostelId?.id || complaint?.hostelId;
                     const filteredWardens = hostelIdStr 
                         ? allWardens.filter(w => w.hostelId === hostelIdStr)
                         : allWardens;
@@ -68,9 +68,9 @@ export default function AssignStaffModal({ isOpen, onClose, complaint, onAssigne
         try {
             const response = await ComplaintService.assignComplaintStaff(complaint.id, selectedStaff);
             showSuccessToast('Assigned Successfully', `${assigneeType === 'warden' ? 'Warden' : 'Maintenance staff'} has been assigned to this complaint.`);
-            const assignedUser = staffList.find(s => s._id === selectedStaff);
+            const assignedUser = staffList.find(s => s.id === selectedStaff);
             onAssigned({ 
-                _id: assignedUser._id, 
+                id: assignedUser.id, 
                 name: assignedUser.name, 
                 phone: assignedUser.phone, 
                 specialization: assignedUser.specialization || (assigneeType === 'warden' ? 'Warden' : '') 
@@ -127,7 +127,7 @@ export default function AssignStaffModal({ isOpen, onClose, complaint, onAssigne
                         options={[
                             { value: "", label: `Select ${assigneeType === 'warden' ? 'Warden' : 'Maintenance Staff'}...` },
                             ...staffList.map((staff) => ({
-                                value: staff._id,
+                                value: staff.id,
                                 label: `${staff.name} ${staff.specialization ? `(${staff.specialization})` : ''}`
                             }))
                         ]}

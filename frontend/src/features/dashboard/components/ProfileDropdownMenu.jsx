@@ -36,9 +36,9 @@ export default function ProfileDropdownMenu({ onClose, onLogout }) {
                         <div className="flex flex-col gap-2">
                             {user.students.map(student => (
                                 <button
-                                    key={student._id}
-                                    onClick={() => handleSwitchStudent(student._id)}
-                                    className={`w-full flex items-center justify-between transition-colors hover:bg-gray-50 p-2 -mx-2 rounded-xl text-left ${activeStudent?._id === student._id ? 'border border-success/20' : ''}`}
+                                    key={student.id}
+                                    onClick={() => handleSwitchStudent(student.id)}
+                                    className={`w-full flex items-center justify-between transition-colors hover:bg-gray-50 p-2 -mx-2 rounded-xl text-left ${activeStudent?.id === student.id ? 'border border-success/20' : ''}`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="relative">

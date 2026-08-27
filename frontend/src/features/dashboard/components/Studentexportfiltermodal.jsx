@@ -92,12 +92,12 @@ export default function StudentExportFilterModal({
 
   const courseOptions = [
     { label: "All Courses", value: "" },
-    ...courses.map((c) => ({ label: c.name, value: c._id })),
+    ...courses.map((c) => ({ label: c.name, value: c.id })),
   ];
 
   const departmentOptions = [
     { label: courseId ? "All Departments" : "Select a course first", value: "" },
-    ...departments.map((d) => ({ label: d.name, value: d._id })),
+    ...departments.map((d) => ({ label: d.name, value: d.id })),
   ];
 
   const handleCourseChange = (value) => {

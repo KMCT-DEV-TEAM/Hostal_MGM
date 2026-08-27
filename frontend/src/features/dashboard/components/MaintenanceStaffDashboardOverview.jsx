@@ -270,7 +270,7 @@ export default function MaintenanceStaffDashboardOverview() {
 
                             return (
                                 <div
-                                    key={task._id}
+                                    key={task.id}
                                     onClick={() => navigate('/dashboard/tasks')}
                                     className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3 gap-2 sm:gap-4 cursor-pointer hover:bg-gray-50 transition-colors"
                                 >
@@ -281,7 +281,7 @@ export default function MaintenanceStaffDashboardOverview() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center flex-wrap gap-2">
                                                 <p className="text-[13px] text-[#333333] break-words font-medium">
-                                                    A{task._id ? task._id.substring(task._id.length - 6).toUpperCase() : '112390'} - {task.subject?.length > 40 ? task.subject.substring(0, 40) + '...' : (task.subject || 'N/A')}
+                                                    A{task.id ? task.id.substring(task.id.length - 6).toUpperCase() : '112390'} - {task.subject?.length > 40 ? task.subject.substring(0, 40) + '...' : (task.subject || 'N/A')}
                                                 </p>
                                                 {task.status && (
                                                     <span className={"px-2 py-0.5 rounded-full text-[10px] font-medium capitalize shrink-0 " + tagClass}>

@@ -505,7 +505,7 @@ export default function WardenDashboardOverview({ user }) {
 
                                     return (
                                         <div
-                                            key={log._id}
+                                            key={log.id}
                                             className="flex items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3"
                                         >
                                             <div className="flex items-center gap-4 flex-1">

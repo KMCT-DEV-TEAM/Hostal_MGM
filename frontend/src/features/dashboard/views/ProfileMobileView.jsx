@@ -144,7 +144,7 @@ const ProfileMobileView = ({
                 isOpen={!!studentToSwitch}
                 onClose={() => setStudentToSwitch(null)}
                 onConfirm={() => {
-                    setActiveStudent(studentToSwitch._id);
+                    setActiveStudent(studentToSwitch.id);
                     setStudentToSwitch(null);
                 }}
                 title="Switch Student"

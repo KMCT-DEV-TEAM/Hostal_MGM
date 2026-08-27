@@ -79,9 +79,9 @@ export default function StudentComplaints() {
 
             // Transform to UI format
             const formatted = fetchedComplaints.map(c => ({
-                id: c._id,
+                id: c.id,
                 category: c.category?.name || 'Unknown',
-                categoryId: c.category?._id,
+                categoryId: c.category?.id,
                 subject: c.subject,
                 description: c.description,
                 roomNo: c.roomNo,
@@ -143,12 +143,12 @@ export default function StudentComplaints() {
 
     const handleCategoryChange = (id, newCategory) => {
         // Find category object to get name and ID
-        const catObj = categories.find(c => c._id === newCategory || c.name === newCategory);
+        const catObj = categories.find(c => c.id === newCategory || c.name === newCategory);
         setConfirmCategoryChange({
             isOpen: true,
             complaintId: id,
             newCategoryName: catObj ? catObj.name : newCategory,
-            newCategoryId: catObj ? catObj._id : newCategory
+            newCategoryId: catObj ? catObj.id : newCategory
         });
     };
 

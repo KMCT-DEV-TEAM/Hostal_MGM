@@ -40,7 +40,7 @@ export default function RejectAssignedTaskModal({ isOpen, onClose, complaint, on
 
         setIsSubmitting(true);
         try {
-            await ComplaintService.rejectAssignedTask(complaint._id, note);
+            await ComplaintService.rejectAssignedTask(complaint.id, note);
             showSuccessToast('Success', 'Task rejected successfully');
             onRejected();
             setNote('');

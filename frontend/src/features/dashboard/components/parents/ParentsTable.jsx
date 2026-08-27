@@ -55,7 +55,7 @@ export default function ParentsTable({
 
     const organizationOptions = [
         { label: 'All Organizations', value: '' },
-        ...organizations.map(org => ({ label: org.name, value: org._id }))
+        ...organizations.map(org => ({ label: org.name, value: org.id }))
     ];
 
     const columns = [

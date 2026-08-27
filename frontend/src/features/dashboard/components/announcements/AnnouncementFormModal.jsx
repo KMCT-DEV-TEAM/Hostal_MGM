@@ -43,8 +43,8 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
                 setTitle(announcementToEdit.title || '');
                 setMessage(announcementToEdit.message || '');
                 setTargetType(announcementToEdit.targetType || 'general');
-                setTargetOrganization(announcementToEdit.targetOrganizations?.[0]?._id || announcementToEdit.targetOrganizations?.[0] || '');
-                setTargetHostel(announcementToEdit.targetHostels?.[0]?._id || announcementToEdit.targetHostels?.[0] || '');
+                setTargetOrganization(announcementToEdit.targetOrganizations?.[0]?.id || announcementToEdit.targetOrganizations?.[0] || '');
+                setTargetHostel(announcementToEdit.targetHostels?.[0]?.id || announcementToEdit.targetHostels?.[0] || '');
                 
                 if (announcementToEdit.status === 'scheduled' || announcementToEdit.status === 'SCHEDULED') {
                     setSendOption('schedule');
@@ -153,7 +153,7 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
             }
 
             if (announcementToEdit) {
-                await AnnouncementService.updateAnnouncement(announcementToEdit._id || announcementToEdit.id, payload);
+                await AnnouncementService.updateAnnouncement(announcementToEdit.id || announcementToEdit.id, payload);
                 showSuccessToast('Announcement Updated', 'Announcement has been updated successfully');
             } else {
                 await AnnouncementService.createAnnouncement(payload);
@@ -347,7 +347,7 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
                                                 <Building2 className="w-3.5 h-3.5 text-gray-400" /> Organizations
                                             </label>
                                             <Dropdown
-                                                options={organizations.map(org => ({ label: org.name, value: org._id || org.id }))}
+                                                options={organizations.map(org => ({ label: org.name, value: org.id || org.id }))}
                                                 value={targetOrganization}
                                                 onChange={(val) => {
                                                     setTargetOrganization(val);
@@ -366,7 +366,7 @@ const AnnouncementFormModal = ({ isOpen, onClose, onSuccess, announcementToEdit 
                                                 <Building className="w-3.5 h-3.5 text-gray-400" /> Hostels
                                             </label>
                                             <Dropdown
-                                                options={hostels.map(h => ({ label: h.name, value: h._id || h.id }))}
+                                                options={hostels.map(h => ({ label: h.name, value: h.id || h.id }))}
                                                 value={targetHostel}
                                                 onChange={(val) => {
                                                     setTargetHostel(val);

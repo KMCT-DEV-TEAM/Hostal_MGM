@@ -63,7 +63,7 @@ const ComplaintMobileView = ({
 
     return (
       <div
-        key={complaint._id || Math.random()}
+        key={complaint.id || Math.random()}
         onClick={() => onViewDetail(complaint)}
         className="bg-white rounded-[16px] p-4 shadow-sm border border-gray-50 flex gap-4 items-start active:scale-[0.98] transition-transform cursor-pointer"
       >

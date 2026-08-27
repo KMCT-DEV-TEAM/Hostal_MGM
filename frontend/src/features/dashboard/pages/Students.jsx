@@ -53,7 +53,7 @@ export default function Students() {
   );
   const { students, setStudents, loading, error, pagination, refetch } =
     useStudents(studentQuery);
-  const getStudentId = (student) => student._id ?? student.id;
+  const getStudentId = (student) => student.id ?? student.id;
   const updateStudentState = useCallback(
     (studentId, updater) => {
       setStudents((prev) =>

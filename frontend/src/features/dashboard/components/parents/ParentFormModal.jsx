@@ -240,7 +240,7 @@ export default function ParentFormModal({
               render={({ field }) => (
                 <Dropdown
                   options={students.map(student => ({
-                    value: student._id || student.id,
+                    value: student.id || student.id,
                     label: `${student.name} (${student.admissionNo})`
                   }))}
                   value={field.value}

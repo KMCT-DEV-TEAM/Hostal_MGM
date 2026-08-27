@@ -187,7 +187,7 @@ export default function MaintenanceStaffManagement() {
     // SELECTION & ACTION HANDLERS
     // ==========================================
     const handleSelectAll = (mobileIds) => {
-        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : staff.map(w => w._id);
+        const currentVisibleIds = (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') ? mobileIds : staff.map(w => w.id);
         const allSelected = currentVisibleIds.every(id => selectedIds.includes(id));
 
         if (allSelected) {
@@ -217,7 +217,7 @@ export default function MaintenanceStaffManagement() {
             const res = await maintenanceStaffService.toggleStatus(statusToUpdate.id);
             if (res && res.data) {
                 const newIsActive = statusToUpdate.currentStatus !== 'Active';
-                setStaff(staff.map(w => w._id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
+                setStaff(staff.map(w => w.id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
                 showSuccessToast('Status Updated', res?.message || `Maintenance staff status changed to ${newIsActive ? 'Active' : 'Inactive'}`);
             }
         } catch (error) {
@@ -245,7 +245,7 @@ export default function MaintenanceStaffManagement() {
             });
             if (res && res.success) {
                 setStaff(staff.map(s =>
-                    selectedIds.includes(s._id) ? { ...s, isActive: bulkStatusToUpdate } : s
+                    selectedIds.includes(s.id) ? { ...s, isActive: bulkStatusToUpdate } : s
                 ));
                 const action = bulkStatusToUpdate ? 'Activated' : 'Deactivated';
                 showSuccessToast('Bulk Status Updated', res?.message || `Successfully ${action.toLowerCase()} ${selectedIds.length} maintenance staff`);
@@ -337,7 +337,7 @@ export default function MaintenanceStaffManagement() {
     };
 
     const openChangeEmailModal = (staff) => {
-        setEmailChangeStaffId(staff._id);
+        setEmailChangeStaffId(staff.id);
         setEmailChangeForm(staff.email);
         setNewEmailForm('');
         setIsEmailVerified(false);
@@ -354,11 +354,11 @@ export default function MaintenanceStaffManagement() {
                 newEmail: newEmailForm
             });
             if (res && res.success) {
-                setStaff(staff.map(s => s._id === emailChangeStaffId ? { ...s, email: newEmailForm } : s));
+                setStaff(staff.map(s => s.id === emailChangeStaffId ? { ...s, email: newEmailForm } : s));
                 setIsEmailChangeModalOpen(false);
                 setIsEmailChangeSuccessModalOpen(true);
 
-                if (selectedStaffDetail && selectedStaffDetail._id === emailChangeStaffId) {
+                if (selectedStaffDetail && selectedStaffDetail.id === emailChangeStaffId) {
                     setSelectedStaffDetail({ ...selectedStaffDetail, email: newEmailForm });
                 }
 
@@ -375,14 +375,14 @@ export default function MaintenanceStaffManagement() {
         setIsSubmitting(true);
         if (editingStaff) {
             try {
-                const res = await maintenanceStaffService.updateMaintenanceStaff(editingStaff._id, {
+                const res = await maintenanceStaffService.updateMaintenanceStaff(editingStaff.id, {
                     name: staffForm.name,
                     phone: staffForm.phone,
                     specialization: staffForm.specialization,
                     assignedTask: staffForm.assignedTask
                 });
                 if (res && res.data) {
-                    setStaff(staff.map(w => w._id === editingStaff._id ? { ...w, ...res.data } : w));
+                    setStaff(staff.map(w => w.id === editingStaff.id ? { ...w, ...res.data } : w));
                     showSuccessToast('Maintenance Staff Updated', res?.message || 'Details saved successfully');
                 }
             } catch (error) {
@@ -945,7 +945,7 @@ export default function MaintenanceStaffManagement() {
 
                         <h3 className="text-xl font-bold text-[#0A437A]">Change Email</h3>
                         <p className="text-sm text-gray-400 mt-1 mb-6">
-                            Change the email of {staff.find(w => w._id === emailChangeStaffId)?.name || 'the staff member'}
+                            Change the email of {staff.find(w => w.id === emailChangeStaffId)?.name || 'the staff member'}
                         </p>
 
                         <hr className="border-gray-200 mb-6" />
