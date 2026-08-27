@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createMentorDb, getPaginatedMentorsDb } from "./mentor.service.js";
+import { createMentorDb, getPaginatedMentorsDb, getMentorByIdDb } from "./mentor.service.js";
 import { ROLES } from "../../constants/roles.js";
 
 /**
@@ -52,5 +52,21 @@ export const getMentors = asyncHandler(async (req, res) => {
   } catch (error) {
     console.log(error);
     return sendError(res, error.statusCode || 500, error.message);
+  }
+});
+
+/**
+ * GET /mentors/:id
+ * Fetches single mentor profile details
+ */
+export const getMentorById = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const mentor = await getMentorByIdDb(id, req.user);
+    return sendSuccess(res, 200, "Mentor details fetched successfully", {
+      data: mentor,
+    });
+  } catch (error) {
+    return sendError(res, error.statusCode || 404, error.message);
   }
 });

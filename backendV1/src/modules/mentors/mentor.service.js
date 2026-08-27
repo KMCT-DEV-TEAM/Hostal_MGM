@@ -176,3 +176,66 @@ export const getPaginatedMentorsDb = async ({
     totalPages: Math.ceil(totalCount / limit),
   };
 };
+
+export const getMentorByIdDb = async (mentorId, requesterUser) => {
+  const where = { id: mentorId, role: "MENTOR" };
+
+  if (requesterUser.role === ROLES.ADMIN) {
+    where.organizationId = requesterUser.organizationId || requesterUser.organization;
+  }
+
+  const mentor = await prisma.user.findFirst({
+    where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      isActive: true,
+      organizationId: true,
+      createdAt: true,
+      updatedAt: true,
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          email: true,
+          phone: true,
+        },
+      },
+    },
+  });
+
+  if (!mentor) {
+    const error = new Error("Mentor not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const activeAssignments = await prisma.mentorAssignment.findMany({
+    where: { mentorId: mentor.id, status: "ACTIVE" },
+    include: {
+      batch: { select: { id: true, name: true, code: true } },
+      organization: { select: { id: true, name: true, code: true } },
+      assignedBy: { select: { id: true, name: true, email: true } },
+    },
+    orderBy: { assignedAt: "desc" },
+  });
+
+  const historyAssignments = await prisma.mentorAssignment.findMany({
+    where: { mentorId: mentor.id, status: { not: "ACTIVE" } },
+    include: {
+      batch: { select: { id: true, name: true, code: true } },
+      organization: { select: { id: true, name: true, code: true } },
+      assignedBy: { select: { id: true, name: true, email: true } },
+    },
+    orderBy: { assignedAt: "desc" },
+  });
+
+  mentor.activeAssignments = activeAssignments;
+  mentor.historyAssignments = historyAssignments;
+
+  return mentor;
+};
