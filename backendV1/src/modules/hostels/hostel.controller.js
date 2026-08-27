@@ -75,13 +75,36 @@ export const getHostels = asyncHandler(async (req, res) => {
   });
 });
 
+const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+
 export const getHostelById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  if (!isUUID(id)) {
+    return sendError(res, 400, 'Invalid hostel ID format');
+  }
 
   const hostel = await prisma.hostel.findUnique({
     where: { id },
     include: {
-      admin: { select: { name: true, email: true, phone: true } }
+      admin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        }
+      },
+      organizations: {
+        include: {
+          organization: true
+        }
+      },
+      wardens: {
+        include: {
+          user: true
+        }
+      }
     }
   });
 
@@ -96,6 +119,10 @@ export const updateHostel = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, code, email, phone, location, capacity, hostelType, type, hosteltype, adminId, isActive } = req.body;
   
+  if (!isUUID(id)) {
+    return sendError(res, 400, 'Invalid hostel ID format');
+  }
+
   const parsedHostelType = hostelType || type || hosteltype;
 
   const existingHostel = await prisma.hostel.findUnique({ where: { id } });
@@ -132,6 +159,10 @@ export const updateHostel = asyncHandler(async (req, res) => {
 export const deleteHostel = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  if (!isUUID(id)) {
+    return sendError(res, 400, 'Invalid hostel ID format');
+  }
+
   const existingHostel = await prisma.hostel.findUnique({ where: { id } });
 
   if (!existingHostel) {
@@ -148,6 +179,10 @@ export const deleteHostel = asyncHandler(async (req, res) => {
 
 export const toggleHostelStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  if (!isUUID(id)) {
+    return sendError(res, 400, 'Invalid hostel ID format');
+  }
 
   const existingHostel = await prisma.hostel.findUnique({ where: { id } });
 
