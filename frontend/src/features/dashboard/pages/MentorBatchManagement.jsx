@@ -29,7 +29,7 @@ const MentorBatchManagement = () => {
         limit,
         search: debouncedSearch,
         status: statusFilter.toLowerCase(),
-        mentorId: user?.id || user?._id,
+        mentorId: user?.id || user?.id,
       };
       const res = await BatchService.getMentorBatches(params);
       if (res && res.data) {
@@ -47,7 +47,7 @@ const MentorBatchManagement = () => {
 
   const handleRowClick = async (batch) => {
     try {
-      const res = await BatchService.getMentorAssignmentById(batch._id);
+      const res = await BatchService.getMentorAssignmentById(batch.id);
       if (res && res.data) {
         setSelectedAssignment(res.data);
         setIsModalOpen(true);

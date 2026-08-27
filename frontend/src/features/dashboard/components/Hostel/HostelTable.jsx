@@ -64,9 +64,9 @@ export default function HostelTable({
 
     const canEditFn = (hostel) => {
         return user?.role === 'super_admin' || 
-               hostel.adminId?._id === user?._id || 
-               hostel.adminId?._id === user?.id || 
-               hostel.adminId === user?._id || 
+               hostel.adminId?.id === user?.id || 
+               hostel.adminId?.id === user?.id || 
+               hostel.adminId === user?.id || 
                hostel.adminId === user?.id;
     };
 

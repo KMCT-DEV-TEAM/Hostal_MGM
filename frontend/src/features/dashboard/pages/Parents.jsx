@@ -64,7 +64,7 @@ export default function Parents() {
         limit
     });
 
-    const getParentId = (parent) => parent._id ?? parent.id;
+    const getParentId = (parent) => parent.id ?? parent.id;
 
     const handleAddClick = () => {
         setEditingParent(null);
@@ -310,7 +310,7 @@ export default function Parents() {
             label: "Organization",
             options: [
                 { label: 'All Organizations', value: '' },
-                ...organizations.map(org => ({ label: org.name, value: org._id }))
+                ...organizations.map(org => ({ label: org.name, value: org.id }))
             ],
             defaultValue: filters.organizationId || ''
         });

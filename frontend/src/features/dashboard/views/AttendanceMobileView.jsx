@@ -16,7 +16,7 @@ const AttendanceMobileView = ({
   const { activeStudentId } = useActiveStudent();
 
   // Fallback to activeStudentId if parent, else authUser (for student role)
-  const defaultStudent = authUser?.role === 'parent' ? { _id: activeStudentId } : authUser;
+  const defaultStudent = authUser?.role === 'parent' ? { id: activeStudentId } : authUser;
   const activeStudent = student || defaultStudent;
   const activeRole = userRole || authUser?.role;
 

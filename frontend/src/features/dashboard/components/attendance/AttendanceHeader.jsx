@@ -65,8 +65,8 @@ export default function AttendanceHeader({ onStatsFetched }) {
             const response = await attendanceService.createWindowByRole(user.role);
             showSuccessToast('Success', response?.message || 'Attendance window created');
 
-            if (response?.data?._id) {
-                navigate(`/dashboard/attendance/scan/${response.data._id}`);
+            if (response?.data?.id) {
+                navigate(`/dashboard/attendance/scan/${response.data.id}`);
             } else {
                 fetchTodayStats();
             }

@@ -130,7 +130,7 @@ const AnnouncementList = ({ announcements, onAnnouncementClick, loading, loading
                 if (isStudentOrParent) {
                     return (
                         <AnnouncementCard
-                            key={announcement._id}
+                            key={announcement.id}
                             announcement={announcement}
                             onClick={onAnnouncementClick ? () => onAnnouncementClick(announcement) : undefined}
                         />
@@ -139,7 +139,7 @@ const AnnouncementList = ({ announcements, onAnnouncementClick, loading, loading
 
                 return (
                     <div
-                        key={announcement._id}
+                        key={announcement.id}
                         onClick={() => onAnnouncementClick && onAnnouncementClick(announcement)}
                         className={`bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col h-full transition-all ${onAnnouncementClick ? 'cursor-pointer hover:shadow-md hover:border-primary/30' : 'hover:shadow-md'
                             }`}

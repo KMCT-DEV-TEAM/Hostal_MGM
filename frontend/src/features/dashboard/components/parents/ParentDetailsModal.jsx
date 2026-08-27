@@ -18,7 +18,7 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
             throw new Error("Current email does not match");
         }
 
-        const parentId = parent._id || parent.id || parent.parentId;
+        const parentId = parent.id || parent.id || parent.parentId;
         await changeParentEmail(role, parentId, {
             oldEmail,
             newEmail,

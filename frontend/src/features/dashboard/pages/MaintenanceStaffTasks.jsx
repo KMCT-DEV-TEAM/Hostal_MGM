@@ -210,7 +210,7 @@ export default function MaintenanceStaffTasks() {
                                 <tr><td colSpan="5" className="text-center p-8 text-gray-500">No tasks found.</td></tr>
                             ) : (
                                 paginatedTasks.map((task) => (
-                                    <tr key={task._id} className="hover:bg-gray-50/40 transition-colors">
+                                    <tr key={task.id} className="hover:bg-gray-50/40 transition-colors">
                                         <td className="p-4 pl-8 text-start text-gray-500 font-medium">{task.roomNo}</td>
                                         <td className="p-4 text-start text-gray-500">{task.category?.name || 'N/A'}</td>
                                         <td className="p-4 text-start text-gray-500">{task.subject}</td>

@@ -79,7 +79,7 @@ function toFieldErrors(zodError) {
 
 function toIdString(value) {
   if (!value) return "";
-  return typeof value === "string" ? value : value.id || value._id || "";
+  return typeof value === "string" ? value : value.id || value.id || "";
 }
 
 // updateStudentSchema is a ZodEffects (because of .refine()), so the plain
@@ -195,15 +195,15 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const userOrganization = useAuthStore((state) => {
     const organization = state.user?.organization;
     if (!organization) return null;
-    return typeof organization === "string" ? organization : organization._id || null;
+    return typeof organization === "string" ? organization : organization.id || null;
   });
   const [organizations, setOrganizations] = useState([]);
   const [loadingHostels, setLoadingHostels] = useState(false);
   const [loadingOrganizations, setLoadingOrganizations] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [organizationId, setOrganizationId] = useState(toIdString(editingStudent?.organization?.id || editingStudent?.organization?._id || editingStudent?.organizationId) || "");
+  const [organizationId, setOrganizationId] = useState(toIdString(editingStudent?.organization?.id || editingStudent?.organization?.id || editingStudent?.organizationId) || "");
   const [hostelId, setHostelId] = useState(
-    toIdString(editingStudent?.hostel?.id || editingStudent?.hostel?._id || editingStudent?.hostelId) || "",
+    toIdString(editingStudent?.hostel?.id || editingStudent?.hostel?.id || editingStudent?.hostelId) || "",
   );
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -211,9 +211,9 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingBatches, setLoadingBatches] = useState(false);
-  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?.id || editingStudent?.course?._id || editingStudent?.courseId) || "");
-  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?.id || editingStudent?.department?._id || editingStudent?.departmentId) || "");
-  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?.id || editingStudent?.batch?._id || editingStudent?.batchId) || "");
+  const [courseId, setCourseId] = useState(toIdString(editingStudent?.course?.id || editingStudent?.course?.id || editingStudent?.courseId) || "");
+  const [departmentId, setDepartmentId] = useState(toIdString(editingStudent?.department?.id || editingStudent?.department?.id || editingStudent?.departmentId) || "");
+  const [batchId, setBatchId] = useState(toIdString(editingStudent?.batch?.id || editingStudent?.batch?.id || editingStudent?.batchId) || "");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   // Fields that were previously plain uncontrolled <input>/<select> elements
@@ -419,7 +419,7 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
       // clears stale cross-org references instead of silently keeping them.
       const payload = { ...result.data };
       const originalOrgId = toIdString(
-        editingStudent?.organization?.id || editingStudent?.organization?._id || editingStudent?.organizationId
+        editingStudent?.organization?.id || editingStudent?.organization?.id || editingStudent?.organizationId
       );
       if (payload.organizationId && payload.organizationId !== originalOrgId) {
         if (!courseId) payload.courseId = null;
@@ -574,24 +574,24 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
 
   const courseOptions = [
     { value: "", label: organizationId ? "Select course" : "Select an organization first" },
-    ...courses.map((c) => ({ value: c.id || c._id, label: c.name })),
+    ...courses.map((c) => ({ value: c.id || c.id, label: c.name })),
   ];
 
   const departmentOptions = [
     { value: "", label: courseId ? "Select department" : "Select a course first" },
-    ...departments.map((d) => ({ value: d.id || d._id, label: d.name })),
+    ...departments.map((d) => ({ value: d.id || d.id, label: d.name })),
   ];
 
   const batchOptions = [
     { value: "", label: departmentId ? "Select batch" : "Select a department first" },
-    ...batches.map((b) => ({ value: b.id || b._id, label: b.name })),
+    ...batches.map((b) => ({ value: b.id || b.id, label: b.name })),
   ];
 
 
 
   const organizationOptions = [
     { value: "", label: "Select organization" },
-    ...organizations.map((org) => ({ value: org.id || org._id, label: org.name })),
+    ...organizations.map((org) => ({ value: org.id || org.id, label: org.name })),
   ];
 
   const dropdownTriggerClass =

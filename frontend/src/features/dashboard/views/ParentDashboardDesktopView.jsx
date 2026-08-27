@@ -286,7 +286,7 @@ export default function ParentDashboardDesktopView({
                         
                         <div className="flex flex-col gap-3 flex-1">
                             {leaveRequests.length > 0 ? leaveRequests.map((req) => (
-                                <div key={req._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#EEF2F7] rounded-[14px] p-4">
+                                <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#EEF2F7] rounded-[14px] p-4">
                                     <div>
                                         <div className="flex items-center gap-1.5 text-[13px] text-[#333333] font-medium flex-wrap">
                                             <span className="capitalize">{req.passType?.replace('_', ' ')}</span>
@@ -325,7 +325,7 @@ export default function ParentDashboardDesktopView({
                         
                         <div className="flex flex-col gap-3 flex-1">
                             {visitors.length > 0 ? visitors.map((visitor) => (
-                                <div key={visitor._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#EEF2F7] rounded-[14px] p-4">
+                                <div key={visitor.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-[#EEF2F7] rounded-[14px] p-4">
                                     <div className="flex items-center gap-4">
                                         <div className="w-8 h-8 rounded-full bg-[#0A437A]/10 text-[#0A437A] flex items-center justify-center font-bold text-xs uppercase shrink-0">
                                             {visitor.name ? visitor.name.substring(0, 2) : 'NA'}

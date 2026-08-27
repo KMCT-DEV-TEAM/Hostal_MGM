@@ -66,7 +66,7 @@ export default function Mentors() {
         limit
     });
 
-    const getMentorId = (mentor) => mentor._id ?? mentor.id;
+    const getMentorId = (mentor) => mentor.id ?? mentor.id;
 
     const handleAddClick = () => {
         setEditingMentor(null);

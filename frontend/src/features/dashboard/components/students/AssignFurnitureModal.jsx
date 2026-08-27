@@ -115,7 +115,7 @@ export default function AssignFurnitureModal({
   const fetchFurnitureTypesOptions = useCallback(async ({ page, search }) => {
     try {
       const params = { page, search, limit: 10 };
-      const hostelId = student?.hostel?._id || student?.hostelId || (typeof student?.hostel === 'string' ? student?.hostel : null);
+      const hostelId = student?.hostel?.id || student?.hostelId || (typeof student?.hostel === 'string' ? student?.hostel : null);
       if (hostelId) {
         params.hostelId = hostelId;
       }
@@ -124,7 +124,7 @@ export default function AssignFurnitureModal({
       const pagination = res.data?.data?.pagination || res.data?.pagination || {};
 
       return {
-        options: types.map(t => ({ label: t.name, value: t._id })),
+        options: types.map(t => ({ label: t.name, value: t.id })),
         hasMore: page < (pagination.totalPages || 1)
       };
     } catch (error) {
@@ -143,7 +143,7 @@ export default function AssignFurnitureModal({
       return {
         options: assets.map(a => ({
           label: `${a.furnitureTypeId?.name || "Asset"} (${a.furnitureId || a.code})`,
-          value: a._id
+          value: a.id
         })),
         hasMore: page < (pagination.totalPages || 1)
       };
@@ -156,7 +156,7 @@ export default function AssignFurnitureModal({
   const lookup = useMemo(() => {
     const map = {};
     assignedFurnitures.forEach(f => {
-      map[f._id] = { label: `${f.furnitureTypeId?.name || "Asset"} (${f.furnitureId || f.code})`, value: f._id };
+      map[f.id] = { label: `${f.furnitureTypeId?.name || "Asset"} (${f.furnitureId || f.code})`, value: f.id };
     });
     return map;
   }, [assignedFurnitures]);

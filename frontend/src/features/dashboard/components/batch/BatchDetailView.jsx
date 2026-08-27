@@ -20,7 +20,7 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
     const [loading, setLoading] = useState(true);
     const [isReleasing, setIsReleasing] = useState(false);
     const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
-
+     
     const fetchBatch = async () => {
         if (!selectedBatchDetail) return;
         try {

@@ -25,7 +25,7 @@ export default function UpdateAttendanceModal({ isOpen, onClose, student, date, 
 
         try {
             setIsSubmitting(true);
-            await attendanceService.correctAttendanceByRole(user.role, windowId, student._id, {
+            await attendanceService.correctAttendanceByRole(user.role, windowId, student.id, {
                 status: statusToUpdate,
                 remarks: `Marked ${statusToUpdate.replace('_', ' ')} manually by warden`
             });

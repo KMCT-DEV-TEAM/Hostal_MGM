@@ -79,9 +79,9 @@ export default function AttendanceScan() {
         try {
             // Try parsing as simple JSON first (for testing QRs)
             const parsed = JSON.parse(token);
-            if (parsed._id || parsed.studentId) {
+            if (parsed.id || parsed.studentId) {
                 decoded = {
-                    studentId: parsed._id || parsed.studentId,
+                    studentId: parsed.id || parsed.studentId,
                     idString: parsed.studentId || 'Unknown',
                     name: parsed.name || 'Student',
                     roomNo: parsed.roomNo || 'N/A',
@@ -102,7 +102,7 @@ export default function AttendanceScan() {
         }
 
         // Check if already scanned
-        const alreadyScanned = records.find(r => r.student?._id === decoded.studentId);
+        const alreadyScanned = records.find(r => r.student?.id === decoded.studentId);
         if (alreadyScanned) {
             showErrorToast('Already Scanned', `${decoded.name || 'Student'} has already been marked present.`);
             return false;
@@ -112,7 +112,7 @@ export default function AttendanceScan() {
 
         // Map JWT payload to student object
         const student = {
-            _id: decoded.studentId,
+            id: decoded.studentId,
             studentId: decoded.idString,
             name: decoded.name,
             roomNo: decoded.roomNo,
@@ -129,13 +129,13 @@ export default function AttendanceScan() {
         if (!scannedStudent) return;
         try {
             setIsScanning(true);
-            await attendanceService.scanStudentByRole(user.role, windowId, { qrToken: rawToken, studentId: scannedStudent._id });
+            await attendanceService.scanStudentByRole(user.role, windowId, { qrToken: rawToken, studentId: scannedStudent.id });
 
             showSuccessToast('Success', `${scannedStudent.name} marked as present.`);
 
             // Add to session list
             setSessionScanned(prev => [{
-                _id: 'session_' + Date.now(),
+                id: 'session_' + Date.now(),
                 student: scannedStudent,
                 scannedAt: new Date().toISOString()
             }, ...prev]);
@@ -284,7 +284,7 @@ export default function AttendanceScan() {
                         filteredSessionRecords.map((record) => {
                             const initials = record.student?.name ? record.student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '??';
                             return (
-                                <div key={record._id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/10 transition-colors">
+                                <div key={record.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/10 transition-colors">
                                     <div className="flex items-center gap-3">
                                         {record.student?.profileImage ? (
                                             <img src={record.student.profileImage} alt="" className="w-8 h-8 rounded-full object-cover" />

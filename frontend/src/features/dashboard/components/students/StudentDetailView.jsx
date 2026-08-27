@@ -50,12 +50,12 @@ import BackButton from "@/components/ui/BackButton";
 import PageHeader from "@/components/ui/PageHeader";
 
 const getParentId = (parent) =>
-  String(parent?._id ?? parent?.id ?? parent?.parentId ?? "");
+  String(parent?.id ?? parent?.id ?? parent?.parentId ?? "");
 
 const normalizeParent = (parent, fallback = {}) => ({
   ...fallback,
   ...parent,
-  _id: parent?._id ?? parent?.id ?? parent?.parentId ?? fallback?._id,
+  id: parent?.id ?? parent?.id ?? parent?.parentId ?? fallback?.id,
   parentName: parent?.parentName ?? fallback?.parentName,
   relationship: parent?.relationship ?? fallback?.relationship,
   phone: parent?.phone ?? parent?.parentPhone ?? fallback?.phone,
@@ -121,10 +121,10 @@ const StudentDetailView = () => {
   const handleVacateHostel = async () => {
     setIsVacating(true);
     try {
-      await vacateHostel(student._id);
+      await vacateHostel(student.id);
       showSuccessToast("Student vacated from hostel successfully");
       setIsVacateConfirmOpen(false);
-      onStudentChange?.(student._id, (current) => ({
+      onStudentChange?.(student.id, (current) => ({
         ...current,
         hostelStatus: "vacated",
         hostelId: null,
@@ -187,7 +187,7 @@ const StudentDetailView = () => {
       const fetchModalData = async () => {
         try {
           const params = { status: "Available", limit: 1000 };
-          const hostelId = student?.hostel?._id || student?.hostelId || (typeof student?.hostel === 'string' ? student?.hostel : null);
+          const hostelId = student?.hostel?.id || student?.hostelId || (typeof student?.hostel === 'string' ? student?.hostel : null);
           if (hostelId) {
             params.hostelId = hostelId;
           }
@@ -203,7 +203,7 @@ const StudentDetailView = () => {
 
   const handleAssignSave = async (data) => {
     try {
-      const studentId = student?._id || student?.id;
+      const studentId = student?.id || student?.id;
       if (!studentId) {
         showErrorToast("Error: Student ID is missing. Cannot save.");
         console.error("Student ID is missing. Student object:", student);
@@ -235,8 +235,8 @@ const StudentDetailView = () => {
     if (!returnConfirmModal.asset) return;
     setIsReturning(true);
     try {
-      const studentId = student?._id || student?.id;
-      const assetId = returnConfirmModal.asset._id || returnConfirmModal.asset.id;
+      const studentId = student?.id || student?.id;
+      const assetId = returnConfirmModal.asset.id || returnConfirmModal.asset.id;
       await furnitureApi.returnAsset(studentId, assetId);
 
       // Re-fetch assigned furnitures
@@ -255,20 +255,20 @@ const StudentDetailView = () => {
   const { handleCreateParent } = useCreateParent((result, payload) => {
     const parentData = result?.parent || result?.data || result;
     const createdParent = normalizeParent(parentData, payload);
-    const studentId = createdParent.studentId ?? student._id ?? student.id;
+    const studentId = createdParent.studentId ?? student.id ?? student.id;
     onStudentChange?.(studentId, (current) => {
       const existingParents = current.parents || [];
-      const parentIdStr = String(createdParent._id);
+      const parentIdStr = String(createdParent.id);
 
       const isAlreadyLinked = existingParents.some(p =>
-        String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr
+        String(p.id) === parentIdStr || String(p.parentId?.id) === parentIdStr
       );
 
       return {
         ...current,
         parents: isAlreadyLinked
           ? existingParents.map(p =>
-            (String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr)
+            (String(p.id) === parentIdStr || String(p.parentId?.id) === parentIdStr)
               ? { ...p, ...createdParent }
               : p
           )
@@ -288,20 +288,20 @@ const StudentDetailView = () => {
 
       const parentData = result?.parent || result?.data || result;
       const createdParent = normalizeParent(parentData, conflictData.payload);
-      const sId = createdParent.studentId ?? student._id ?? student.id;
+      const sId = createdParent.studentId ?? student.id ?? student.id;
       onStudentChange?.(sId, (current) => {
         const existingParents = current.parents || [];
-        const parentIdStr = String(createdParent._id);
+        const parentIdStr = String(createdParent.id);
 
         const isAlreadyLinked = existingParents.some(p =>
-          String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr
+          String(p.id) === parentIdStr || String(p.parentId?.id) === parentIdStr
         );
 
         return {
           ...current,
           parents: isAlreadyLinked
             ? existingParents.map(p =>
-              (String(p._id) === parentIdStr || String(p.parentId?._id) === parentIdStr)
+              (String(p.id) === parentIdStr || String(p.parentId?.id) === parentIdStr)
                 ? { ...p, ...createdParent }
                 : p
             )
@@ -406,9 +406,9 @@ const StudentDetailView = () => {
         throw new Error("Current email does not match");
       }
 
-      await changeStudentEmail(role, student._id, { oldEmail, newEmail, otp });
+      await changeStudentEmail(role, student.id, { oldEmail, newEmail, otp });
 
-      onStudentChange?.(student._id, (current) => ({
+      onStudentChange?.(student.id, (current) => ({
         ...current,
         email: newEmail,
       }));
@@ -431,7 +431,7 @@ const StudentDetailView = () => {
         otp
       });
 
-      onStudentChange?.(student._id, (current) => ({
+      onStudentChange?.(student.id, (current) => ({
         ...current,
         parents: (current.parents || []).map((parent) =>
           getParentId(parent) === parentId
@@ -859,7 +859,7 @@ const StudentDetailView = () => {
 
                   return (
                     <TimelineStep
-                      key={item._id || index}
+                      key={item.id || index}
                       title={title}
                       subtitle={subtitle}
                       status={item.status}
@@ -884,7 +884,7 @@ const StudentDetailView = () => {
           parents={parents}
           onClose={() => setIsDefaultParentModalOpen(false)}
           onDefaultChange={(parentId) => {
-            onStudentChange?.(student._id, (current) => ({
+            onStudentChange?.(student.id, (current) => ({
               ...current,
               parents: (current.parents || []).map((p) => ({
                 ...p,
@@ -897,7 +897,7 @@ const StudentDetailView = () => {
 
       {isAddParentModalOpen && (
         <ParentFormModal
-          studentId={student._id}
+          studentId={student.id}
           onClose={() => handleModalCloseRequest(() => setIsAddParentModalOpen(false))}
           onSave={async (payload) => {
             try {
@@ -984,7 +984,7 @@ const StudentDetailView = () => {
         onClose={() => handleModalCloseRequest(() => setIsManageHostelModalOpen(false))}
         student={student}
         onSave={(data) => {
-          onStudentChange?.(student._id, (current) => ({
+          onStudentChange?.(student.id, (current) => ({
             ...current,
             hostelId: data.hostelId,
             hostel: data.hostel,

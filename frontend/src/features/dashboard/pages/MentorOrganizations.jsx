@@ -30,7 +30,7 @@ export default function MentorOrganizations() {
     });
 
     const handleViewOrg = (org) => {
-        navigate(`/dashboard/mentors/${org._id}`, { state: { orgName: org.name } });
+        navigate(`/dashboard/mentors/${org.id}`, { state: { orgName: org.name } });
     };
 
     const handleAddMentor = () => {

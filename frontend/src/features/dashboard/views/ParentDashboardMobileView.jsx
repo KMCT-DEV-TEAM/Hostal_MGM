@@ -192,9 +192,9 @@ export default function ParentDashboardMobileView({
                         >
                             {pendingParentLeaveRequests.map((req, index) => (
                                 <div
-                                    key={req._id || index}
+                                    key={req.id || index}
                                     className="bg-white rounded-[24px] p-5 cursor-pointer min-w-[300px] w-[300px] sm:min-w-[340px] sm:w-[340px] shrink-0 snap-start flex flex-col"
-                                    onClick={() => onNavigate(`/dashboard/leaves/details/${req._id || req.id}`)}
+                                    onClick={() => onNavigate(`/dashboard/leaves/details/${req.id || req.id}`)}
                                 >
                                     <div className="flex items-center gap-4 mb-8">
                                         <div className="w-[50px] h-[50px] rounded-full bg-[#DCE4F0] flex items-center justify-center shrink-0">
@@ -227,7 +227,7 @@ export default function ParentDashboardMobileView({
                                             size="sm"
                                             onClick={(e) => {
                                                 e.stopPropagation(); // prevent card click
-                                                onNavigate(`/dashboard/leaves/details/${req._id || req.id}`);
+                                                onNavigate(`/dashboard/leaves/details/${req.id || req.id}`);
                                             }}
                                             icon={<FileEdit />}
                                             variant='primary'
@@ -258,7 +258,7 @@ export default function ParentDashboardMobileView({
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
                             {recentAnnouncements.map((announcement, index) => (
-                                <div key={announcement._id || index} className="bg-white rounded-[24px] p-5 min-w-[260px] w-[260px] shrink-0 snap-start">
+                                <div key={announcement.id || index} className="bg-white rounded-[24px] p-5 min-w-[260px] w-[260px] shrink-0 snap-start">
                                     <div className="w-[46px] h-[46px] rounded-[14px] bg-[#DCE4F0] flex items-center justify-center mb-5">
                                         <Bell className="w-[22px] h-[22px] text-[#1e3a8a]" strokeWidth={1.5} />
                                     </div>

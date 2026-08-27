@@ -19,12 +19,12 @@ export default function StudentMonthlyCalendar({
     const year = currentDate.getFullYear();
 
     const fetchCalendar = useCallback(async () => {
-        if (!student?._id || !userRole) return;
+        if (!student?.id || !userRole) return;
 
         try {
             setLoading(true);
             const response = await attendanceService.getStudentCalendarByRole(userRole, {
-                studentId: student._id,
+                studentId: student.id,
                 month,
                 year
             });
@@ -35,7 +35,7 @@ export default function StudentMonthlyCalendar({
         } finally {
             setLoading(false);
         }
-    }, [student?._id, userRole, month, year]);
+    }, [student?.id, userRole, month, year]);
 
     useEffect(() => {
         if (student) {

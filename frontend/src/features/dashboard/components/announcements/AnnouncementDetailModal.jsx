@@ -19,8 +19,8 @@ const AnnouncementDetailModal = ({ isOpen, onClose, announcement, onEdit, onDele
     if (!isOpen || !announcement) return null;
 
     const canEdit = (user?.role === 'super_admin' || 
-                    announcement.createdBy?._id === user?._id || 
-                    announcement.createdBy === user?._id) && 
+                    announcement.createdBy?.id === user?.id || 
+                    announcement.createdBy === user?.id) && 
                     announcement.status !== 'deleted' && 
                     announcement.status !== 'expired';
 

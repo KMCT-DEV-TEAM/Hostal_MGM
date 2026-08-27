@@ -480,7 +480,7 @@ export default function Administrator() {
                 if (adminForm.organization !== oldOrgId) {
                     await adminService.updateOrganization(editingAdmin.id, { organizationId: adminForm.organization });
                     const newOrg = organizations.find(o => o.id === adminForm.organization);
-                    updatedAdmin.organization = newOrg ? newOrg : { _id: adminForm.organization };
+                    updatedAdmin.organization = newOrg ? newOrg : { id: adminForm.organization };
                 }
 
                 // Check if Status changed
@@ -515,7 +515,7 @@ export default function Administrator() {
                     if (newAdmin) {
                         // Optimistically populate organization details for the table
                         const org = organizations.find(o => o.id === adminForm.organization);
-                        const populatedAdmin = { ...newAdmin, organization: org || { _id: adminForm.organization } };
+                        const populatedAdmin = { ...newAdmin, organization: org || { id: adminForm.organization } };
                         setAdmins(prev => [populatedAdmin, ...prev]);
                     }
                     setCurrentPage(1);

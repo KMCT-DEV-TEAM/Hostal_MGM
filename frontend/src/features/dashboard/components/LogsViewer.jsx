@@ -276,7 +276,7 @@ const LogsViewer = ({ entityType }) => {
                 totalItems={pagination.totalDocs}
                 totalPages={pagination.totalPages}
                 fetchMore={() => fetchLogs(pagination.page + 1)}
-                getItemId={(o) => o._id}
+                getItemId={(o) => o.id}
             />
         </div>
 

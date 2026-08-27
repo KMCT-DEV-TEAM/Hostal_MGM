@@ -124,8 +124,8 @@ export default function WardenComplaints({ hostel, onBack, headerActions }) {
         }
     }, [complaints]);
     const handleCategoryChange = (id, newCategoryVal) => {
-        const catObj = categories.find(c => c._id === newCategoryVal || c.name === newCategoryVal);
-        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj._id : newCategoryVal });
+        const catObj = categories.find(c => c.id === newCategoryVal || c.name === newCategoryVal);
+        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj.id : newCategoryVal });
     };
 
     const handlePriorityChange = (id, newPriority) => {
