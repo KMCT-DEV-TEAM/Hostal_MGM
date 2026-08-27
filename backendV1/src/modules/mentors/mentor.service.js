@@ -2,6 +2,7 @@ import { prisma } from "../../config/prisma.js";
 import { hashPassword } from "../../utils/hash.js";
 import { sendMail } from "../../utils/mailer.js";
 import { createLogDb } from "../logs/log.service.js";
+import { getOrCreateOtp, saveOtpDb } from "../otp/otp.service.js";
 import { ROLES } from "../../constants/roles.js";
 import crypto from "crypto";
 
@@ -238,4 +239,183 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
   mentor.historyAssignments = historyAssignments;
 
   return mentor;
+};
+
+/**
+ * Updates Mentor details inside a Prisma Transaction
+ */
+export const updateMentorDb = async (mentorId, updateData, requesterUser) => {
+  const where = { id: mentorId, role: "MENTOR" };
+  if (requesterUser.role === ROLES.ADMIN) {
+    where.organizationId = requesterUser.organizationId || requesterUser.organization;
+  }
+
+  // 1. Find Mentor
+  const mentor = await prisma.user.findFirst({ where });
+  if (!mentor) {
+    const error = new Error("Mentor not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  let otpRequired = false;
+  let targetEmailForOtp = null;
+
+  // Handle Email Update with OTP
+  if (updateData.email && updateData.email !== mentor.email) {
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: updateData.email,
+        id: { not: mentorId },
+      },
+    });
+
+    if (existingUser) {
+      const error = new Error("Email address already in use");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    otpRequired = true;
+    targetEmailForOtp = updateData.email;
+    delete updateData.email;
+  }
+
+  const updatePayload = {};
+  if (updateData.name !== undefined) updatePayload.name = updateData.name;
+  if (updateData.phone !== undefined) updatePayload.phone = updateData.phone;
+  if (updateData.isActive !== undefined) updatePayload.isActive = updateData.isActive;
+  // Ignore specialization as it doesn't exist in Prisma User schema
+
+  const updatedMentor = await prisma.$transaction(async (tx) => {
+    const updated = await tx.user.update({
+      where: { id: mentor.id },
+      data: updatePayload,
+    });
+
+    if (requesterUser) {
+      await createLogDb(
+        {
+          action: "Updated Mentor",
+          entityType: "User",
+          entityId: updated.id,
+          user: requesterUser.id,
+          userRole: requesterUser.role,
+          details: `Updated mentor details for ${updated.name}`,
+          status: "success",
+        },
+        tx
+      );
+    }
+
+    return updated;
+  });
+
+  // Handle OTP Generation & Email dispatch outside transaction
+  if (otpRequired && targetEmailForOtp) {
+    const { otpCode } = await getOrCreateOtp(targetEmailForOtp);
+    await saveOtpDb(targetEmailForOtp, otpCode);
+
+    const subject = "Email Update Verification Code";
+    const text = `Your OTP code to verify your new email (${targetEmailForOtp}) is: ${otpCode}`;
+    const html = `<p>Your OTP code to verify your new email (<strong>${targetEmailForOtp}</strong>) is: <strong>${otpCode}</strong></p>`;
+
+    try {
+      await sendMail(targetEmailForOtp, subject, text, html);
+    } catch (err) {
+      console.error("Failed to send OTP email:", err);
+    }
+  }
+
+  const sanitized = { ...updatedMentor };
+  delete sanitized.password;
+  delete sanitized.failedLoginAttempts;
+  delete sanitized.lockUntil;
+
+  return {
+    mentor: sanitized,
+    otpRequired,
+    message: otpRequired
+      ? "Mentor updated successfully. Verification OTP sent to the new email address."
+      : "Mentor updated successfully",
+  };
+};
+
+/**
+ * Updates Mentor status inside a Prisma Transaction
+ */
+export const updateMentorStatusDb = async (mentorId, isActive, requesterUser) => {
+  const where = { id: mentorId, role: "MENTOR" };
+  if (requesterUser.role === ROLES.ADMIN) {
+    where.organizationId = requesterUser.organizationId || requesterUser.organization;
+  }
+
+  const mentor = await prisma.user.findFirst({ where });
+  if (!mentor) {
+    const error = new Error("Mentor not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (mentor.isActive === isActive) {
+    const error = new Error(
+      `Mentor is already ${isActive ? "active" : "inactive"}`
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!isActive) {
+    const activeAssignments = await prisma.mentorAssignment.findMany({
+      where: {
+        mentorId: mentor.id,
+        status: "ACTIVE",
+      },
+      include: {
+        batch: { select: { name: true } },
+      },
+    });
+
+    if (activeAssignments.length > 0) {
+      const batchNames = activeAssignments
+        .map((a) => a.batch?.name || "Unknown Batch")
+        .join(", ");
+      const error = new Error(
+        `Cannot deactivate mentor. This mentor is currently assigned to batch(es): ${batchNames}. Please transfer or end their active assignments first.`
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  const updatedMentor = await prisma.$transaction(async (tx) => {
+    const updated = await tx.user.update({
+      where: { id: mentor.id },
+      data: { isActive },
+    });
+
+    if (requesterUser) {
+      await createLogDb(
+        {
+          action: isActive ? "Activated Mentor" : "Deactivated Mentor",
+          entityType: "User",
+          entityId: mentor.id,
+          user: requesterUser.id,
+          userRole: requesterUser.role,
+          details: `${isActive ? "Activated" : "Deactivated"} mentor ${mentor.name}`,
+          status: "success",
+        },
+        tx
+      );
+    }
+
+    return updated;
+  });
+
+  const sanitized = { ...updatedMentor };
+  delete sanitized.password;
+  delete sanitized.failedLoginAttempts;
+  delete sanitized.lockUntil;
+
+  return sanitized;
 };

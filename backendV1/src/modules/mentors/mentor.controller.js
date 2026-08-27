@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createMentorDb, getPaginatedMentorsDb, getMentorByIdDb } from "./mentor.service.js";
+import { createMentorDb, getPaginatedMentorsDb, getMentorByIdDb, updateMentorDb, updateMentorStatusDb } from "./mentor.service.js";
 import { ROLES } from "../../constants/roles.js";
 
 /**
@@ -68,5 +68,43 @@ export const getMentorById = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     return sendError(res, error.statusCode || 404, error.message);
+  }
+});
+
+/**
+ * PATCH /mentors/:id
+ * Updates mentor profile details
+ */
+export const updateMentor = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await updateMentorDb(id, req.body, req.user);
+    return sendSuccess(res, 200, result.message, { data: result.mentor });
+  } catch (error) {
+    return sendError(res, error.statusCode || 400, error.message);
+  }
+});
+
+/**
+ * PATCH /mentors/:id/status
+ * Activates or deactivates mentor profile
+ */
+export const updateMentorStatus = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== "boolean") {
+      return sendError(res, 400, "isActive boolean field is required");
+    }
+
+    const updatedMentor = await updateMentorStatusDb(id, isActive, req.user);
+    const message = isActive
+      ? "Mentor activated successfully"
+      : "Mentor deactivated successfully";
+
+    return sendSuccess(res, 200, message, { data: updatedMentor });
+  } catch (error) {
+    return sendError(res, error.statusCode || 400, error.message);
   }
 });
