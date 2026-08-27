@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createPassDb, getStudentPassesUnifiedDb, getPassesDb } from "./pass.service.js";
+import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb } from "./pass.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
@@ -134,4 +134,13 @@ export const getPasses = asyncHandler(async (req, res) => {
     data: passes,
     pagination,
   });
+});
+
+export const getPassDetails = asyncHandler(async (req, res) => {
+  const pass = await getPassDetailsDb({
+    passId: req.params.id,
+    actor: req.user,
+  });
+
+  return sendSuccess(res, 200, "Pass details loaded successfully.", pass);
 });

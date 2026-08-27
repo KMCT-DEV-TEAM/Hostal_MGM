@@ -198,3 +198,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pass_ListResponse'
+  /passes/{id}:
+    get:
+      tags:
+        - Passes
+      summary: Get pass details
+      description: Retrieves the detailed information of a specific pass by its ID. Enforces organization-level tenant isolation and role-specific permissions for students, parents, wardens, assistant wardens, mentors, admins, and super admins.
+      operationId: getPassDetails
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique UUID of the pass.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pass details loaded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Invalid Pass ID format (must be UUID).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+        '403':
+          description: Access denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_StandardErrorResponse'
+        '404':
+          description: Pass not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_StandardErrorResponse'

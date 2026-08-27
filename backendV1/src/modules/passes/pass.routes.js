@@ -1,8 +1,8 @@
 import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
-import { createPass, getMyPassesUnified, getPasses } from "./pass.controller.js";
-import { validateCreatePass, validateGetPassesUnified, validateGetPasses } from "./pass.validation.js";
+import { createPass, getMyPassesUnified, getPasses, getPassDetails } from "./pass.controller.js";
+import { validateCreatePass, validateGetPassesUnified, validateGetPasses, validatePassIdParam } from "./pass.validation.js";
 import verifyStudentAccess from "../../middlewares/verifyStudentAccess.middleware.js";
 
 const router = express.Router();
@@ -33,6 +33,22 @@ router.get(
   verifyStudentAccess,
   validateGetPasses,
   getPasses
+);
+
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(
+    "student",
+    "parent",
+    "warden",
+    "assistant_warden",
+    "mentor",
+    "admin",
+    "super_admin"
+  ),
+  validatePassIdParam,
+  getPassDetails
 );
 
 export default router;

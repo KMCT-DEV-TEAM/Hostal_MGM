@@ -1,5 +1,6 @@
 
 import { prisma } from "../../config/prisma.js";
+import { isUUID } from "../../utils/validators.js";
 
 export const validateCreatePass = async (req, res, next) => {
   try {
@@ -354,5 +355,16 @@ export const validateGetPassesUnified = (req, res, next) => {
     }
   }
 
+  next();
+};
+
+export const validatePassIdParam = (req, res, next) => {
+  const { id } = req.params;
+  if (!id || !isUUID(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Pass ID format. Must be a valid UUID.",
+    });
+  }
   next();
 };
