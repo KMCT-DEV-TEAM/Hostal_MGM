@@ -46,13 +46,13 @@ const login = asyncHandler(async (req, res) => {
   user.role = dbRole;
 
   // Portal Authorization Checks
-  if (role === 'super_admin' && user.role !== 'SUPER_ADMIN') {
+  if (role === 'super_admin' && user.role !== 'super_admin') {
     return sendError(res, 401, "You are not authorized to login as Super Admin. Check URL");
   }
-  if (role === 'admin' && !['ADMIN', 'WARDEN', 'MENTOR'].includes(user.role)) {
+  if (role === 'admin' && !['admin', 'warden', 'mentor'].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login from here. Check URL");
   }
-  if (role === 'warden' && user.role !== 'WARDEN') {
+  if (role === 'warden' && user.role !== 'warden') {
     return sendError(res, 401, "You are not authorized to login as Warden. Check URL");
   }
 
@@ -176,7 +176,7 @@ const me = asyncHandler(async (req, res) => {
       }
     });
     if (user) {
-        if (user.role === 'WARDEN') {
+        if (user.role === 'warden') {
             user.assignedHostels = user.hostelWardens.map(hw => hw.hostel);
         }
         // Normalize role to lowercase for frontend compatibility

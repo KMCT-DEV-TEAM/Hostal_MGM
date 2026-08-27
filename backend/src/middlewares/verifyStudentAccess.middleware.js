@@ -3,7 +3,7 @@ import StudentParent from "../modules/parents/studentParent.model.js";
 const verifyStudentAccess = async (req, res, next) => {
   try {
     if (req.user.role !== "parent") {
-      if (['admin', 'super-admin'].includes(req.user.role)) return next();
+      if (['admin', 'super-admin', 'mentor', 'assistant_warden', 'student'].includes(req.user.role)) return next();
       return res.status(403).json({
         success: false,
         message: "Access denied. Only parents can access these resources.",

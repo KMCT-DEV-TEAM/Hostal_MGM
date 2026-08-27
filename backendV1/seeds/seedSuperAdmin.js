@@ -29,7 +29,7 @@ const seedSuperAdmin = async () => {
         name: process.env.SUPER_ADMIN_NAME,
         email: process.env.SUPER_ADMIN_EMAIL,
         password: hashedPassword,
-        role: "SUPER_ADMIN",
+        role: "super_admin",
       },
     });
 

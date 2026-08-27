@@ -78,7 +78,7 @@ export const getAdmins = asyncHandler(async (req, res) => {
   const search = req.query.search;
 
   // We are looking for ADMIN role
-  const { users, totalCount } = await getPaginatedUsersByRole("ADMIN", page, limit, status, search);
+  const { users, totalCount } = await getPaginatedUsersByRole("admin", page, limit, status, search);
 
   // Note: The frontend expects 'name' instead of 'name' based on old mongoose schema
   const mappedUsers = users.map(user => ({
@@ -101,7 +101,7 @@ export const getWardens = asyncHandler(async (req, res) => {
   const status = req.query.status;
   const search = req.query.search;
 
-  const { users, totalCount } = await getPaginatedUsersByRole("WARDEN", page, limit, status, search);
+  const { users, totalCount } = await getPaginatedUsersByRole("warden", page, limit, status, search);
 
   const mappedUsers = users.map(user => {
     const rawHostel = user.hostelWardens && user.hostelWardens.length > 0 ? user.hostelWardens[0].hostel : null;
@@ -136,7 +136,7 @@ export const getAssistantWardens = asyncHandler(async (req, res) => {
   const status = req.query.status;
   const search = req.query.search;
 
-  const { users, totalCount } = await getPaginatedUsersByRole("ASSISTANT_WARDEN", page, limit, status, search);
+  const { users, totalCount } = await getPaginatedUsersByRole("assistant_warden", page, limit, status, search);
 
   const mappedUsers = users.map(user => {
     const rawHostel = user.hostelWardens && user.hostelWardens.length > 0 ? user.hostelWardens[0].hostel : null;
@@ -178,7 +178,7 @@ export const getAssistantWardenById = asyncHandler(async (req, res) => {
     }
   });
 
-  if (!user || user.role !== 'ASSISTANT_WARDEN') {
+  if (!user || user.role !== 'assistant_warden') {
     return sendError(res, 404, "Assistant Warden not found");
   }
 
@@ -211,7 +211,7 @@ export const createAssistantWarden = asyncHandler(async (req, res) => {
               phone,
               password: hashedPassword,
               tempPassword: true,
-              role: "ASSISTANT_WARDEN",
+              role: "assistant_warden",
               createdBy: req.user?.id || req.user?._id
           }
       });
@@ -346,7 +346,7 @@ export const createAdmin = asyncHandler(async (req, res) => {
       phone,
       passwordHash: hashed,
       tempPassword: true,
-      role: "ADMIN",
+      role: "admin",
       organizationId,
     },
     include: { organization: true },
@@ -511,7 +511,7 @@ export const bulkToggleAdminStatus = asyncHandler(async (req, res) => {
   }
 
   await prisma.user.updateMany({
-    where: { id: { in: ids }, role: "ADMIN" },
+    where: { id: { in: ids }, role: "admin" },
     data: { isActive },
   });
 
@@ -605,7 +605,7 @@ export const createWarden = asyncHandler(async (req, res) => {
               phone,
               password: hashedPassword,
               tempPassword: true,
-              role: "WARDEN",
+              role: "warden",
               createdBy: req.user?.id || req.user?._id
           }
       });
@@ -751,7 +751,7 @@ export const getMaintenanceStaff = asyncHandler(async (req, res) => {
   const status = req.query.status;
   const search = req.query.search;
 
-  const { users, totalCount } = await getPaginatedUsersByRole("MAINTENANCE_STAFF", page, limit, status, search);
+  const { users, totalCount } = await getPaginatedUsersByRole("maintenance_staff", page, limit, status, search);
 
   const mappedUsers = users.map(user => {
     let specialization = '';
@@ -811,7 +811,7 @@ export const createMaintenanceStaff = asyncHandler(async (req, res) => {
               phone,
               password: hashedPassword,
               tempPassword: true,
-              role: "MAINTENANCE_STAFF",
+              role: "maintenance_staff",
               organizationId: organizationId || null,
               settings: { specialization, assignedTask },
               createdBy: req.user?.id || req.user?._id
@@ -915,7 +915,7 @@ export const bulkToggleMaintenanceStaffStatus = asyncHandler(async (req, res) =>
   const { ids, isActive } = req.body;
   
   await prisma.user.updateMany({
-    where: { id: { in: ids }, role: "MAINTENANCE_STAFF" },
+    where: { id: { in: ids }, role: "maintenance_staff" },
     data: { isActive }
   });
 

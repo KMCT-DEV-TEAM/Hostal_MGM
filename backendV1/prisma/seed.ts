@@ -12,7 +12,13 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Seeding Hostel Management System Master Data...');
   const defaultPassword = await bcrypt.hash('password123', 10);
-  const superAdminId = '9e2849ea-3498-4b5b-96ae-1903875e9911';
+  const superAdmin = await prisma.user.findFirst({
+    where: { role: 'super_admin' }
+  });
+  if (!superAdmin) {
+    throw new Error("Super Admin user not found. Please run 'npm run seedSuperAdmin' first!");
+  }
+  const superAdminId = superAdmin.id;
 
   // ==========================================
   // 1. CORE HIERARCHY
@@ -132,7 +138,7 @@ async function main() {
       name: 'AdminA',
       email: 'adminA@organizationa.com',
       password: defaultPassword,
-      role: Role.ADMIN,
+      role: Role.admin,
       organizationId: org.id,
       createdBy: superAdminId,
     },
@@ -145,7 +151,7 @@ async function main() {
       name: 'WardenA',
       email: 'wardenA@organizationa.com',
       password: defaultPassword,
-      role: Role.WARDEN,
+      role: Role.warden,
       organizationId: org.id,
       createdBy: superAdminId,
     },
@@ -158,7 +164,7 @@ async function main() {
       name: 'MentorA',
       email: 'mentorA@organizationa.com',
       password: defaultPassword,
-      role: Role.MENTOR,
+      role: Role.mentor,
       organizationId: org.id,
       createdBy: superAdminId,
     },

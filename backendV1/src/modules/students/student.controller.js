@@ -19,7 +19,7 @@ export const createStudent = asyncHandler(async (req, res) => {
         throw { statusCode: 400, message: "Student and parent email must be different" };
       }
 
-      if (req.user?.role === "ADMIN" || req.user?.role === "admin") {
+      if (req.user?.role === "admin") {
         const admin = await tx.user.findUnique({
           where: { id: req.user.id },
           select: { organizationId: true }
@@ -199,7 +199,7 @@ export const changeStudentEmail = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
-  if (req.user?.role === "admin" || req.user?.role === "ADMIN") {
+  if (req.user?.role === "admin") {
     const admin = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: { organizationId: true }
