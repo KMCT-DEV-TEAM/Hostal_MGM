@@ -4,6 +4,7 @@ import { sendMail } from "../../utils/mailer.js";
 import { createLogDb } from "../logs/log.service.js";
 import { getOrCreateOtp, saveOtpDb } from "../otp/otp.service.js";
 import { ROLES } from "../../constants/roles.js";
+import { MENTOR_ASSIGNMENT_STATUS } from "../../constants/status.js";
 import crypto from "crypto";
 
 const generateRandomPassword = () => {
@@ -51,7 +52,7 @@ export const createMentorDb = async (mentorData, creatorUser) => {
         email,
         phone,
         password: hashedPassword,
-        role: "MENTOR",
+        role: ROLES.MENTOR.toUpperCase(),
         organizationId: organizationId || null,
         tempPassword: true,
         isActive: true,
@@ -110,7 +111,7 @@ export const getPaginatedMentorsDb = async ({
   requesterUser,
 }) => {
   const skip = (page - 1) * limit;
-  const where = { role: "MENTOR" };
+  const where = { role: ROLES.MENTOR.toUpperCase() };
 
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
@@ -179,7 +180,7 @@ export const getPaginatedMentorsDb = async ({
 };
 
 export const getMentorByIdDb = async (mentorId, requesterUser) => {
-  const where = { id: mentorId, role: "MENTOR" };
+  const where = { id: mentorId, role: ROLES.MENTOR.toUpperCase() };
 
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
@@ -216,7 +217,7 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
   }
 
   const activeAssignments = await prisma.mentorAssignment.findMany({
-    where: { mentorId: mentor.id, status: "ACTIVE" },
+    where: { mentorId: mentor.id, status: MENTOR_ASSIGNMENT_STATUS.ACTIVE },
     include: {
       batch: { select: { id: true, name: true, code: true } },
       organization: { select: { id: true, name: true, code: true } },
@@ -226,7 +227,7 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
   });
 
   const historyAssignments = await prisma.mentorAssignment.findMany({
-    where: { mentorId: mentor.id, status: { not: "ACTIVE" } },
+    where: { mentorId: mentor.id, status: { not: MENTOR_ASSIGNMENT_STATUS.ACTIVE } },
     include: {
       batch: { select: { id: true, name: true, code: true } },
       organization: { select: { id: true, name: true, code: true } },
@@ -245,7 +246,7 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
  * Updates Mentor details inside a Prisma Transaction
  */
 export const updateMentorDb = async (mentorId, updateData, requesterUser) => {
-  const where = { id: mentorId, role: "MENTOR" };
+  const where = { id: mentorId, role: ROLES.MENTOR.toUpperCase() };
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
   }
@@ -345,7 +346,7 @@ export const updateMentorDb = async (mentorId, updateData, requesterUser) => {
  * Updates Mentor status inside a Prisma Transaction
  */
 export const updateMentorStatusDb = async (mentorId, isActive, requesterUser) => {
-  const where = { id: mentorId, role: "MENTOR" };
+  const where = { id: mentorId, role: ROLES.MENTOR.toUpperCase() };
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
   }
@@ -369,7 +370,7 @@ export const updateMentorStatusDb = async (mentorId, isActive, requesterUser) =>
     const activeAssignments = await prisma.mentorAssignment.findMany({
       where: {
         mentorId: mentor.id,
-        status: "ACTIVE",
+        status: MENTOR_ASSIGNMENT_STATUS.ACTIVE,
       },
       include: {
         batch: { select: { name: true } },
@@ -431,7 +432,7 @@ export const deleteMentorDb = async (mentorId, requesterUser) => {
     throw error;
   }
 
-  const where = { id: mentorId, role: "MENTOR" };
+  const where = { id: mentorId, role: ROLES.MENTOR.toUpperCase() };
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
   }
@@ -447,7 +448,7 @@ export const deleteMentorDb = async (mentorId, requesterUser) => {
   const activeAssignmentsCount = await prisma.mentorAssignment.count({
     where: {
       mentorId,
-      status: "ACTIVE",
+      status: MENTOR_ASSIGNMENT_STATUS.ACTIVE,
     },
   });
 
@@ -486,4 +487,58 @@ export const deleteMentorDb = async (mentorId, requesterUser) => {
   });
 
   return { message: "Mentor soft deleted successfully" };
+};
+
+/**
+ * Gets organizations that have at least one mentor
+ */
+export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, search }) => {
+  const skip = (page - 1) * limit;
+
+  const where = {
+    users: {
+      some: { role: ROLES.MENTOR.toUpperCase() },
+    },
+  };
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { code: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const [organizations, totalCount] = await Promise.all([
+    prisma.organization.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        email: true,
+        _count: {
+          select: { users: { where: { role: ROLES.MENTOR.toUpperCase() } } },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: { name: "asc" },
+    }),
+    prisma.organization.count({ where }),
+  ]);
+
+  const formattedData = organizations.map((org) => ({
+    _id: org.id,
+    name: org.name,
+    code: org.code,
+    email: org.email,
+    mentorCount: org._count.users,
+  }));
+
+  return {
+    data: formattedData,
+    totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
+  };
 };

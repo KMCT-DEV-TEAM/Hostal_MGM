@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createMentorDb, getPaginatedMentorsDb, getMentorByIdDb, updateMentorDb, updateMentorStatusDb, deleteMentorDb } from "./mentor.service.js";
+import { createMentorDb, getPaginatedMentorsDb, getMentorByIdDb, updateMentorDb, updateMentorStatusDb, deleteMentorDb, getOrganizationsWithMentorsDb } from "./mentor.service.js";
 import { ROLES } from "../../constants/roles.js";
 
 /**
@@ -120,5 +120,29 @@ export const deleteMentor = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, result.message);
   } catch (error) {
     return sendError(res, error.statusCode || 400, error.message);
+  }
+});
+
+/**
+ * GET /mentors/organizations
+ * Returns list of organizations that have mentors
+ */
+export const getOrganizationsWithMentors = asyncHandler(async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const { search } = req.query;
+
+    const result = await getOrganizationsWithMentorsDb({ page, limit, search });
+
+    return sendSuccess(res, 200, "Organizations with mentors fetched successfully", {
+      count: result.data.length,
+      totalCount: result.totalCount,
+      currentPage: result.currentPage,
+      totalPages: result.totalPages,
+      data: result.data
+    });
+  } catch (error) {
+    return sendError(res, error.statusCode || 500, error.message);
   }
 });
