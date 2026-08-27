@@ -1,7 +1,8 @@
 import { templateService } from '../services/template.service.js';
+import complaintTemplates from '../../complaints/complaint.notification.js';
 
 export const registerAllTemplates = () => {
-    // Registering a dummy test template for testing purposes
+    // Registering dummy test template
     templateService.registerTemplates({
         'TEST_EVENT': {
             'USER': {
@@ -13,6 +14,9 @@ export const registerAllTemplates = () => {
             }
         }
     });
+
+    // Register complaint domain templates
+    templateService.registerTemplates(complaintTemplates);
 
     console.log('[Notification System] All domain templates successfully registered.');
 };
