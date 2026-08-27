@@ -152,7 +152,7 @@ const getPassApproverRecipients = async (studentId, organizationId) => {
 
   const admins = await prisma.user.findMany({
     where: {
-      role: "ADMIN",
+      role: "admin",
       organizationId: organizationId,
       isActive: true
     },

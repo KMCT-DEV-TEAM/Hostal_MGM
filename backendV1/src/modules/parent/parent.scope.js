@@ -18,7 +18,7 @@ const getUserScope = async (user) => {
 
   const userId = user.id || user._id;
 
-  if (user.role === "admin" || user.role === "ADMIN") {
+  if (user.role === "admin") {
     const admin = await prisma.user.findUnique({
       where: { id: userId },
       select: { organizationId: true },
@@ -30,7 +30,7 @@ const getUserScope = async (user) => {
     user.organizationId = String(admin.organizationId);
   }
 
-  if (user.role === "mentor" || user.role === "MENTOR") {
+  if (user.role === "mentor") {
     const activeAssignments = await prisma.mentorAssignment.findMany({
       where: {
         mentorId: userId,
@@ -86,7 +86,7 @@ export const checkParentAccess = async (user, parentId) => {
   }
 
   // 2. Super Admin bypass
-  if (user.role === "super_admin" || user.role === "SUPER_ADMIN") {
+  if (user.role === "super_admin") {
     return parentContext;
   }
 
@@ -94,7 +94,7 @@ export const checkParentAccess = async (user, parentId) => {
   const scopedUser = await getUserScope(user);
 
   // 4. Admin validation
-  if (user.role === "admin" || user.role === "ADMIN") {
+  if (user.role === "admin") {
     if (!parentContext.linkedOrganizationIds.includes(scopedUser.organizationId)) {
       throw new AuthorizationError("You can only manage parents in your organization", 403);
     }
@@ -102,7 +102,7 @@ export const checkParentAccess = async (user, parentId) => {
   }
 
   // 5. Mentor validation
-  if (user.role === "mentor" || user.role === "MENTOR") {
+  if (user.role === "mentor") {
     const hasAccess = parentContext.linkedBatchIds.some((batchId) => 
       scopedUser.assignedBatchIds.includes(batchId)
     );
@@ -131,21 +131,21 @@ export const checkStudentAccess = async (user, studentId) => {
     throw new AuthorizationError("Student not found", 404);
   }
 
-  if (user.role === "super_admin" || user.role === "SUPER_ADMIN") {
+  if (user.role === "super_admin") {
     return student;
   }
 
   // Hydrate user scope (cached per request)
   const scopedUser = await getUserScope(user);
 
-  if (user.role === "admin" || user.role === "ADMIN") {
+  if (user.role === "admin") {
     if (String(student.organizationId) !== scopedUser.organizationId) {
       throw new AuthorizationError("You can only manage students in your organization", 403);
     }
     return student;
   }
 
-  if (user.role === "mentor" || user.role === "MENTOR") {
+  if (user.role === "mentor") {
     if (!student.batchId || !scopedUser.assignedBatchIds.includes(String(student.batchId))) {
       throw new AuthorizationError("You can only manage students in your assigned batches", 403);
     }

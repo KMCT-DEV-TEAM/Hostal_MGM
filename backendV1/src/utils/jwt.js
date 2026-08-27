@@ -26,21 +26,16 @@ export const generateRefreshToken = (user) => {
   let expiresIn = "7d";
 
   switch (user.role) {
-    case "SUPER_ADMIN":
     case "super_admin":
       expiresIn = "8h";
       break;
-    case "ADMIN":
     case "admin":
       expiresIn = "12h";
       break;
-    case "WARDEN":
     case "warden":
       expiresIn = "24h";
       break;
-    case "STUDENT":
     case "student":
-    case "PARENT":
     case "parent":
     default:
       expiresIn = "7d";
