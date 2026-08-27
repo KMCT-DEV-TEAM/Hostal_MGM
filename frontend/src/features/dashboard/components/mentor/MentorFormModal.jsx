@@ -34,7 +34,7 @@ export default function MentorFormModal({
         email: editingMentor.email || "",
         phone: editingMentor.phone || "",
         specialization: editingMentor.specialization || "",
-        organizationId: editingMentor.organization?._id || editingMentor.organization || ""
+        organizationId: editingMentor.organization?.id || editingMentor.organization || ""
       });
     }
   }, [editingMentor]);
@@ -45,7 +45,7 @@ export default function MentorFormModal({
       return {
         options: (res.data || res.organizations || []).map(org => ({
           label: org.name,
-          value: org._id
+          value: org.id
         })),
         hasMore: res.currentPage < res.totalPages
       };

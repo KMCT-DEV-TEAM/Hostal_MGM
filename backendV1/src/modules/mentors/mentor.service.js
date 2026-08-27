@@ -52,7 +52,7 @@ export const createMentorDb = async (mentorData, creatorUser) => {
         email,
         phone,
         password: hashedPassword,
-        role: ROLES.MENTOR.toUpperCase(),
+        role: ROLES.MENTOR,
         organizationId: organizationId || null,
         tempPassword: true,
         isActive: true,
@@ -111,7 +111,7 @@ export const getPaginatedMentorsDb = async ({
   requesterUser,
 }) => {
   const skip = (page - 1) * limit;
-  const where = { role: ROLES.MENTOR.toUpperCase() };
+  const where = { role: ROLES.MENTOR };
 
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
@@ -180,7 +180,7 @@ export const getPaginatedMentorsDb = async ({
 };
 
 export const getMentorByIdDb = async (mentorId, requesterUser) => {
-  const where = { id: mentorId, role: ROLES.MENTOR.toUpperCase() };
+  const where = { id: mentorId, role: ROLES.MENTOR };
 
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
@@ -246,7 +246,7 @@ export const getMentorByIdDb = async (mentorId, requesterUser) => {
  * Updates Mentor details inside a Prisma Transaction
  */
 export const updateMentorDb = async (mentorId, updateData, requesterUser) => {
-  const where = { id: mentorId, role: ROLES.MENTOR.toUpperCase() };
+  const where = { id: mentorId, role: ROLES.MENTOR };
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
   }
@@ -346,7 +346,7 @@ export const updateMentorDb = async (mentorId, updateData, requesterUser) => {
  * Updates Mentor status inside a Prisma Transaction
  */
 export const updateMentorStatusDb = async (mentorId, isActive, requesterUser) => {
-  const where = { id: mentorId, role: ROLES.MENTOR.toUpperCase() };
+  const where = { id: mentorId, role: ROLES.MENTOR };
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
   }
@@ -432,7 +432,7 @@ export const deleteMentorDb = async (mentorId, requesterUser) => {
     throw error;
   }
 
-  const where = { id: mentorId, role: ROLES.MENTOR.toUpperCase() };
+  const where = { id: mentorId, role: ROLES.MENTOR };
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
   }
@@ -497,7 +497,7 @@ export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, sear
 
   const where = {
     users: {
-      some: { role: ROLES.MENTOR.toUpperCase() },
+      some: { role: ROLES.MENTOR },
     },
   };
 
@@ -517,7 +517,7 @@ export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, sear
         code: true,
         email: true,
         _count: {
-          select: { users: { where: { role: ROLES.MENTOR.toUpperCase() } } },
+          select: { users: { where: { role: ROLES.MENTOR } } },
         },
       },
       skip,

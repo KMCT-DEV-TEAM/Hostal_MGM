@@ -134,7 +134,7 @@ export default function MentorTable({
     const addNewButton = canCreate && (
         <button
             onClick={onAddClick}
-            className="flex items-center justify-center gap-2 px-3 py-1 sm:px-4  bg-[#0A437A] hover:bg-[#0A437A]/90 text-white rounded-lg transition-colors font-medium text-sm shadow-sm py-2"
+            className="flex items-center justify-center gap-2 px-3 py-1 sm:px-4  bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors font-medium text-sm shadow-sm py-2"
         >
             <Plus className="w-4 h-4" />
             <span className="">Add <span className='hidden md:inline'>Mentor </span></span>
