@@ -419,3 +419,71 @@ export const updateMentorStatusDb = async (mentorId, isActive, requesterUser) =>
 
   return sanitized;
 };
+
+/**
+ * Soft deletes a Mentor inside a Prisma Transaction
+ */
+export const deleteMentorDb = async (mentorId, requesterUser) => {
+  const currentUserId = requesterUser.id;
+  if (currentUserId === mentorId) {
+    const error = new Error("Mentors/Users cannot delete themselves");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const where = { id: mentorId, role: "MENTOR" };
+  if (requesterUser.role === ROLES.ADMIN) {
+    where.organizationId = requesterUser.organizationId || requesterUser.organization;
+  }
+
+  const mentor = await prisma.user.findFirst({ where });
+  if (!mentor) {
+    const error = new Error("Mentor not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Business Rule Check: Count active batch assignments
+  const activeAssignmentsCount = await prisma.mentorAssignment.count({
+    where: {
+      mentorId,
+      status: "ACTIVE",
+    },
+  });
+
+  if (activeAssignmentsCount > 0) {
+    const error = new Error(
+      `Cannot delete mentor with ${activeAssignmentsCount} active batch assignment(s). Reassign or deactivate batches first.`
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Soft delete
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: mentor.id },
+      data: {
+        isActive: false,
+        deletedAt: new Date(),
+      },
+    });
+
+    if (requesterUser) {
+      await createLogDb(
+        {
+          action: "Soft Deleted Mentor",
+          entityType: "User",
+          entityId: mentor.id,
+          user: requesterUser.id,
+          userRole: requesterUser.role,
+          details: `Soft deleted mentor ${mentor.name}`,
+          status: "success",
+        },
+        tx
+      );
+    }
+  });
+
+  return { message: "Mentor soft deleted successfully" };
+};

@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createMentorDb, getPaginatedMentorsDb, getMentorByIdDb, updateMentorDb, updateMentorStatusDb } from "./mentor.service.js";
+import { createMentorDb, getPaginatedMentorsDb, getMentorByIdDb, updateMentorDb, updateMentorStatusDb, deleteMentorDb } from "./mentor.service.js";
 import { ROLES } from "../../constants/roles.js";
 
 /**
@@ -104,6 +104,20 @@ export const updateMentorStatus = asyncHandler(async (req, res) => {
       : "Mentor deactivated successfully";
 
     return sendSuccess(res, 200, message, { data: updatedMentor });
+  } catch (error) {
+    return sendError(res, error.statusCode || 400, error.message);
+  }
+});
+
+/**
+ * DELETE /mentors/:id
+ * Soft deletes mentor profile
+ */
+export const deleteMentor = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await deleteMentorDb(id, req.user);
+    return sendSuccess(res, 200, result.message);
   } catch (error) {
     return sendError(res, error.statusCode || 400, error.message);
   }
