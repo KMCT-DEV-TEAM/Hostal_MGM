@@ -56,6 +56,7 @@ import studentRoutes from './modules/students/student.routes.js';
 import studentHostelRoutes from './modules/student-hostel/studentHostel.routes.js';
 import parentRoutes from './modules/parent/parent.routes.js';
 import attendanceRoutes from './modules/attendance/attendance.routes.js';
+import mentorRoutes from './modules/mentors/mentor.routes.js';
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
@@ -76,6 +77,7 @@ app.use('/api/parents', parentRoutes);
 app.use('/api/furniture', furnitureRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/passes', passRoutes);
+app.use('/api/mentors', mentorRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);
