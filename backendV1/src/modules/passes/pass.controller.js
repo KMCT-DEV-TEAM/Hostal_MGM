@@ -118,26 +118,25 @@ export const createPass = asyncHandler(async (req, res) => {
         }
       }
 
-      await tx.notificationOutbox.create({
-        data: {
-          payload: {
-            sender: buildSender(req.user),
-            eventName: 'PASS_CREATED',
-            target: { type: 'PARENT', filter: { studentId: student.id } },
-            data: {
-              passTypeLabel,
-              studentName: student.name || " ".trim(),
-              reason,
-              link
-            }
-          }
-        }
-      });
-
       newPass = await createPassDb(passData, tx);
     }, {
       isolationLevel: "Serializable"
     });
+
+    const passTypeLabel = passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+    const link = "/dashboard/leaves/";
+
+    orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'PASS_CREATED',
+      target: { type: 'PARENT', filter: { studentId: student.id } },
+      data: {
+        passTypeLabel,
+        studentName: student.name || " ".trim(),
+        reason,
+        link
+      }
+    }).catch(err => console.error("Notification Error:", err));
   } catch (error) {
     if (error.message === "OVERLAPPING_HOME_PASS") {
       return sendError(res, 400, "You already have another home pass requested or approved during these dates.");
@@ -153,7 +152,6 @@ export const createPass = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 201, "Pass created successfully", newPass);
 
-  return sendSuccess(res, 201, "Pass created successfully", newPass);
 });
 
 export const getMyPassesUnified = asyncHandler(async (req, res) => {

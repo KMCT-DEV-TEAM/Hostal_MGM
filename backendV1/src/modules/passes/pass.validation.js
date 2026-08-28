@@ -45,6 +45,13 @@ export const validateCreatePass = async (req, res, next) => {
       const end = parseISTDateEnd(toDate);
       const todayStart = getTodayISTStart();
 
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid date format. Please ensure dates are correctly formatted (YYYY-MM-DD).",
+        });
+      }
+
       // 1. From Date Cannot Be Past
       if (start < todayStart) {
         return res.status(400).json({
@@ -90,6 +97,13 @@ export const validateCreatePass = async (req, res, next) => {
       const passDateStart = parseISTDateStart(date);
       const todayStart = getTodayISTStart();
 
+      if (isNaN(passDateStart.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid date format. Please ensure the date is correctly formatted (YYYY-MM-DD).",
+        });
+      }
+
       if (passDateStart < todayStart) {
         return res.status(400).json({
           success: false,
@@ -106,6 +120,13 @@ export const validateCreatePass = async (req, res, next) => {
 
       const outDateTime = parseISTDateTime(date, outTime);
       const returnDateTime = parseISTDateTime(date, expectedReturnTime);
+
+      if (isNaN(outDateTime.getTime()) || isNaN(returnDateTime.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid time format. Please ensure times are valid.",
+        });
+      }
 
       const durationInHours = (returnDateTime - outDateTime) / (1000 * 60 * 60);
       const MAX_OUT_PASS_HOURS = Number(process.env.MAX_OUT_PASS_HOURS) || 12;
