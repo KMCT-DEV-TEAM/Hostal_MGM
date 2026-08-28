@@ -133,9 +133,9 @@ export const getPaginatedAssignmentsDb = async (filters, options) => {
     }
   }
 
-  if (mentorId) where.mentorId = mentorId;
-  if (batchId) where.batchId = batchId;
-  if (organizationId) where.organizationId = organizationId;
+  if (mentorId && mentorId !== "undefined") where.mentorId = mentorId;
+  if (batchId && batchId !== "undefined") where.batchId = batchId;
+  if (organizationId && organizationId !== "undefined") where.organizationId = organizationId;
 
   if (search) {
     where.OR = [
