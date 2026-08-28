@@ -115,7 +115,7 @@ export const getPaginatedMentorsDb = async ({
 
   if (requesterUser.role === ROLES.ADMIN) {
     where.organizationId = requesterUser.organizationId || requesterUser.organization;
-  } else if (organizationId) {
+  } else if (organizationId && organizationId !== "undefined") {
     where.organizationId = organizationId;
   }
 

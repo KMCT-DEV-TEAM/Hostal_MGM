@@ -7,6 +7,7 @@ import { getOrCreateOtp, verifyOtpDb, deleteOtpDb } from "../otps/otp.service.js
 import { sendMail } from "../../utils/mailer.js";
 import { getIo } from "../../config/socket.js";
 import jwt from "jsonwebtoken";
+import { ROLES } from "../../constants/roles.js";
 
 const refreshTokenCookieOptions = {
   httpOnly: true,
@@ -17,7 +18,7 @@ const refreshTokenCookieOptions = {
 const login = asyncHandler(async (req, res) => {
   const { email, password, role } = req.body;
 
-  if (!['super_admin', 'admin', 'warden', 'assistant_warden', 'student', 'parent', 'maintenance_staff'].includes(role)) {
+  if (![ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.STUDENT, ROLES.PARENT, ROLES.SECURITY, ROLES.MENTOR].includes(role)) {
     return sendError(res, 400, "Invalid login portal");
   }
 
@@ -25,13 +26,13 @@ const login = asyncHandler(async (req, res) => {
   let dbRole = null;
   let modelName = '';
 
-  if (role === 'student') {
+  if (role === ROLES.STUDENT) {
     user = await prisma.student.findUnique({ where: { email } });
-    dbRole = 'STUDENT';
+    dbRole = ROLES.STUDENT;
     modelName = 'student';
-  } else if (role === 'parent') {
+  } else if (role === ROLES.PARENT) {
     user = await prisma.parent.findUnique({ where: { email } });
-    dbRole = 'PARENT';
+    dbRole = ROLES.PARENT;
     modelName = 'parent';
   } else {
     user = await prisma.user.findUnique({ where: { email } });
@@ -49,17 +50,20 @@ const login = asyncHandler(async (req, res) => {
   user.role = dbRole;
 
   // Portal Authorization Checks
-  if (role === 'super_admin' && user.role !== 'super_admin') {
+  if (role === ROLES.SUPER_ADMIN && user.role !== ROLES.SUPER_ADMIN) {
     return sendError(res, 401, "You are not authorized to login as Super Admin. Check URL");
   }
-  if (role === 'admin' && !['ADMIN', 'WARDEN', 'ASSISTANT_WARDEN', 'MENTOR'].includes(user.role)) {
+  if (role === ROLES.ADMIN && ![ROLES.ADMIN, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.MENTOR].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login from here. Check URL");
   }
-  if (role === 'warden' && !['WARDEN', 'ASSISTANT_WARDEN'].includes(user.role)) {
+  if (role === ROLES.WARDEN && ![ROLES.WARDEN, ROLES.ASSISTANT_WARDEN].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login as Warden. Check URL");
   }
-  if (role === 'assistant_warden' && !['WARDEN', 'ASSISTANT_WARDEN'].includes(user.role)) {
+  if (role === ROLES.ASSISTANT_WARDEN && ![ROLES.WARDEN, ROLES.ASSISTANT_WARDEN].includes(user.role)) {
     return sendError(res, 401, "You are not authorized to login as Assistant Warden. Check URL");
+  }
+  if (role === ROLES.MENTOR && user.role !== ROLES.MENTOR) {
+    return sendError(res, 401, "You are not authorized to login as Mentor. Check URL");
   }
 
   if (user.lockUntil && user.lockUntil > new Date()) {
@@ -127,12 +131,12 @@ const refreshToken = asyncHandler(async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_TOKEN);
     let user = null;
 
-    if (decoded.role === 'STUDENT' || decoded.role === 'student') {
+    if (decoded.role === ROLES.STUDENT) {
       user = await prisma.student.findUnique({ where: { id: decoded.id } });
-      if (user) user.role = 'STUDENT';
-    } else if (decoded.role === 'PARENT' || decoded.role === 'parent') {
+      if (user) user.role = ROLES.STUDENT;
+    } else if (decoded.role === ROLES.PARENT) {
       user = await prisma.parent.findUnique({ where: { id: decoded.id } });
-      if (user) user.role = 'PARENT';
+      if (user) user.role = ROLES.PARENT;
     } else {
       user = await prisma.user.findUnique({ where: { id: decoded.id } });
     }
@@ -152,7 +156,7 @@ const refreshToken = asyncHandler(async (req, res) => {
 const me = asyncHandler(async (req, res) => {
   let user = null;
 
-  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+  if (req.user.role === ROLES.STUDENT) {
     user = await prisma.student.findUnique({
       where: { id: req.user.id },
       include: {
@@ -168,7 +172,7 @@ const me = asyncHandler(async (req, res) => {
     });
     
     if (user) {
-        user.role = 'student';
+        user.role = ROLES.STUDENT;
         const activeAllocation = user.studentHostels?.[0];
         
         if (activeAllocation?.hostel) {
@@ -193,7 +197,7 @@ const me = asyncHandler(async (req, res) => {
         
         user.qrToken = qrToken;
     }
-  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+  } else if (req.user.role === ROLES.PARENT) {
     user = await prisma.parent.findUnique({
       where: { id: req.user.id },
       include: {
@@ -204,7 +208,7 @@ const me = asyncHandler(async (req, res) => {
       }
     });
     if (user) {
-      user.role = 'parent';
+      user.role = ROLES.PARENT;
       user.students = user.studentParents.map(sp => sp.student);
     }
   } else {
@@ -250,10 +254,10 @@ export const changePassword = asyncHandler(async (req, res) => {
   let user = null;
   let model = 'user';
 
-  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+  if (req.user.role === ROLES.STUDENT) {
     user = await prisma.student.findUnique({ where: { id: userId } });
     model = 'student';
-  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+  } else if (req.user.role === ROLES.PARENT) {
     user = await prisma.parent.findUnique({ where: { id: userId } });
     model = 'parent';
   } else {
@@ -315,9 +319,9 @@ export const verifyPassword = asyncHandler(async (req, res) => {
 
   let user = null;
 
-  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+  if (req.user.role === ROLES.STUDENT) {
     user = await prisma.student.findUnique({ where: { id: req.user.id } });
-  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+  } else if (req.user.role === ROLES.PARENT) {
     user = await prisma.parent.findUnique({ where: { id: req.user.id } });
   } else {
     user = await prisma.user.findUnique({ where: { id: req.user.id } });
@@ -428,10 +432,10 @@ export const updateProfile = asyncHandler(async (req, res) => {
   let user = null;
   let model = 'user';
 
-  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+  if (req.user.role === ROLES.STUDENT) {
     user = await prisma.student.findUnique({ where: { id: userId } });
     model = 'student';
-  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+  } else if (req.user.role === ROLES.PARENT) {
     user = await prisma.parent.findUnique({ where: { id: userId } });
     model = 'parent';
   } else {
@@ -514,9 +518,9 @@ export const verifyEmailChange = asyncHandler(async (req, res) => {
   }
 
   const userId = req.user.id;
-  if (req.user.role === 'STUDENT' || req.user.role === 'student') {
+  if (req.user.role === ROLES.STUDENT) {
     await prisma.student.update({ where: { id: userId }, data: { email: newEmail } });
-  } else if (req.user.role === 'PARENT' || req.user.role === 'parent') {
+  } else if (req.user.role === ROLES.PARENT) {
     await prisma.parent.update({ where: { id: userId }, data: { email: newEmail } });
   } else {
     await prisma.user.update({ where: { id: userId }, data: { email: newEmail } });
