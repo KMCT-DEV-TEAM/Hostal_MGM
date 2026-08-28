@@ -2,8 +2,8 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 import { ROLES } from "../../constants/roles.js";
-import { createPass, getMyPassesUnified, getPasses, getPassDetails, updatePass, cancelPass, approvePass, getManagementHostels, getManagementHostelPasses, getManagementDashboardStats } from "./pass.controller.js";
-import { validateCreatePass, validateGetPassesUnified, validateGetPasses, validatePassIdParam, validateUpdatePass, validateCancelPass, validateHostelIdParam } from "./pass.validation.js";
+import { createPass, getMyPassesUnified, getPasses, getPassDetails, updatePass, cancelPass, approvePass, rejectPass, getManagementHostels, getManagementHostelPasses, getManagementDashboardStats } from "./pass.controller.js";
+import { validateCreatePass, validateGetPassesUnified, validateGetPasses, validatePassIdParam, validateUpdatePass, validateCancelPass, validateHostelIdParam, validateRejectPass } from "./pass.validation.js";
 import verifyStudentAccess from "../../middlewares/verifyStudentAccess.middleware.js";
 
 const router = express.Router();
@@ -96,6 +96,15 @@ router.patch(
   roleMiddleware(ROLES.PARENT, ROLES.MENTOR, ROLES.ADMIN, ROLES.SUPER_ADMIN),
   validatePassIdParam,
   approvePass
+);
+
+router.patch(
+  "/:id/reject",
+  authMiddleware,
+  roleMiddleware(ROLES.PARENT, ROLES.MENTOR, ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  validatePassIdParam,
+  validateRejectPass,
+  rejectPass
 );
 
 export default router;

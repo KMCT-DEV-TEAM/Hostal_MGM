@@ -571,3 +571,47 @@ paths:
           description: Conflict. Pass status changed concurrently.
         '422':
           description: Unprocessable. The pass cannot be approved in its current status.
+  /passes/{id}/reject:
+    patch:
+      tags:
+        - Passes
+      summary: Reject a pass request (Parent/Mentor/Admin)
+      description: Rejects a pass request. Authenticated user's role (parent, mentor, admin, super_admin) determines the specific rejection rules, status transitions, notifications, and timeline actions executed.
+      operationId: rejectPass
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique UUID of the pass.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remarks:
+                  type: string
+                  description: Optional remarks or reason for rejection.
+      responses:
+        '200':
+          description: Pass rejected successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Validation error or pass not waiting for this rejection.
+        '403':
+          description: Forbidden. Insufficient permissions or not linked.
+        '404':
+          description: Pass not found.
+        '409':
+          description: Conflict. Pass status changed concurrently.
+        '422':
+          description: Unprocessable. The pass cannot be rejected in its current status.

@@ -669,3 +669,13 @@ export const validateCancelPass = async (req, res, next) => {
     next(error);
   }
 };
+
+export const validateRejectPass = (req, res, next) => {
+  const { remarks } = req.body;
+
+  if (!remarks || remarks.trim() === "") {
+    return res.status(400).json({ success: false, message: "Please provide a reason or remark for rejecting this pass." });
+  }
+
+  next();
+};

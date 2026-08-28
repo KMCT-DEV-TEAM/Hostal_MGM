@@ -1461,3 +1461,229 @@ export const getManagementDashboardStatsDb = async (scope) => {
   return response;
 };
 
+export const rejectParentPassDb = async (passId, parentId, remarks) => {
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    const updateResult = await tx.pass.updateMany({
+      where: { id: passId, status: "pending_parent" },
+      data: { status: "rejected" },
+    });
+
+    if (updateResult.count === 0) {
+      const error = new Error("The pass could not be rejected. Its status may have changed.");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const existingApproval = await tx.passApproval.findFirst({
+      where: { passId, approvalLevel: "PARENT" }
+    });
+
+    if (existingApproval) {
+      await tx.passApproval.update({
+        where: { id: existingApproval.id },
+        data: {
+          status: "REJECTED",
+          actionById: null,
+          parentId: parentId,
+          remarks: remarks || "",
+          actionAt: new Date(),
+        }
+      });
+    } else {
+      await tx.passApproval.create({
+        data: {
+          passId,
+          approvalLevel: "PARENT",
+          status: "REJECTED",
+          parentId: parentId,
+          remarks: remarks || "",
+          actionAt: new Date(),
+        }
+      });
+    }
+
+    await tx.passTimeline.create({
+      data: {
+        passId,
+        action: "parent_rejected",
+        actorId: parentId,
+        actorRole: "parent",
+        remarks: remarks || "Rejected by parent",
+      }
+    });
+
+    updatedPass = await tx.pass.findUnique({
+      where: { id: passId },
+      include: {
+        student: { select: { id: true, name: true } },
+        hostel: { select: { id: true, name: true } }
+      }
+    });
+  });
+
+  return updatedPass;
+};
+
+export const rejectMentorPassDb = async (passId, mentorId, batchIds, remarks) => {
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    // We do the batch validation before this function in the controller or we can do it via a findFirst here
+    const pass = await tx.pass.findUnique({
+      where: { id: passId },
+      include: { student: true }
+    });
+
+    if (!pass) {
+      const error = new Error("We couldn't find the pass you're looking for.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (!pass.student || !batchIds.includes(pass.student.batchId)) {
+      const error = new Error("You don't have permission to reject passes for this student.");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const updateResult = await tx.pass.updateMany({
+      where: { id: passId, status: "pending_admin" },
+      data: { status: "rejected" },
+    });
+
+    if (updateResult.count === 0) {
+      const error = new Error("This pass can't be rejected right now because of its current status.");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const existingApproval = await tx.passApproval.findFirst({
+      where: { passId, approvalLevel: "ADMIN" }
+    });
+
+    if (existingApproval) {
+      await tx.passApproval.update({
+        where: { id: existingApproval.id },
+        data: {
+          status: "REJECTED",
+          actionById: mentorId,
+          remarks: remarks || "",
+          actionAt: new Date(),
+        }
+      });
+    } else {
+      await tx.passApproval.create({
+        data: {
+          passId,
+          approvalLevel: "ADMIN",
+          status: "REJECTED",
+          actionById: mentorId,
+          remarks: remarks || "",
+          actionAt: new Date(),
+        }
+      });
+    }
+
+    await tx.passTimeline.create({
+      data: {
+        passId,
+        action: "admin_rejected",
+        actorId: mentorId,
+        actorRole: "mentor",
+        remarks: remarks || "Rejected",
+      }
+    });
+
+    updatedPass = await tx.pass.findUnique({
+      where: { id: passId },
+      include: {
+        student: { select: { id: true, name: true } },
+        hostel: { select: { id: true, name: true, organizations: true } }
+      }
+    });
+  });
+
+  return updatedPass;
+};
+
+export const rejectManagementPassDb = async (passId, scope, remarks) => {
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    const pass = await tx.pass.findUnique({
+      where: { id: passId },
+      include: { hostel: { include: { organizations: true } } }
+    });
+
+    if (!pass) {
+      const error = new Error("We couldn't find the pass you're looking for.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (scope.role === "admin") {
+      if (!pass.hostel || pass.organizationId !== scope.organizationId) {
+        const error = new Error("You don't have permission to reject passes for this hostel.");
+        error.statusCode = 403;
+        throw error;
+      }
+    }
+
+    const updateResult = await tx.pass.updateMany({
+      where: { id: passId, status: "pending_admin" },
+      data: { status: "rejected" },
+    });
+
+    if (updateResult.count === 0) {
+      const error = new Error("This pass can't be rejected right now because of its current status.");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const existingApproval = await tx.passApproval.findFirst({
+      where: { passId, approvalLevel: "ADMIN" }
+    });
+
+    if (existingApproval) {
+      await tx.passApproval.update({
+        where: { id: existingApproval.id },
+        data: {
+          status: "REJECTED",
+          actionById: scope.actorId,
+          remarks: remarks || "",
+          actionAt: new Date(),
+        }
+      });
+    } else {
+      await tx.passApproval.create({
+        data: {
+          passId,
+          approvalLevel: "ADMIN",
+          status: "REJECTED",
+          actionById: scope.actorId,
+          remarks: remarks || "",
+          actionAt: new Date(),
+        }
+      });
+    }
+
+    await tx.passTimeline.create({
+      data: {
+        passId,
+        action: "admin_rejected",
+        actorId: scope.actorId,
+        actorRole: scope.role, // admin or super_admin
+        remarks: remarks || "Rejected",
+      }
+    });
+
+    updatedPass = await tx.pass.findUnique({
+      where: { id: passId },
+      include: {
+        student: { select: { id: true, name: true } },
+        hostel: { select: { id: true, name: true, organizations: true, wardens: true } }
+      }
+    });
+  });
+
+  return updatedPass;
+};

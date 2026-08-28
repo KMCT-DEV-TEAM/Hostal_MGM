@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin, getManagementHostelsDb, getManagementHostelPassesDb, getManagementDashboardStatsDb } from "./pass.service.js";
+import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin, getManagementHostelsDb, getManagementHostelPassesDb, getManagementDashboardStatsDb, rejectParentPassDb, rejectMentorPassDb, rejectManagementPassDb } from "./pass.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
@@ -555,4 +555,103 @@ export const getManagementDashboardStats = asyncHandler(async (req, res, next) =
   // Delegate to pass.service.js for admin/super_admin pass stats
   const stats = await getManagementDashboardStatsDb(scope);
   return sendSuccess(res, 200, "Dashboard stats fetched successfully", { data: stats });
+});
+
+export const rejectPass = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { remarks } = req.body;
+  const role = req.user.role;
+  let updatedPass;
+
+  if (role === "parent") {
+    // Basic verification since we didn't add the verifyStudentAccess middleware to this specific route.
+    // Parent should only reject passes for students linked to them.
+    const parentId = req.user.id;
+    const pass = await prisma.pass.findUnique({
+      where: { id },
+      include: { student: { include: { studentParents: true } } }
+    });
+    if (!pass) return sendError(res, 404, "We couldn't find the pass you're looking for.");
+
+    const isLinked = pass.student.studentParents.some(sp => sp.parentId === parentId);
+    if (!isLinked) {
+      return sendError(res, 403, "Only the default guardian has permission to reject passes.");
+    }
+
+    updatedPass = await rejectParentPassDb(id, parentId, remarks);
+
+  } else if (role === "mentor") {
+    const scope = await buildMentorScope(req);
+    updatedPass = await rejectMentorPassDb(id, scope.actorId, scope.batchIds, remarks);
+
+  } else if (role === "admin" || role === "super_admin") {
+    let scope;
+    if (role === "admin") scope = buildAdminScope(req);
+    else scope = buildSuperAdminScope(req);
+
+    updatedPass = await rejectManagementPassDb(id, scope, remarks);
+  } else {
+    return sendError(res, 403, "You do not have permission to perform this action.");
+  }
+
+  // Notifications
+  const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
+  const passTypeSlug = updatedPass.passType === 'home_pass' ? 'home-pass' : 'out-pass';
+  const link = `/dashboard/leaves/${passTypeSlug}`;
+
+  const studentName = updatedPass.student.name;
+  const remarksText = remarks || (role === "parent" ? "Parent rejected the pass request." : "Rejected");
+
+  if (role === "parent") {
+    const parentName = req.user.name;
+    await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'PASS_PARENT_REJECTED',
+      target: { type: 'STUDENT', filter: { studentId: updatedPass.student.id } },
+      data: { passTypeLabel, studentName, parentName, remarks: remarksText, link }
+    }).catch(err => console.error("Notification Error:", err));
+
+    await createLogDb({
+      action: "Parent Rejected Pass",
+      entityType: "Pass",
+      entityId: id,
+      user: req.user.id || req.user._id,
+      userRole: role,
+      details: `Parent rejected pass request. Remarks: ${remarksText}`,
+      status: "success"
+    });
+  } else {
+    // Mentor, Admin, Super Admin
+    const approvedBy = req.user.name || `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Management';
+
+    await orchestratorService.triggerNotification({
+      sender: buildSender(req.user),
+      eventName: 'PASS_ADMIN_REJECTED',
+      target: { type: 'STUDENT', filter: { studentId: updatedPass.student.id } },
+      data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
+    }).catch(err => console.error("Notification Error:", err));
+
+    if (role === "admin" || role === "super_admin") {
+      if (updatedPass.parentId) {
+        await orchestratorService.triggerNotification({
+          sender: buildSender(req.user),
+          eventName: 'PASS_ADMIN_REJECTED',
+          target: { type: 'PARENT', filter: { studentId: updatedPass.student.id } },
+          data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
+        }).catch(err => console.error("Notification Error:", err));
+      }
+    }
+
+    await createLogDb({
+      action: role === "mentor" ? "Mentor Rejected Pass" : "Admin/Super Admin Rejected Pass",
+      entityType: "Pass",
+      entityId: id,
+      user: req.user.id || req.user._id,
+      userRole: role,
+      details: `${role} rejected pass request. Remarks: ${remarksText}`,
+      status: "success"
+    });
+  }
+
+  return sendSuccess(res, 200, "The pass has been rejected.", updatedPass);
 });
