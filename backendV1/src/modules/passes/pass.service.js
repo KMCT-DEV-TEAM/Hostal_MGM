@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma.js";
+import { parseISTDateStart, parseISTDateEnd, parseISTDateTime, getISTTimeStr } from "../../utils/date.util.js";
 
 export const createPassDb = async (passData, tx = prisma) => {
   const result = await tx.pass.create({
@@ -199,8 +200,24 @@ export const getPassesDb = async (studentId, query) => {
 };
 
 export const getPassDetails = async ({ passId, actor }) => {
-  const pass = await prisma.pass.findUnique({
-    where: { id: passId },
+  const role = (actor.role || "").toLowerCase();
+
+  const whereClause = { id: passId };
+
+  if (role === "student") {
+    whereClause.studentId = actor.id;
+  } else if (role === "parent") {
+    whereClause.student = {
+      studentParents: {
+        some: { parentId: actor.id }
+      }
+    };
+  } else if (role !== "super_admin" && actor.organizationId) {
+    whereClause.organizationId = actor.organizationId;
+  }
+
+  const pass = await prisma.pass.findFirst({
+    where: whereClause,
     include: {
       student: {
         include: {
@@ -247,7 +264,6 @@ export const getPassDetails = async ({ passId, actor }) => {
     throw error;
   }
 
-  const role = (actor.role || "").toLowerCase();
 
   // Tenant isolation (except for super admin)
   if (role !== "super_admin") {
@@ -346,7 +362,7 @@ export const formatPassResponse = (pass) => {
 
   const parentApproval = parentApprovalRecord ? {
     status: parentApprovalRecord.status.toLowerCase(),
-    actionBy: parentApprovalRecord.actionById,
+    actionBy: parentApprovalRecord.parentId || parentApprovalRecord.actionById,
     actionAt: parentApprovalRecord.actionAt,
     remarks: parentApprovalRecord.remarks || "",
   } : {
@@ -371,8 +387,8 @@ export const formatPassResponse = (pass) => {
     remarks: "",
   };
 
-  const leftLog = pass.gateLogs?.find(g => g.eventType === "LEFT");
-  const returnedLog = pass.gateLogs?.find(g => g.eventType === "RETURNED");
+  const leftLog = pass.gateLogs?.filter(g => g.eventType === "LEFT").sort((a, b) => new Date(b.eventTime) - new Date(a.eventTime))[0];
+  const returnedLog = pass.gateLogs?.filter(g => g.eventType === "RETURNED").sort((a, b) => new Date(b.eventTime) - new Date(a.eventTime))[0];
 
   const returnTracking = leftLog ? {
     leftHostelAt: leftLog.eventTime,
@@ -484,34 +500,26 @@ export const updatePass = async ({ passId, actor, data }) => {
   if (reason !== undefined) updateData.reason = reason;
 
   if (pass.passType === "home_pass") {
-    if (fromDate !== undefined) updateData.fromDate = new Date(fromDate);
-    if (toDate !== undefined) updateData.toDate = new Date(toDate);
+    if (fromDate !== undefined) updateData.fromDate = parseISTDateStart(fromDate);
+    if (toDate !== undefined) updateData.toDate = parseISTDateEnd(toDate);
   } else if (pass.passType === "out_pass") {
-    const passDate = new Date(date !== undefined ? date : pass.fromDate);
+    let passDateStr = date;
+    if (!passDateStr) {
+      passDateStr = pass.fromDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    }
 
     let outTimeStr = outTime;
     if (outTimeStr === undefined) {
-      const d = new Date(pass.fromDate);
-      outTimeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      outTimeStr = getISTTimeStr(pass.fromDate);
     }
 
     let expectedReturnTimeStr = expectedReturnTime;
     if (expectedReturnTimeStr === undefined) {
-      const d = new Date(pass.expectedReturnAt);
-      expectedReturnTimeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      expectedReturnTimeStr = getISTTimeStr(pass.expectedReturnAt);
     }
 
-    const [outHour, outMinute] = outTimeStr.split(":").map(Number);
-    const [returnHour, returnMinute] = expectedReturnTimeStr.split(":").map(Number);
-
-    const outDateTime = new Date(passDate);
-    outDateTime.setHours(outHour, outMinute, 0, 0);
-
-    const returnDateTime = new Date(passDate);
-    returnDateTime.setHours(returnHour, returnMinute, 0, 0);
-
-    updateData.fromDate = outDateTime;
-    updateData.expectedReturnAt = returnDateTime;
+    updateData.fromDate = parseISTDateTime(passDateStr, outTimeStr);
+    updateData.expectedReturnAt = parseISTDateTime(passDateStr, expectedReturnTimeStr);
     if (outPassCategory !== undefined) updateData.outPassCategory = outPassCategory;
   }
 
@@ -536,6 +544,17 @@ export const updatePass = async ({ passId, actor, data }) => {
 
   let updatedPass;
   await prisma.$transaction(async (tx) => {
+    const updateResult = await tx.pass.updateMany({
+      where: { id: passId, status: pass.status },
+      data: updateData,
+    });
+
+    if (updateResult.count === 0) {
+      const error = new Error("The pass could not be updated. Its status may have changed concurrently.");
+      error.statusCode = 409;
+      throw error;
+    }
+
     if (resetParent) {
       await tx.passApproval.deleteMany({
         where: { passId, approvalLevel: "PARENT" }
@@ -569,9 +588,8 @@ export const updatePass = async ({ passId, actor, data }) => {
       });
     }
 
-    updatedPass = await tx.pass.update({
+    updatedPass = await tx.pass.findUnique({
       where: { id: passId },
-      data: updateData,
       include: {
         student: {
           include: {
@@ -696,6 +714,17 @@ export const cancelPass = async ({ passId, actor, data }) => {
 
   let updatedPass;
   await prisma.$transaction(async (tx) => {
+    const updateResult = await tx.pass.updateMany({
+      where: { id: passId, status: pass.status },
+      data: { status: "cancelled" },
+    });
+
+    if (updateResult.count === 0) {
+      const error = new Error("The pass could not be cancelled. Its status may have changed concurrently.");
+      error.statusCode = 409;
+      throw error;
+    }
+
     await tx.passTimeline.create({
       data: {
         passId,
@@ -706,9 +735,365 @@ export const cancelPass = async ({ passId, actor, data }) => {
       }
     });
 
+    updatedPass = await tx.pass.findUnique({
+      where: { id: passId },
+      include: {
+        student: {
+          include: {
+            course: { select: { name: true } },
+            department: { select: { name: true } },
+            batch: { select: { name: true } },
+            studentHostels: {
+              where: { status: "active" },
+              select: { roomNumber: true }
+            },
+            studentParents: true
+          }
+        },
+        parent: true,
+        hostel: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        approvals: {
+          include: {
+            actionBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        gateLogs: true,
+        timeline: {
+          orderBy: {
+            timestamp: "asc"
+          }
+        }
+      }
+    });
+  });
+
+  return formatPassResponse(updatedPass);
+};
+
+export const approvePassAsParent = async ({ passId, actor, remarks }) => {
+  const parentId = actor.id;
+
+  const pass = await prisma.pass.findUnique({
+    where: { id: passId },
+    include: {
+      student: {
+        include: {
+          studentParents: {
+            where: { parentId }
+          }
+        }
+      }
+    }
+  });
+
+  if (!pass) {
+    const error = new Error("We couldn't find the pass you're looking for.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const parentLink = pass.student?.studentParents?.[0];
+  if (!parentLink) {
+    const error = new Error("Forbidden. You do not have authorization to access this student's records.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (!parentLink.defaultGuardian) {
+    const error = new Error("Only the default guardian has permission to approve passes.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (pass.status !== "pending_parent") {
+    const error = new Error("This pass is not waiting for your approval.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.pass.updateMany({
+      where: { id: passId, status: "pending_parent" },
+      data: { status: "pending_admin" }
+    });
+
+    if (updated.count === 0) {
+      const error = new Error("The pass could not be approved. Its status may have changed.");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    await tx.passApproval.create({
+      data: {
+        passId,
+        approvalLevel: "PARENT",
+        status: "APPROVED",
+        parentId: parentId,
+        remarks: remarks || "",
+        actionAt: new Date()
+      }
+    });
+
+    const isCancellation = pass.cancellationRequest && pass.cancellationRequest.requested;
+    let defaultRemark = "Approved by parent";
+
+    if (isCancellation) {
+      defaultRemark = "Cancellation request approved by parent";
+    }
+
+    await tx.passTimeline.create({
+      data: {
+        passId,
+        action: "parent_approved",
+        actorId: parentId,
+        actorRole: "parent",
+        remarks: remarks || defaultRemark
+      }
+    });
+
     updatedPass = await tx.pass.update({
       where: { id: passId },
-      data: { status: "cancelled" },
+      data: {},
+      include: {
+        student: {
+          include: {
+            course: { select: { name: true } },
+            department: { select: { name: true } },
+            batch: { select: { name: true } },
+            studentHostels: {
+              where: { status: "active" },
+              select: { roomNumber: true }
+            },
+            studentParents: true
+          }
+        },
+        parent: true,
+        hostel: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        approvals: {
+          include: {
+            actionBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        gateLogs: true,
+        timeline: {
+          orderBy: {
+            timestamp: "asc"
+          }
+        }
+      }
+    });
+  });
+
+  return formatPassResponse(updatedPass);
+};
+
+export const approvePassAsMentor = async ({ passId, actor, remarks }) => {
+  const mentorId = actor.id;
+
+  const pass = await prisma.pass.findUnique({
+    where: { id: passId },
+    include: {
+      student: true
+    }
+  });
+
+  if (!pass) {
+    const error = new Error("We couldn't find the pass you're looking for.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const activeAssignments = await prisma.mentorAssignment.findMany({
+    where: { mentorId, status: "ACTIVE" },
+    select: { batchId: true }
+  });
+  const batchIds = activeAssignments.map(a => a.batchId);
+
+  if (!pass.student?.batchId || !batchIds.includes(pass.student.batchId)) {
+    const error = new Error("You don't have permission to approve passes for this student.");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (pass.status !== "pending_admin") {
+    const error = new Error("This pass can't be approved right now because of its current status.");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.pass.updateMany({
+      where: { id: passId, status: "pending_admin" },
+      data: { status: "approved" }
+    });
+
+    if (updated.count === 0) {
+      const error = new Error("The pass could not be approved. Its status may have changed.");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    await tx.passApproval.create({
+      data: {
+        passId,
+        approvalLevel: "ADMIN",
+        status: "APPROVED",
+        actionById: mentorId,
+        remarks: remarks || "Approved by mentor",
+        actionAt: new Date()
+      }
+    });
+
+    await tx.passTimeline.create({
+      data: {
+        passId,
+        action: "admin_approved",
+        actorId: mentorId,
+        actorRole: "mentor",
+        remarks: remarks || "Approved by mentor"
+      }
+    });
+
+    updatedPass = await tx.pass.update({
+      where: { id: passId },
+      data: {},
+      include: {
+        student: {
+          include: {
+            course: { select: { name: true } },
+            department: { select: { name: true } },
+            batch: { select: { name: true } },
+            studentHostels: {
+              where: { status: "active" },
+              select: { roomNumber: true }
+            },
+            studentParents: true
+          }
+        },
+        parent: true,
+        hostel: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        approvals: {
+          include: {
+            actionBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        gateLogs: true,
+        timeline: {
+          orderBy: {
+            timestamp: "asc"
+          }
+        }
+      }
+    });
+  });
+
+  return formatPassResponse(updatedPass);
+};
+
+export const approvePassAsAdmin = async ({ passId, actor, remarks }) => {
+  const adminId = actor.id;
+  const role = (actor.role || "").toLowerCase();
+
+  const pass = await prisma.pass.findUnique({
+    where: { id: passId },
+    include: {
+      student: true
+    }
+  });
+
+  if (!pass) {
+    const error = new Error("We couldn't find the pass you're looking for.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Admin scope check
+  if (role !== "super_admin") {
+    if (pass.organizationId !== actor.organizationId) {
+      const error = new Error("You don't have permission to approve passes for this hostel.");
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+
+  if (pass.status !== "pending_admin") {
+    const error = new Error("This pass can't be approved right now because of its current status.");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.pass.updateMany({
+      where: { id: passId, status: "pending_admin" },
+      data: { status: "approved" }
+    });
+
+    if (updated.count === 0) {
+      const error = new Error("The pass could not be approved. Its status may have changed.");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    await tx.passApproval.create({
+      data: {
+        passId,
+        approvalLevel: "ADMIN",
+        status: "APPROVED",
+        actionById: adminId,
+        remarks: remarks || "Approved by admin",
+        actionAt: new Date()
+      }
+    });
+
+    await tx.passTimeline.create({
+      data: {
+        passId,
+        action: "admin_approved",
+        actorId: adminId,
+        actorRole: role === "super_admin" ? "super_admin" : "admin",
+        remarks: remarks || "Approved by admin"
+      }
+    });
+
+    updatedPass = await tx.pass.update({
+      where: { id: passId },
+      data: {},
       include: {
         student: {
           include: {

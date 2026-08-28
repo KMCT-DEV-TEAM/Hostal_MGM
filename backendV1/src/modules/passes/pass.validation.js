@@ -1,6 +1,7 @@
 
 import { prisma } from "../../config/prisma.js";
 import { isUUID } from "../../utils/validators.js";
+import { parseISTDateStart, parseISTDateEnd, parseISTDateTime, getTodayISTStart } from "../../utils/date.util.js";
 
 export const validateCreatePass = async (req, res, next) => {
   try {
@@ -40,13 +41,12 @@ export const validateCreatePass = async (req, res, next) => {
         });
       }
 
-      const start = new Date(fromDate);
-      const end = new Date(toDate);
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
+      const start = parseISTDateStart(fromDate);
+      const end = parseISTDateEnd(toDate);
+      const todayStart = getTodayISTStart();
 
       // 1. From Date Cannot Be Past
-      if (start < today) {
+      if (start < todayStart) {
         return res.status(400).json({
           success: false,
           message: "The start date cannot be in the past. Please select a valid date.",
@@ -70,23 +70,6 @@ export const validateCreatePass = async (req, res, next) => {
         });
       }
 
-      // 4. No Overlapping Home Pass
-      const overlappingPass = await prisma.pass.findFirst({
-        where: {
-          studentId,
-          passType: "home_pass",
-          status: { notIn: ["rejected", "cancelled", "completed"] },
-          fromDate: { lte: end },
-          toDate: { gte: start },
-        },
-      });
-
-      if (overlappingPass) {
-        return res.status(400).json({
-          success: false,
-          message: "You already have another home pass requested or approved during these dates.",
-        });
-      }
     }
 
     if (passType === "out_pass") {
@@ -104,11 +87,10 @@ export const validateCreatePass = async (req, res, next) => {
         });
       }
 
-      const passDate = new Date(date);
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
+      const passDateStart = parseISTDateStart(date);
+      const todayStart = getTodayISTStart();
 
-      if (passDate < today) {
+      if (passDateStart < todayStart) {
         return res.status(400).json({
           success: false,
           message: "The date cannot be in the past. Please select a valid date.",
@@ -122,14 +104,8 @@ export const validateCreatePass = async (req, res, next) => {
         });
       }
 
-      const [outHour, outMinute] = outTime.split(":").map(Number);
-      const [returnHour, returnMinute] = expectedReturnTime.split(":").map(Number);
-
-      const outDateTime = new Date(passDate);
-      outDateTime.setHours(outHour, outMinute, 0, 0);
-
-      const returnDateTime = new Date(passDate);
-      returnDateTime.setHours(returnHour, returnMinute, 0, 0);
+      const outDateTime = parseISTDateTime(date, outTime);
+      const returnDateTime = parseISTDateTime(date, expectedReturnTime);
 
       const durationInHours = (returnDateTime - outDateTime) / (1000 * 60 * 60);
       const MAX_OUT_PASS_HOURS = Number(process.env.MAX_OUT_PASS_HOURS) || 12;
@@ -146,24 +122,6 @@ export const validateCreatePass = async (req, res, next) => {
       const dayEnd = new Date(dayStart);
       dayEnd.setUTCHours(23, 59, 59, 999);
 
-      const existingOutPass = await prisma.pass.findFirst({
-        where: {
-          studentId,
-          passType: "out_pass",
-          status: { notIn: ["rejected", "cancelled", "completed"] },
-          fromDate: {
-            gte: dayStart,
-            lte: dayEnd,
-          },
-        },
-      });
-
-      if (existingOutPass) {
-        return res.status(400).json({
-          success: false,
-          message: "You already have an Out Pass requested or approved for this date.",
-        });
-      }
     }
 
     next();
