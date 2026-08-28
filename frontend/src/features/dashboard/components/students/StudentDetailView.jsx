@@ -109,7 +109,7 @@ const StudentDetailView = () => {
   };
 
   const fetchTimeline = React.useCallback(async () => {
-    if (!id) return;
+    if (!id || id === 'undefined') return;
     try {
       const data = await getStudentHostelTimeline(id);
       setTimelineData(data?.data?.timeline || data?.timeline || []);
@@ -152,7 +152,7 @@ const StudentDetailView = () => {
         setLoading(false);
       }
     };
-    if (id && role) {
+    if (id && id !== 'undefined' && role) {
       fetchStudent();
     }
   }, [id, role]);

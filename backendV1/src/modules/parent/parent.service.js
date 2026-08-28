@@ -617,6 +617,7 @@ export const getParentStudentsService = async (parentId, filters = {}) => {
     const activeHostel = link.student.studentHostels[0];
     return {
       _id: link.student.id,
+      id: link.student.id,
       studentId: link.student.admissionNo,
       name: link.student.name,
       roomNumber: activeHostel?.roomNumber || null,
