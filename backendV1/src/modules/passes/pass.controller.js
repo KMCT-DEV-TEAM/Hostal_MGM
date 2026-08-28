@@ -1,6 +1,6 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin, getManagementHostelsDb, getManagementHostelPassesDb, getManagementDashboardStatsDb, rejectParentPassDb, rejectMentorPassDb, rejectManagementPassDb } from "./pass.service.js";
+import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin, getManagementHostelsDb, getManagementHostelPassesDb, getManagementDashboardStatsDb, rejectParentPassDb, rejectMentorPassDb, rejectManagementPassDb, markStudentLeftHostelDb, markStudentReturnedDb } from "./pass.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
@@ -654,4 +654,89 @@ export const rejectPass = asyncHandler(async (req, res) => {
   }
 
   return sendSuccess(res, 200, "The pass has been rejected.", updatedPass);
+});
+
+export const markStudentLeftHostel = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const { id } = req.params;
+
+  const wardenLink = await prisma.hostelWarden.findFirst({
+    where: { userId: wardenId },
+    select: { hostelId: true }
+  });
+
+  if (!wardenLink) return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
+
+  const updatedPass = await markStudentLeftHostelDb(id, wardenId, wardenLink.hostelId);
+
+  await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: 'WARDEN_MARKED_OUT',
+    target: [
+      { type: 'STUDENT', filter: { studentId: updatedPass.student.id } },
+      { type: 'PARENT', filter: { studentId: updatedPass.student.id } }
+    ],
+    data: { message: "The student has been marked as left the hostel. Have a safe trip!" }
+  }).catch(err => console.error("Notification Error:", err));
+
+  await createLogDb({
+    action: "Marked Student Left Hostel",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Warden marked student as left hostel`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, "The student has been marked as left.", updatedPass);
+});
+
+export const markStudentReturned = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  const { id } = req.params;
+
+  const wardenLink = await prisma.hostelWarden.findFirst({
+    where: { userId: wardenId },
+    select: { hostelId: true }
+  });
+
+  if (!wardenLink) return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
+
+  const updatedPass = await markStudentReturnedDb(id, wardenId, wardenLink.hostelId);
+
+  const returnStatus = updatedPass._returnStatus;
+  
+  await orchestratorService.triggerNotification({
+    sender: buildSender(req.user),
+    eventName: 'WARDEN_MARKED_RETURNED',
+    target: { type: 'STUDENT', filter: { studentId: updatedPass.student.id } },
+    data: { message: `You have been marked as returned to the hostel. Status: ${returnStatus.replace("_", " ")}` }
+  }).catch(err => console.error("Notification Error:", err));
+
+  await createLogDb({
+    action: "Marked Student Returned to Hostel",
+    entityType: "Pass",
+    entityId: id,
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Warden marked student as returned. Status: ${returnStatus}`,
+    status: "success"
+  });
+
+  return sendSuccess(res, 200, "The student has been marked as returned.", updatedPass);
+});
+
+export const getWardenPasses = asyncHandler(async (req, res) => {
+  const wardenId = req.user.id;
+  
+  const wardenLink = await prisma.hostelWarden.findFirst({
+    where: { userId: wardenId },
+    select: { hostelId: true }
+  });
+
+  if (!wardenLink) return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
+
+  const { passes, pagination } = await getManagementHostelPassesDb(req.query, { role: "warden" }, wardenLink.hostelId);
+  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });

@@ -1687,3 +1687,221 @@ export const rejectManagementPassDb = async (passId, scope, remarks) => {
 
   return updatedPass;
 };
+
+export const markStudentLeftHostelDb = async (passId, wardenId, hostelId) => {
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    const pass = await tx.pass.findUnique({
+      where: { id: passId, hostelId: hostelId }
+    });
+
+    if (!pass) {
+      const error = new Error("We couldn't find the pass you're looking for.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (pass.status !== "approved") {
+      const error = new Error("The student cannot leave right now because of the pass status.");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const existingLeftLog = await tx.passGateLog.findFirst({
+      where: { passId, eventType: "LEFT" }
+    });
+
+    if (existingLeftLog) {
+      const error = new Error("The student has already been marked as left.");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const now = new Date();
+
+    if (pass.passType === "home_pass" && pass.fromDate && pass.toDate) {
+      const startOfLeave = new Date(pass.fromDate);
+      startOfLeave.setUTCHours(0, 0, 0, 0);
+      const endOfLeave = new Date(pass.toDate);
+      endOfLeave.setUTCHours(23, 59, 59, 999);
+
+      if (now < startOfLeave) {
+        const error = new Error("The student cannot be marked as left before their scheduled leave date.");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (now > endOfLeave) {
+        const error = new Error("This pass has expired. The student cannot leave using an expired pass.");
+        error.statusCode = 400;
+        throw error;
+      }
+    } else if (pass.passType === "out_pass" && pass.date) {
+      const startOfOutDate = new Date(pass.date);
+      startOfOutDate.setUTCHours(0, 0, 0, 0);
+
+      let endOfOutDate = new Date(pass.date);
+      if (pass.expectedReturnAt) {
+        // In Prisma, expectedReturnAt is already a DateTime, so we use it directly
+        endOfOutDate = new Date(pass.expectedReturnAt);
+      } else {
+        endOfOutDate.setUTCHours(23, 59, 59, 999);
+      }
+
+      if (now < startOfOutDate) {
+        const error = new Error("The student cannot be marked as left before their scheduled out date.");
+        error.statusCode = 400;
+        throw error;
+      }
+      if (now > endOfOutDate) {
+        const error = new Error("This out pass has expired. The student cannot leave using an expired pass.");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Create gate log
+    await tx.passGateLog.create({
+      data: {
+        passId: pass.id,
+        studentId: pass.studentId,
+        eventType: "LEFT",
+        eventTime: now,
+        recordedAt: now,
+        recordedById: wardenId
+      }
+    });
+
+    // Create timeline
+    await tx.passTimeline.create({
+      data: {
+        passId: pass.id,
+        action: "warden_marked_out",
+        actorId: wardenId,
+        actorRole: "warden",
+        remarks: "Student left the hostel.",
+        timestamp: now
+      }
+    });
+
+    // Fetch updated pass (to get relationships for notification payload)
+    updatedPass = await tx.pass.findUnique({
+      where: { id: passId },
+      include: {
+        student: { select: { id: true, name: true } },
+        parent: { select: { id: true, parentName: true } }
+      }
+    });
+  });
+
+  return updatedPass;
+};
+
+export const markStudentReturnedDb = async (passId, wardenId, hostelId) => {
+  let updatedPass;
+  await prisma.$transaction(async (tx) => {
+    const pass = await tx.pass.findUnique({
+      where: { id: passId, hostelId: hostelId }
+    });
+
+    if (!pass) {
+      const error = new Error("We couldn't find the pass you're looking for.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (pass.status !== "approved") {
+      const error = new Error("The pass is not in approved status.");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const leftLog = await tx.passGateLog.findFirst({
+      where: { passId, eventType: "LEFT" }
+    });
+
+    if (!leftLog) {
+      const error = new Error("The student hasn't left the hostel yet.");
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const returnedLog = await tx.passGateLog.findFirst({
+      where: { passId, eventType: "RETURNED" }
+    });
+
+    if (returnedLog) {
+      const error = new Error("The student is already marked as returned.");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const returnedAt = new Date();
+
+    if (returnedAt < new Date(leftLog.eventTime)) {
+      const error = new Error("Return time cannot be before the time the student left the hostel.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Calculate on-time / late
+    let returnStatus = "on_time";
+    if (pass.passType === "home_pass" && pass.toDate) {
+      const expectedEnd = new Date(pass.toDate);
+      expectedEnd.setUTCHours(23, 59, 59, 999);
+      if (returnedAt > expectedEnd) returnStatus = "late";
+    } else if (pass.passType === "out_pass" && pass.date && pass.expectedReturnAt) {
+      if (returnedAt > new Date(pass.expectedReturnAt)) returnStatus = "late";
+    }
+
+    // Update pass status
+    const updateResult = await tx.pass.updateMany({
+      where: { id: passId, status: "approved" },
+      data: { status: "returned" }
+    });
+
+    if (updateResult.count === 0) {
+      const error = new Error("We couldn't mark the student as returned because the pass status has changed.");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    // Create gate log
+    await tx.passGateLog.create({
+      data: {
+        passId: pass.id,
+        studentId: pass.studentId,
+        eventType: "RETURNED",
+        eventTime: returnedAt,
+        recordedAt: returnedAt,
+        recordedById: wardenId,
+        remarks: returnStatus // We map the return status onto the remarks field
+      }
+    });
+
+    // Create timeline
+    await tx.passTimeline.create({
+      data: {
+        passId: pass.id,
+        action: "warden_marked_returned",
+        actorId: wardenId,
+        actorRole: "warden",
+        remarks: `Student returned ${returnStatus.replace("_", " ")}.`,
+        timestamp: returnedAt
+      }
+    });
+
+    // Fetch updated pass
+    updatedPass = await tx.pass.findUnique({
+      where: { id: passId },
+      include: {
+        student: { select: { id: true, name: true } },
+        parent: { select: { id: true, parentName: true } }
+      }
+    });
+    
+    // Attach the dynamically calculated returnStatus so the controller can use it for notifications
+    updatedPass._returnStatus = returnStatus;
+  });
+
+  return updatedPass;
+};

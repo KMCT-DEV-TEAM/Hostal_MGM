@@ -2,7 +2,7 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 import { ROLES } from "../../constants/roles.js";
-import { createPass, getMyPassesUnified, getPasses, getPassDetails, updatePass, cancelPass, approvePass, rejectPass, getManagementHostels, getManagementHostelPasses, getManagementDashboardStats } from "./pass.controller.js";
+import { createPass, getMyPassesUnified, getPasses, getPassDetails, updatePass, cancelPass, approvePass, rejectPass, getManagementHostels, getManagementHostelPasses, getManagementDashboardStats, markStudentLeftHostel, markStudentReturned, getWardenPasses } from "./pass.controller.js";
 import { validateCreatePass, validateGetPassesUnified, validateGetPasses, validatePassIdParam, validateUpdatePass, validateCancelPass, validateHostelIdParam, validateRejectPass } from "./pass.validation.js";
 import verifyStudentAccess from "../../middlewares/verifyStudentAccess.middleware.js";
 
@@ -32,6 +32,15 @@ router.get(
   verifyStudentAccess,
   validateGetPasses,
   getPasses
+);
+
+
+router.get(
+  "/warden-list",
+  authMiddleware,
+  roleMiddleware(ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
+  validateGetPasses,
+  getWardenPasses
 );
 
 router.get(
@@ -105,6 +114,22 @@ router.patch(
   validatePassIdParam,
   validateRejectPass,
   rejectPass
+);
+
+router.patch(
+  "/:id/mark-left",
+  authMiddleware,
+  roleMiddleware(ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
+  validatePassIdParam,
+  markStudentLeftHostel
+);
+
+router.patch(
+  "/:id/mark-returned",
+  authMiddleware,
+  roleMiddleware(ROLES.WARDEN, ROLES.ASSISTANT_WARDEN),
+  validatePassIdParam,
+  markStudentReturned
 );
 
 export default router;
