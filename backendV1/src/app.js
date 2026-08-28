@@ -60,6 +60,7 @@ import mentorRoutes from './modules/mentors/mentor.routes.js';
 import mentorAssignmentRoutes from './modules/mentor-assignment/mentorAssignment.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import profileRoutes from './modules/profile/profile.routes.js';
+import visitorRoutes, { parentVisitorRouter } from './modules/visitor/visitor.routes.js';
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
@@ -83,6 +84,9 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/passes', passRoutes);
 app.use('/api/mentors', mentorRoutes);
 app.use('/api/mentor-assignments', mentorAssignmentRoutes);
+app.use('/api/parent/students/:studentId/visitors', parentVisitorRouter);
+app.use('/api/parent/visitors', parentVisitorRouter);
+app.use('/api/visitor', visitorRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);
