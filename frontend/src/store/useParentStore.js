@@ -17,7 +17,7 @@ export const useParentStore = create(
                 }
 
                 if (state.activeStudentId) {
-                    const isValidActive = students.some(s => s._id === state.activeStudentId);
+                    const isValidActive = students.some(s => (s.id || s._id) === state.activeStudentId);
                     if (isValidActive) {
                         return {}; // state remains unchanged
                     }
@@ -25,7 +25,7 @@ export const useParentStore = create(
                 
                 // If they only have 1 student, auto-select it
                 if (students.length === 1) {
-                    return { activeStudentId: students[0]._id };
+                    return { activeStudentId: students[0].id || students[0]._id };
                 }
                 
                 // Otherwise clear the selection so the modal opens

@@ -49,7 +49,7 @@ const login = asyncHandler(async (req, res) => {
   user.role = dbRole;
 
   // Portal Authorization Checks
-  if (role === 'super_admin' && user.role !== 'SUPER_ADMIN') {
+  if (role === 'super_admin' && user.role !== 'super_admin') {
     return sendError(res, 401, "You are not authorized to login as Super Admin. Check URL");
   }
   if (role === 'admin' && !['ADMIN', 'WARDEN', 'ASSISTANT_WARDEN', 'MENTOR'].includes(user.role)) {

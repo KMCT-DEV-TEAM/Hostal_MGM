@@ -198,3 +198,146 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pass_ListResponse'
+  /passes/{id}:
+    get:
+      tags:
+        - Passes
+      summary: Get pass details
+      description: Retrieves the detailed information of a specific pass by its ID. Enforces organization-level tenant isolation and role-specific permissions for students, parents, wardens, assistant wardens, mentors, admins, and super admins.
+      operationId: getPassDetails
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique UUID of the pass.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pass details loaded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Invalid Pass ID format (must be UUID).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+        '403':
+          description: Access denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_StandardErrorResponse'
+        '404':
+          description: Pass not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_StandardErrorResponse'
+    put:
+      tags:
+        - Passes
+      summary: Update a pass request (Student/Parent)
+      description: Allows a student or parent to update an existing pass request. Support editing reason, dates, times, or category. Enforces ownership and status transitions.
+      operationId: updatePass
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique UUID of the pass.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                fromDate:
+                  type: string
+                  format: date-time
+                toDate:
+                  type: string
+                  format: date-time
+                date:
+                  type: string
+                  format: date
+                outTime:
+                  type: string
+                  pattern: '^\d{2}:\d{2}$'
+                expectedReturnTime:
+                  type: string
+                  pattern: '^\d{2}:\d{2}$'
+                outPassCategory:
+                  type: string
+                  enum: [in_house, out_house]
+      responses:
+        '200':
+          description: Pass updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Validation error or invalid update details.
+        '403':
+          description: Forbidden. Insufficient permissions.
+        '404':
+          description: Pass not found.
+        '422':
+          description: Unprocessable. Pass cannot be edited.
+  /passes/{id}/cancel:
+    put:
+      tags:
+        - Passes
+      summary: Cancel a pass request (All Roles)
+      description: Cancels an active pass request. Supported roles include student, parent, mentor, admin, and super_admin.
+      operationId: cancelPass
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique UUID of the pass.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remarks:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Pass cancelled successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Validation error.
+        '403':
+          description: Forbidden. Insufficient permissions.
+        '404':
+          description: Pass not found.
+        '422':
+          description: Unprocessable. Pass cannot be cancelled.

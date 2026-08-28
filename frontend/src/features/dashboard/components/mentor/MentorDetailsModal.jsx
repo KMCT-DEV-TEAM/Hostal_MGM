@@ -27,14 +27,16 @@ export default function MentorDetailsModal({
     const [assignmentToRelease, setAssignmentToRelease] = useState(null);
     const [isReleasing, setIsReleasing] = useState(false);
 
+    const mentorId = initialMentor?.id;
+
     useEffect(() => {
-        if (!initialMentor?.id || !role) return;
+        if (!mentorId || !role) return;
 
         let isMounted = true;
         const fetchDetails = async () => {
             setLoading(true);
             try {
-                const response = await mentorService.getMentorById(role, initialMentor.id);
+                const response = await mentorService.getMentorById(role, mentorId);
                 if (isMounted && response?.data) {
                     setMentor(response.data);
                 }
@@ -138,11 +140,6 @@ export default function MentorDetailsModal({
                                         label="Phone Number"
                                         value={mentor.phone || '-----'}
                                         icon={<Phone className="w-4 h-4 text-text-secondary" />}
-                                    />
-                                    <DetailRow
-                                        label="Specialization"
-                                        value={mentor.specialization || 'Not Specified'}
-                                        icon={<GraduationCap className="w-4 h-4 text-text-secondary" />}
                                     />
                                     {role === ROLES.SUPER_ADMIN && (
                                         <DetailRow

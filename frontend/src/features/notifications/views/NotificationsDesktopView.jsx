@@ -23,7 +23,7 @@ const NotificationsDesktopView = ({
 
     const studentOptions = [
         { label: 'All Students', value: '' },
-        ...(students || []).map(s => ({ label: s.name, value: s._id }))
+        ...(students || []).map(s => ({ label: s.name, value: s.id || s._id }))
     ];
 
     return (
