@@ -1,11 +1,12 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
-import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin } from "./pass.service.js";
+import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin, getManagementHostelsDb, getManagementHostelPassesDb, getManagementDashboardStatsDb } from "./pass.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
 import { prisma } from "../../config/prisma.js";
 import { parseISTDateStart, parseISTDateEnd, parseISTDateTime } from "../../utils/date.util.js";
+import { getMentorDashboardStats } from "../dashboard/dashboard.controller.js";
 
 export const createPass = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
@@ -436,4 +437,122 @@ export const approvePass = asyncHandler(async (req, res) => {
   }
 
   return sendSuccess(res, 200, "The pass has been approved.", updatedPass);
+});
+
+// Helpers for scoping
+const buildMentorScope = async (req) => {
+  const activeAssignments = await prisma.mentorAssignment.findMany({
+    where: {
+      mentorId: req.user.id,
+      status: "ACTIVE"
+    },
+    select: { batchId: true }
+  });
+
+  const batchIds = activeAssignments.map(({ batchId }) => batchId);
+
+  return {
+    role: "mentor",
+    organizationId: req.user.organizationId,
+    batchIds,
+    actorId: req.user.id
+  };
+};
+
+const buildAdminScope = (req) => ({
+  role: "admin",
+  organizationId: req.user.organizationId,
+  actorId: req.user.id
+});
+
+const buildSuperAdminScope = (req) => ({
+  role: "super_admin",
+  organizationId: null,
+  actorId: req.user.id
+});
+
+export const getManagementHostels = asyncHandler(async (req, res) => {
+  let scope;
+  if (req.user.role === "mentor") {
+    scope = await buildMentorScope(req);
+  } else if (req.user.role === "admin") {
+    scope = buildAdminScope(req);
+  } else {
+    scope = buildSuperAdminScope(req);
+  }
+
+  const { hostels, pagination } = await getManagementHostelsDb(scope, req.query);
+  return sendSuccess(res, 200, "Hostels loaded successfully.", { data: hostels, pagination });
+});
+
+export const getManagementHostelPasses = asyncHandler(async (req, res) => {
+  let scope;
+  if (req.user.role === "mentor") {
+    scope = await buildMentorScope(req);
+  } else if (req.user.role === "admin") {
+    scope = buildAdminScope(req);
+  } else {
+    scope = buildSuperAdminScope(req);
+  }
+
+  const { hostelId } = req.params;
+
+  let hostelQuery = { id: hostelId, isActive: true };
+  if (scope.role === 'admin') {
+    hostelQuery.organizations = {
+      some: { organizationId: scope.organizationId }
+    };
+  } else if (scope.role === 'mentor') {
+    const studentsInBatches = await prisma.student.findMany({
+      where: {
+        batchId: { in: scope.batchIds },
+        isActive: true
+      },
+      select: { id: true }
+    });
+    const studentIds = studentsInBatches.map(s => s.id);
+
+    const allocations = await prisma.studentHostel.findMany({
+      where: {
+        studentId: { in: studentIds },
+        status: "active"
+      },
+      select: { hostelId: true }
+    });
+    const validHostelIds = allocations.map(a => a.hostelId);
+
+    if (!validHostelIds.includes(hostelId)) {
+      return sendError(res, 403, "We couldn't find this hostel, or you might not have permission to view it.");
+    }
+  }
+
+  const hostel = await prisma.hostel.findFirst({ where: hostelQuery });
+  if (!hostel) {
+    return sendError(res, 403, "We couldn't find this hostel, or you might not have permission to view it.");
+  }
+
+  const { passes, pagination } = await getManagementHostelPassesDb(req.query, scope, hostelId);
+  return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
+});
+
+export const getManagementDashboardStats = asyncHandler(async (req, res, next) => {
+  const { role } = req.user;
+
+  if (role === "mentor") {
+    // Delegate to the dashboard service for mentors
+    return getMentorDashboardStats(req, res, next);
+  }
+
+  let scope;
+  if (role === "admin") {
+    scope = buildAdminScope(req);
+  } else if (role === "super_admin") {
+    scope = buildSuperAdminScope(req);
+  } else {
+    return sendError(res, 403, "Access denied");
+  }
+
+  // Delegate to pass.service.js for admin/super_admin pass stats
+  const stats = await getManagementDashboardStatsDb(scope);
+  return sendSuccess(res, 200, "Dashboard stats fetched successfully", { data: stats });
 });

@@ -1137,3 +1137,327 @@ export const approvePassAsAdmin = async ({ passId, actor, remarks }) => {
 
   return formatPassResponse(updatedPass);
 };
+
+export const getManagementHostelsDb = async (scope, query = {}) => {
+  const page = Math.max(parseInt(query.page) || 1, 1);
+  const limit = Math.min(parseInt(query.limit) || 10, 50);
+  const skip = (page - 1) * limit;
+
+  let where = { isActive: true };
+
+  if (scope.role === "mentor") {
+    const studentsInBatches = await prisma.student.findMany({
+      where: {
+        batchId: { in: scope.batchIds },
+        isActive: true
+      },
+      select: { id: true }
+    });
+    const studentIds = studentsInBatches.map(s => s.id);
+
+    const allocations = await prisma.studentHostel.findMany({
+      where: {
+        studentId: { in: studentIds },
+        status: "active"
+      },
+      select: { hostelId: true }
+    });
+    const validHostelIds = allocations.map(a => a.hostelId);
+
+    where.id = { in: validHostelIds };
+  } else if (scope.role === "admin" && scope.organizationId) {
+    const orgHostels = await prisma.hostelOrganization.findMany({
+      where: { organizationId: scope.organizationId },
+      select: { hostelId: true }
+    });
+    const hostelIds = orgHostels.map(h => h.hostelId);
+    where.id = { in: hostelIds };
+  }
+
+  if (query.search) {
+    where.name = { contains: query.search, mode: "insensitive" };
+  }
+
+  let passWhere = {
+    status: { notIn: ["completed", "returned"] }
+  };
+  if (query.passType && query.passType !== "all") {
+    passWhere.passType = query.passType;
+  }
+
+  const [totalRecords, hostels] = await Promise.all([
+    prisma.hostel.count({ where }),
+    prisma.hostel.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        _count: {
+          select: {
+            studentHostels: { where: { status: "active" } },
+            passes: { where: passWhere }
+          }
+        },
+        passes: {
+          where: passWhere,
+          select: {
+            status: true,
+            gateLogs: {
+              select: {
+                eventType: true,
+                eventTime: true
+              },
+              orderBy: { eventTime: 'desc' }
+            }
+          }
+        }
+      }
+    })
+  ]);
+
+  const formattedHostels = hostels.map(h => {
+    let pending = 0;
+    let approved = 0;
+    let rejected = 0;
+    let outside = 0;
+
+    h.passes.forEach(p => {
+      if (p.status === "pending_parent" || p.status === "pending_admin") pending++;
+      if (p.status === "approved") {
+        approved++;
+        const latestLog = p.gateLogs[0];
+        if (latestLog && latestLog.eventType === "LEFT") {
+          outside++;
+        }
+      }
+      if (p.status === "rejected") rejected++;
+    });
+
+    return {
+      _id: h.id,
+      hostel: h.name,
+      students: h._count.studentHostels,
+      total: h._count.passes,
+      pending,
+      approved,
+      rejected,
+      outside
+    };
+  }).filter(h => h.total > 0 || h.students > 0);
+
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  return {
+    hostels: formattedHostels,
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    }
+  };
+};
+
+export const getManagementHostelPassesDb = async (query, scope, hostelId) => {
+  const page = Math.max(parseInt(query.page) || 1, 1);
+  const limit = Math.min(parseInt(query.limit) || 10, 50);
+  const skip = (page - 1) * limit;
+
+  const sortField = ["createdAt", "fromDate"].includes(query.sortBy) ? query.sortBy : "createdAt";
+  const sortDir = query.sortOrder === "asc" ? "asc" : "desc";
+
+  const where = { hostelId };
+
+  if (query.status) {
+    where.status = query.status;
+  }
+  if (query.passType && query.passType !== "all") {
+    where.passType = query.passType;
+  }
+  if (query.category && query.category !== "all") {
+    where.outPassCategory = query.category;
+  }
+  if (query.search) {
+    where.student = {
+      name: { contains: query.search, mode: "insensitive" }
+    };
+  }
+
+  // Mentor student scope
+  if (scope.role === "mentor") {
+    where.student = {
+      ...where.student,
+      batchId: { in: scope.batchIds }
+    };
+  } else if (scope.role === "admin") {
+    where.organizationId = scope.organizationId;
+  }
+
+  if (query.fromDate || query.toDate) {
+    const dateFilter = {};
+    if (query.fromDate) {
+      const s = new Date(query.fromDate);
+      s.setUTCHours(0, 0, 0, 0);
+      dateFilter.gte = s;
+    }
+    if (query.toDate) {
+      const e = new Date(query.toDate);
+      e.setUTCHours(23, 59, 59, 999);
+      dateFilter.lte = e;
+    }
+    where.fromDate = dateFilter;
+  }
+
+  const [totalRecords, passes] = await Promise.all([
+    prisma.pass.count({ where }),
+    prisma.pass.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { [sortField]: sortDir },
+      include: {
+        student: {
+          include: {
+            course: { select: { name: true } },
+            department: { select: { name: true } },
+            batch: { select: { name: true } },
+            studentHostels: {
+              where: { status: "active" },
+              select: { roomNumber: true }
+            },
+            studentParents: true
+          }
+        },
+        parent: true,
+        hostel: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        approvals: {
+          include: {
+            actionBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        gateLogs: true,
+        timeline: {
+          orderBy: {
+            timestamp: "asc"
+          }
+        }
+      }
+    })
+  ]);
+
+  const totalPages = Math.ceil(totalRecords / limit);
+
+  const formattedPasses = passes.map(pass => formatPassResponse(pass).data);
+
+  return {
+    passes: formattedPasses,
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    }
+  };
+};
+
+export const getManagementDashboardStatsDb = async (scope) => {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+
+  let matchQuery = {};
+  if (scope.role === "admin" && scope.organizationId) {
+    matchQuery = {
+      student: { organizationId: scope.organizationId }
+    };
+  }
+
+  const [
+    totalRequests,
+    pendingParent,
+    pendingAdmin,
+    approved,
+    rejected,
+    cancelled,
+    studentsOutside,
+    returnedToday,
+    homePassCount,
+    outPassCount,
+    inHouseCount,
+    outHouseCount,
+    totalOrganizations,
+    totalHostels,
+    totalStudents
+  ] = await Promise.all([
+    prisma.pass.count({ where: matchQuery }),
+    prisma.pass.count({ where: { ...matchQuery, status: "pending_parent" } }),
+    prisma.pass.count({ where: { ...matchQuery, status: "pending_admin" } }),
+    prisma.pass.count({ where: { ...matchQuery, status: "approved" } }),
+    prisma.pass.count({ where: { ...matchQuery, status: "rejected" } }),
+    prisma.pass.count({ where: { ...matchQuery, status: "cancelled" } }),
+    prisma.pass.count({
+      where: {
+        ...matchQuery,
+        status: "approved",
+        gateLogs: { some: { eventType: "LEFT" } },
+        NOT: { gateLogs: { some: { eventType: "RETURNED" } } }
+      }
+    }),
+    prisma.pass.count({
+      where: {
+        ...matchQuery,
+        gateLogs: { some: { eventType: "RETURNED", eventTime: { gte: startOfToday, lte: endOfToday } } }
+      }
+    }),
+    prisma.pass.count({ where: { ...matchQuery, passType: "home_pass" } }),
+    prisma.pass.count({ where: { ...matchQuery, passType: "out_pass" } }),
+    prisma.pass.count({ where: { ...matchQuery, passType: "out_pass", outPassCategory: "in_house" } }),
+    prisma.pass.count({ where: { ...matchQuery, passType: "out_pass", outPassCategory: "out_house" } }),
+    scope.role === "super_admin" ? prisma.organization.count({ where: { isActive: true } }) : Promise.resolve(0),
+    scope.role === "super_admin" ? prisma.hostel.count({ where: { isActive: true } }) : Promise.resolve(0),
+    scope.role === "super_admin" ? prisma.student.count({ where: { isActive: true } }) : Promise.resolve(0),
+  ]);
+
+  const response = {
+    totalRequests,
+    pendingParent,
+    pendingAdmin,
+    approved,
+    rejected,
+    cancelled,
+    studentsOutside,
+    returnedToday,
+    homePassCount,
+    outPassCount,
+    inHouseCount,
+    outHouseCount,
+  };
+
+  if (scope.role === "super_admin") {
+    response.totalOrganizations = totalOrganizations;
+    response.totalHostels = totalHostels;
+    response.totalStudents = totalStudents;
+  }
+
+  return response;
+};
+

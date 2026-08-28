@@ -356,6 +356,17 @@ export const validatePassIdParam = (req, res, next) => {
   next();
 };
 
+export const validateHostelIdParam = (req, res, next) => {
+  const { hostelId } = req.params;
+  if (!hostelId || !isUUID(hostelId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid Hostel ID format. Must be a valid UUID.",
+    });
+  }
+  next();
+};
+
 export const validateUpdatePass = async (req, res, next) => {
   try {
     const { id } = req.params;

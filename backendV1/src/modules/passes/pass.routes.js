@@ -2,8 +2,8 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 import { ROLES } from "../../constants/roles.js";
-import { createPass, getMyPassesUnified, getPasses, getPassDetails, updatePass, cancelPass, approvePass } from "./pass.controller.js";
-import { validateCreatePass, validateGetPassesUnified, validateGetPasses, validatePassIdParam, validateUpdatePass, validateCancelPass } from "./pass.validation.js";
+import { createPass, getMyPassesUnified, getPasses, getPassDetails, updatePass, cancelPass, approvePass, getManagementHostels, getManagementHostelPasses, getManagementDashboardStats } from "./pass.controller.js";
+import { validateCreatePass, validateGetPassesUnified, validateGetPasses, validatePassIdParam, validateUpdatePass, validateCancelPass, validateHostelIdParam } from "./pass.validation.js";
 import verifyStudentAccess from "../../middlewares/verifyStudentAccess.middleware.js";
 
 const router = express.Router();
@@ -32,6 +32,28 @@ router.get(
   verifyStudentAccess,
   validateGetPasses,
   getPasses
+);
+
+router.get(
+  "/dashboard",
+  authMiddleware,
+  roleMiddleware(ROLES.MENTOR, ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  getManagementDashboardStats
+);
+
+router.get(
+  "/hostels",
+  authMiddleware,
+  roleMiddleware(ROLES.MENTOR, ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  getManagementHostels
+);
+
+router.get(
+  "/hostels/:hostelId",
+  authMiddleware,
+  roleMiddleware(ROLES.MENTOR, ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  validateHostelIdParam,
+  getManagementHostelPasses
 );
 
 router.get(
