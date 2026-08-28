@@ -1,7 +1,7 @@
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
-
+import { Prisma } from "@prisma/client";
 const getSuperAdminStats = asyncHandler(async (req, res) => {
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
@@ -215,7 +215,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
   ]);
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
+
   const thisYearRaw = await prisma.$queryRaw`
     SELECT EXTRACT(MONTH FROM a.created_at) as month,
            SUM(CASE WHEN a.status = 'PRESENT' THEN 1 ELSE 0 END) as present_count,
@@ -367,7 +367,7 @@ const getStudentDashboardStats = asyncHandler(async (req, res) => {
     orderBy: { createdAt: 'desc' },
     take: 5
   });
-  
+
   const studentHostel = await prisma.studentHostel.findFirst({
     where: { studentId, status: "active" }
   });
@@ -621,7 +621,7 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
   });
 
   const batchIds = activeAssignments.map(a => a.batchId);
-  
+
   const students = await prisma.student.findMany({
     where: { batchId: { in: batchIds } },
     select: { id: true }
@@ -647,23 +647,23 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
     prisma.student.count({ where: { batchId: { in: batchIds }, createdAt: { gte: lastMonth } } }),
     prisma.parent.count({ where: { studentParents: { some: { studentId: { in: studentIds } } } } }),
     prisma.parent.count({ where: { createdAt: { gte: lastMonth }, studentParents: { some: { studentId: { in: studentIds } } } } }),
-    
+
     prisma.batch.findMany({ where: { id: { in: batchIds } }, select: { id: true, name: true, code: true } }),
-    
+
     prisma.announcement.findMany({
       where: { status: "ACTIVE", isActive: true },
       include: { createdBy: { select: { name: true, role: true } } },
       orderBy: { createdAt: 'desc' },
       take: 5
     }),
-    
+
     prisma.pass.findMany({
       where: { studentId: { in: studentIds } },
       include: { student: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
       take: 5
     }),
-    
+
     prisma.visitRequest.findMany({
       where: { studentId: { in: studentIds } },
       include: { visitor: { select: { name: true } } },
@@ -672,16 +672,23 @@ const getMentorDashboardStats = asyncHandler(async (req, res) => {
     })
   ]);
 
-  const attendanceStatsRaw = await prisma.$queryRaw`
-    SELECT EXTRACT(YEAR FROM created_at) as year,
-           EXTRACT(MONTH FROM created_at) as month,
-           SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) as present_count,
-           COUNT(*) as total_count
-    FROM attendance_records
-    WHERE student_id IN (${studentIds.length > 0 ? prisma.join(studentIds) : ''})
-      AND created_at >= ${lastYearStart}
-    GROUP BY EXTRACT(YEAR FROM created_at), EXTRACT(MONTH FROM created_at)
-  `;
+  let attendanceStatsRaw = [];
+  if (studentIds.length > 0) {
+    attendanceStatsRaw = await prisma.attendanceRecord.groupBy({
+      by: ["status"],
+      where: {
+        studentId: {
+          in: studentIds,
+        },
+        createdAt: {
+          gte: lastYearStart,
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    });
+  }
 
   const pendingPassesCount = await prisma.pass.count({ where: { studentId: { in: studentIds }, status: { in: ["pending_admin", "pending_parent"] } } });
   const approvedPassesCount = await prisma.pass.count({ where: { studentId: { in: studentIds }, status: "approved" } });
@@ -839,7 +846,7 @@ const getWardenDashboardSummary = asyncHandler(async (req, res) => {
 
   const allStatuses = ['INCOMPLETE', 'RESOLVED', 'PENDING', 'IN_PROGRESS', 'AWAITING', 'REJECTED'];
   const existingStatuses = new Set(complaintStats.map(s => s.name));
-  
+
   allStatuses.forEach(status => {
     if (!existingStatuses.has(status)) {
       complaintStats.push({ name: status, count: 0 });
@@ -860,7 +867,7 @@ const getWardenDashboardSummary = asyncHandler(async (req, res) => {
     take: 4,
     include: { student: { select: { name: true } } }
   });
-    
+
   const recentPasses = await prisma.pass.findMany({
     where: {
       student: { studentHostels: { some: { hostelId: { in: hostelIds }, status: "active" } } }
@@ -909,12 +916,12 @@ const getWardenDashboardSummary = asyncHandler(async (req, res) => {
     leaveRequests,
     recentActivities,
     attendanceHistory: attendanceWindowsRaw,
-    
+
     messAttendance: { value: presentToday, total: totalStudents },
     complaintStatus: { open: pendingComplaints, highPriority: highPriorityComplaints },
     leavesApproved: { thisWeek: leavesApprovedThisWeek, pending: leaveRequests },
     parentMessage: { unread: visitorsToday, urgent: 0 },
-    
+
     complaintSummary: complaintSummary.length > 0 ? complaintSummary : [
       { name: 'Maintenance', value: 40, color: '#3B82F6' },
       { name: 'Mess / Food', value: 25, color: '#A855F7' },

@@ -198,6 +198,192 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pass_ListResponse'
+  /passes/dashboard:
+    get:
+      tags:
+        - Passes
+      summary: Get pass dashboard statistics (Unified)
+      description: Retrieves the pass dashboard statistics for the authenticated mentor, admin, or super_admin. The response structure varies depending on the role of the authenticated user. Mentors receive a comprehensive dashboard payload including attendance and complaints. Admins and Super Admins receive primarily pass statistics, with Super Admins getting additional organizational counts.
+      operationId: getManagementDashboardStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard statistics loaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+        '403':
+          description: Access denied.
+  /passes/hostels:
+    get:
+      tags:
+        - Passes
+      summary: Get management hostels (Unified)
+      description: Retrieves a paginated list of hostels managed by the authenticated mentor, admin, or super_admin.
+      operationId: getManagementHostels
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          description: Search term to match against the hostel name.
+          required: false
+          schema:
+            type: string
+        - name: passType
+          in: query
+          description: Filter statistics by pass type.
+          required: false
+          schema:
+            type: string
+            enum: [all, home_pass, out_pass]
+            default: all
+        - name: page
+          in: query
+          description: Page number for pagination.
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page.
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Hostels loaded successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                      pagination:
+                        type: object
+  /passes/hostels/{hostelId}/passes:
+    get:
+      tags:
+        - Passes
+      summary: Get management hostel passes (Unified)
+      description: Retrieves passes for a specific hostel managed by the authenticated mentor, admin, or super_admin.
+      operationId: getManagementHostelPasses
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: hostelId
+          in: path
+          description: The unique UUID of the hostel.
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by pass status.
+          required: false
+          schema:
+            type: string
+            enum: [pending_parent, pending_admin, approved, rejected, cancelled, returned, completed]
+        - name: passType
+          in: query
+          description: Filter by pass type.
+          required: false
+          schema:
+            type: string
+            enum: [all, home_pass, out_pass]
+            default: all
+        - name: category
+          in: query
+          description: Filter by out pass category.
+          required: false
+          schema:
+            type: string
+            enum: [all, in_house, out_house]
+            default: all
+        - name: search
+          in: query
+          description: Search term to match against the student name.
+          required: false
+          schema:
+            type: string
+        - name: fromDate
+          in: query
+          description: Filter passes starting from this date (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          description: Filter passes up to this date (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: sortBy
+          in: query
+          description: Field to sort by.
+          required: false
+          schema:
+            type: string
+            enum: [createdAt, fromDate]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: Sort direction.
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: page
+          in: query
+          description: Page number for pagination.
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page.
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Passes loaded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_UnifiedListingResponse'
+        '400':
+          description: Validation error.
+        '403':
+          description: Access denied or forbidden.
+
   /passes/{id}:
     get:
       tags:
@@ -341,3 +527,91 @@ paths:
           description: Pass not found.
         '422':
           description: Unprocessable. Pass cannot be cancelled.
+  /passes/{id}/approve:
+    patch:
+      tags:
+        - Passes
+      summary: Approve a pass request (Parent/Mentor/Admin)
+      description: Approves a pass request. Authenticated user's role (parent, mentor, admin, super_admin) determines the specific approval rules, status transitions, notifications, and timeline actions executed.
+      operationId: approvePass
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique UUID of the pass.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remarks:
+                  type: string
+                  description: Optional remarks or reason for approval.
+      responses:
+        '200':
+          description: Pass approved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Validation error or pass not waiting for this approval.
+        '403':
+          description: Forbidden. Insufficient permissions or not linked.
+        '404':
+          description: Pass not found.
+        '409':
+          description: Conflict. Pass status changed concurrently.
+        '422':
+          description: Unprocessable. The pass cannot be approved in its current status.
+  /passes/{id}/reject:
+    patch:
+      tags:
+        - Passes
+      summary: Reject a pass request (Parent/Mentor/Admin)
+      description: Rejects a pass request. Authenticated user's role (parent, mentor, admin, super_admin) determines the specific rejection rules, status transitions, notifications, and timeline actions executed.
+      operationId: rejectPass
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The unique UUID of the pass.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remarks:
+                  type: string
+                  description: Optional remarks or reason for rejection.
+      responses:
+        '200':
+          description: Pass rejected successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pass_Response'
+        '400':
+          description: Validation error or pass not waiting for this rejection.
+        '403':
+          description: Forbidden. Insufficient permissions or not linked.
+        '404':
+          description: Pass not found.
+        '409':
+          description: Conflict. Pass status changed concurrently.
+        '422':
+          description: Unprocessable. The pass cannot be rejected in its current status.

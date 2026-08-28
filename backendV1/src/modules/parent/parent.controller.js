@@ -13,7 +13,7 @@ import {
 } from "./parent.service.js";
 import { createLogDb } from "../logs/log.service.js";
 import { checkStudentAccess, checkParentAccess } from "./parent.scope.js";
-import { prisma } from "../../config/prisma.js"; // Import prisma for user/hostel queries
+import { prisma } from "../../config/prisma.js";
 
 export const createParent = asyncHandler(async (req, res) => {
   const { email, parentOtp, studentId } = req.body;
@@ -55,6 +55,15 @@ export const createParent = asyncHandler(async (req, res) => {
         success: false,
         code: error.code,
         message: error.message,
+      });
+    }
+
+    if (error.statusCode === 409) {
+      return res.status(409).json({
+        success: false,
+        code: error.code || "CONFLICT",
+        message: error.message,
+        data: error.conflictData,
       });
     }
 
@@ -126,9 +135,19 @@ export const resolveParentConflict = asyncHandler(async (req, res) => {
       });
     }
 
+    if (error.code === "PARENT_EXISTS_WITH_DIFFERENT_DATA" || error.statusCode === 409) {
+      return res.status(409).json({
+        success: false,
+        code: error.code || "CONFLICT",
+        message: error.message,
+        data: error.conflictData,
+      });
+    }
+
     if (error.message === "Invalid studentId") {
       return sendError(res, 400, "Invalid studentId");
     }
+
     throw error;
   }
 
@@ -261,7 +280,6 @@ export const changeParentEmail = asyncHandler(async (req, res) => {
     status: "success"
   });
 
-  // To perfectly match Mongoose behavior, we emulate the undefined values for missing properties
   return sendSuccess(res, 200, "Parent email updated successfully", {
     data: {
       parentId: parent.id,

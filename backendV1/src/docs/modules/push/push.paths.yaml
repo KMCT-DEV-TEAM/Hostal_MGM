@@ -1,0 +1,106 @@
+paths:
+  /push/register:
+    post:
+      tags:
+        - Push Notifications
+      summary: Register Web Push Subscription
+      description: Registers or updates a browser Web Push subscription for the authenticated user (student, parent, or management user).
+      operationId: registerPushSubscription
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Push_Subscription_Request'
+      responses:
+        '200':
+          description: Push subscription registered successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Push_Subscription_Response'
+        '400':
+          description: Invalid subscription object provided.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+        '401':
+          description: Unauthorized. Authentication token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+
+  /push/unregister:
+    delete:
+      tags:
+        - Push Notifications
+      summary: Unregister Web Push Subscription
+      description: Deactivates an existing Web Push subscription associated with the given endpoint.
+      operationId: unregisterPushSubscription
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Push_Unregister_Request'
+      responses:
+        '200':
+          description: Push subscription unregistered successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Push subscription unregistered successfully
+        '400':
+          description: Endpoint is required to unregister subscription.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ValidationErrorResponse'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+        '404':
+          description: Subscription not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
+
+  /push/subscriptions:
+    get:
+      tags:
+        - Push Notifications
+      summary: Get Active Push Subscriptions
+      description: Retrieves all active Web Push subscriptions registered for the authenticated account.
+      operationId: getUserSubscriptions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Active subscriptions retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Push_Subscriptions_List_Response'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shared_ErrorResponse'
