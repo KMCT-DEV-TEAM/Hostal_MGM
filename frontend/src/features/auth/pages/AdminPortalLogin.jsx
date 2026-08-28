@@ -46,7 +46,8 @@ const AdminPortalLogin = () => {
         try {
             await login(data);
             const user = useAuthStore.getState().user;
-            showSuccessToast('Login Successful', `Welcome to the ${user.role === 'admin' ? 'Admin' : 'Warden'} Dashboard`);
+            const roleName = user.role === 'admin' ? 'Admin' : (user.role === 'assistant_warden' ? 'Assistant Warden' : 'Warden');
+            showSuccessToast('Login Successful', `Welcome to the ${roleName} Dashboard`);
             navigate(getDashboardRoute(user.role));
         } catch (error) {
             console.log("error from the login page", error);

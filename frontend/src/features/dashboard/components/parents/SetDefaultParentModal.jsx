@@ -26,7 +26,7 @@ export default function SetDefaultParentModal({
 
   const { loading, handleSetDefaultGuardian } =
     useDefaultGuardian(async (result) => {
-      const updatedParentId = result?.data?.parentId ?? selectedParentData?._id;
+      const updatedParentId = result?.data?.parentId ?? selectedParentData?.id;
       onDefaultChange?.(updatedParentId, result);
       // Close immediately after success — no discard prompt needed
       onClose();
@@ -50,7 +50,7 @@ export default function SetDefaultParentModal({
     // Dismiss the confirm dialog immediately so it doesn't flash on success
     setShowConfirm(false);
     try {
-      await handleSetDefaultGuardian(selectedParentData._id);
+      await handleSetDefaultGuardian(selectedParentData.id);
     } catch (error) {
       console.error(error);
     }
@@ -100,7 +100,7 @@ export default function SetDefaultParentModal({
 
             return (
               <div
-                key={parent._id}
+                key={parent.id}
                 onClick={() => setSelectedParent(index)}
                 className={`cursor-pointer rounded-lg border p-4 transition-all
                   ${active

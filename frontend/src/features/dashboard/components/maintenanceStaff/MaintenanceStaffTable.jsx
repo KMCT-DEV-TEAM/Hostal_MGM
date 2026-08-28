@@ -118,7 +118,7 @@ export default function MaintenanceStaffTable({
                                 { value: "Inactive", label: t("inactive") },
                             ]}
                             value={isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick?.(o._id, isActive ? "Active" : "Inactive")}
+                            onChange={() => handleStatusChangeClick?.(o.id, isActive ? "Active" : "Inactive")}
                             triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                         />
                     </div>
@@ -161,7 +161,7 @@ export default function MaintenanceStaffTable({
             { label: 'Pending', value: o.taskPendingCount || 0 }
         ],
         onEdit: (o) => openEditStaffModal?.(o),
-        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, isActive ? "Active" : "Inactive"),
+        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o.id, isActive ? "Active" : "Inactive"),
     };
 
     // 3. Toolbar Slots
@@ -271,7 +271,7 @@ export default function MaintenanceStaffTable({
                 hasMore: page < totalPages,
                 onLoadMore: () => setPage?.(prev => prev + 1),
             }}
-            getItemId={(o) => o._id}
+            getItemId={(o) => o.id}
         />
     );
 }

@@ -16,7 +16,7 @@ export default function ManageHostelModal({ isOpen, onClose, student, onSave }) 
   useEffect(() => {
     if (isOpen && student) {
       if (student.hostel) {
-        const id = student.hostel._id || student.hostelId;
+        const id = student.hostel.id || student.hostelId;
         setHostelId(id);
         setHostelsMap(prev => ({
           ...prev,
@@ -46,13 +46,13 @@ export default function ManageHostelModal({ isOpen, onClose, student, onSave }) 
         hostelId: hostelId,
         roomNumber: roomNumber.trim(),
       };
-      const res = await updateStudentHostel(student._id, data);
+      const res = await updateStudentHostel(student.id, data);
       showSuccessToast(res.message || "Hostel updated successfully");
 
       const newHostelStatus = "active";
       onSave({
         hostelId: hostelId,
-        hostel: { _id: hostelId, name: hostelsMap[hostelId]?.label || "Unknown Hostel" },
+        hostel: { id: hostelId, name: hostelsMap[hostelId]?.label || "Unknown Hostel" },
         roomNumber: roomNumber.trim(),
         hostelStatus: newHostelStatus,
         activeAllocation: res.data?.newAllocation || res.data?.allocation || student.activeAllocation // Attempt to use new allocation data if returned

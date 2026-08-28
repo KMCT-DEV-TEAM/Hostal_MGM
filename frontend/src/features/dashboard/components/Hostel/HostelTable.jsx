@@ -64,9 +64,9 @@ export default function HostelTable({
 
     const canEditFn = (hostel) => {
         return user?.role === 'super_admin' || 
-               hostel.adminId?._id === user?._id || 
-               hostel.adminId?._id === user?.id || 
-               hostel.adminId === user?._id || 
+               hostel.adminId?.id === user?.id || 
+               hostel.adminId?.id === user?.id || 
+               hostel.adminId === user?.id || 
                hostel.adminId === user?.id;
     };
 
@@ -128,7 +128,7 @@ export default function HostelTable({
                                     { value: "Inactive", label: t("inactive") },
                                 ]}
                                 value={isActive ? "Active" : "Inactive"}
-                                onChange={() => handleStatusChangeClick?.(o._id, isActive)}
+                                onChange={() => handleStatusChangeClick?.(o.id || o._id, isActive)}
                                 triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                             />
                         ) : (
@@ -185,7 +185,7 @@ export default function HostelTable({
             { label: t("capacity"), value: o.capacity || 0 },
             { label: t("students"), value: o.studentsCount || 0 }
         ],
-        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o._id, o.isActive),
+        onStatusChange: (o, isActive) => handleStatusChangeClick?.(o.id || o._id, o.isActive),
     };
 
     // 3. Toolbar Slots
@@ -296,7 +296,7 @@ export default function HostelTable({
                 hasMore: page < totalPages,
                 onLoadMore: () => setPage?.(prev => prev + 1),
             }}
-            getItemId={(o) => o._id}
+            getItemId={(o) => o.id || o._id}
         />
     );
 }

@@ -58,9 +58,12 @@ import parentRoutes from './modules/parent/parent.routes.js';
 import attendanceRoutes from './modules/attendance/attendance.routes.js';
 import mentorRoutes from './modules/mentors/mentor.routes.js';
 import mentorAssignmentRoutes from './modules/mentor-assignment/mentorAssignment.routes.js';
+import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
+import profileRoutes from './modules/profile/profile.routes.js';
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/courses', courseRoutes);
@@ -83,8 +86,16 @@ app.use('/api/mentor-assignments', mentorAssignmentRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);
+app.use('/api/super-admin/dashboard', dashboardRoutes);
 app.use('/api/super-admin/hostels', hostelRoutes);
 app.use('/api/super-admin/password-requests', passwordRequestRoutes);
+
+// Role-specific Dashboard Mounts
+app.use('/api/admin/dashboard', dashboardRoutes);
+app.use('/api/student/dashboard', dashboardRoutes);
+app.use('/api/parent/dashboard', dashboardRoutes);
+app.use('/api/mentor/dashboard', dashboardRoutes);
+app.use('/api/warden', dashboardRoutes);
 
 // Basic health check route
 app.get("/api/health", (req, res) => {

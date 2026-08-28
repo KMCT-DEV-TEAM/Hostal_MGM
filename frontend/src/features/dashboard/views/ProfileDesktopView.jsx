@@ -27,7 +27,7 @@ const ProfileDesktopView = ({
     const { setActiveStudent } = useParentStore();
 
     const selectedStudent = user?.role === ROLES.PARENT 
-        ? (user?.students?.find(s => s._id === activeStudentId) || user?.students?.[0])
+        ? (user?.students?.find(s => s.id === activeStudentId) || user?.students?.[0])
         : null;
 
     return (
@@ -187,10 +187,10 @@ const ProfileDesktopView = ({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {user?.students?.map(student => {
-                                const isActive = student._id === activeStudentId;
+                                const isActive = student.id === activeStudentId;
                                 return (
                                 <div
-                                    key={student._id}
+                                    key={student.id}
                                     onClick={() => {
                                         if (!isActive) {
                                             setStudentToSwitch(student);
@@ -311,7 +311,7 @@ const ProfileDesktopView = ({
                 isOpen={!!studentToSwitch}
                 onClose={() => setStudentToSwitch(null)}
                 onConfirm={() => {
-                    setActiveStudent(studentToSwitch._id);
+                    setActiveStudent(studentToSwitch.id);
                     setStudentToSwitch(null);
                 }}
                 title="Switch Student"

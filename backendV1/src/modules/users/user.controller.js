@@ -344,7 +344,7 @@ export const createAdmin = asyncHandler(async (req, res) => {
       name: name,
       email,
       phone,
-      passwordHash: hashed,
+      password: hashed,
       tempPassword: true,
       role: "admin",
       organizationId,

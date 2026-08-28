@@ -16,8 +16,8 @@ const StudentSelectionModal = ({ students, onSelect }) => {
                 <p className="text-sm text-gray-500 mb-2">Please select which student's dashboard you would like to view.</p>
                 {students.map(student => (
                     <button
-                        key={student._id}
-                        onClick={() => onSelect(student._id)}
+                        key={student.id}
+                        onClick={() => onSelect(student.id)}
                         className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:border-[#0A437A] hover:bg-blue-50/50 transition-all text-left group"
                     >
                         <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center shrink-0">

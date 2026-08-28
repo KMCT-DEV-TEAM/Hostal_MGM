@@ -41,12 +41,11 @@ export default function MaintenanceAssignedTasks() {
             const res = await ComplaintService.getAssignedComplaints(params);
             const rawData = res.data || [];
             const formatted = rawData.map(c => ({
-                id: c._id,
-                _id: c._id,
+                id: c.id || c._id,
                 student: c.studentId?.name || 'Unknown',
                 roomNo: c.roomNo || 'N/A',
                 category: c.category?.name || 'Unknown',
-                categoryId: c.category?._id,
+                categoryId: c.category?.id,
                 subject: c.subject,
                 description: c.description,
                 date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -362,7 +361,7 @@ export default function MaintenanceAssignedTasks() {
                         hasMore: currentPage < totalPages,
                         onLoadMore: () => setCurrentPage(prev => prev + 1)
                     }}
-                    getItemId={(o) => o._id}
+                    getItemId={(o) => o.id}
                 />
             </div>
 

@@ -10,7 +10,7 @@ const AdminDetailView = ({ selectedAdminDetail, setView, openChangeEmailModal })
 
     useEffect(() => {
         if (selectedAdminDetail && selectedAdminDetail.organization) {
-            const orgId = typeof selectedAdminDetail.organization === 'object' ? selectedAdminDetail.organization._id : selectedAdminDetail.organization;
+            const orgId = typeof selectedAdminDetail.organization === 'object' ? selectedAdminDetail.organization.id : selectedAdminDetail.organization;
             if (orgId) {
                 const fetchOrg = async () => {
                     setLoadingOrg(true);

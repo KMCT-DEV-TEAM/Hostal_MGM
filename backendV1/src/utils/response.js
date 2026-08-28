@@ -4,6 +4,14 @@ const sendSuccess = (res, statusCode, message, payload = {}) => {
   if (payload && typeof payload.toJSON === 'function') {
     finalPayload = payload.toJSON();
   }
+
+  if (Array.isArray(finalPayload)) {
+    return res.status(statusCode).json({
+      success: true,
+      message,
+      data: finalPayload,
+    });
+  }
   
   return res.status(statusCode).json({
     success: true,

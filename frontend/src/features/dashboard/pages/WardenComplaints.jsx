@@ -32,14 +32,14 @@ export default function WardenComplaints({ hostel, onBack, headerActions }) {
         setIsLoading(true);
         try {
             const response = await ComplaintService.getAllComplaints();
-            let rawData = response.data || [];
+            let rawData = response?.data?.complaints || response?.complaints || response?.data || (Array.isArray(response) ? response : []);
 
             const formatted = rawData.map(c => ({
-                id: c._id,
-                student: c.studentId?.name || 'Unknown',
+                id: c.id || c._id,
+                student: typeof c.studentId === 'object' ? (c.studentId?.name || 'Unknown') : (c.student?.name || 'Unknown'),
                 roomNo: c.roomNo || 'N/A',
-                category: c.category?.name || 'Unknown',
-                categoryId: c.category?._id,
+                category: typeof c.category === 'object' ? (c.category?.name || 'Unknown') : (c.category || 'Unknown'),
+                categoryId: typeof c.category === 'object' ? (c.category?.id || c.category?._id) : (c.categoryId || c.category),
                 subject: c.subject,
                 description: c.description,
                 date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -47,7 +47,7 @@ export default function WardenComplaints({ hostel, onBack, headerActions }) {
                 priority: c.priority || 'Medium',
                 status: c.status,
                 hostelId: c.hostelId,
-                hostelName: c.hostelId?.name || 'Unknown Hostel',
+                hostelName: typeof c.hostelId === 'object' ? (c.hostelId?.name || 'Unknown Hostel') : (c.hostel?.name || 'Unknown Hostel'),
                 assignedStaff: c.assignedStaff,
                 timeline: c.timeline || [],
                 internalNotes: c.internalNotes || [],
@@ -124,8 +124,8 @@ export default function WardenComplaints({ hostel, onBack, headerActions }) {
         }
     }, [complaints]);
     const handleCategoryChange = (id, newCategoryVal) => {
-        const catObj = categories.find(c => c._id === newCategoryVal || c.name === newCategoryVal);
-        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj._id : newCategoryVal });
+        const catObj = categories.find(c => c.id === newCategoryVal || c.name === newCategoryVal);
+        setConfirmCategoryChange({ isOpen: true, complaintId: id, newCategory: catObj ? catObj.name : newCategoryVal, newCategoryId: catObj ? catObj.id : newCategoryVal });
     };
 
     const handlePriorityChange = (id, newPriority) => {

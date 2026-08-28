@@ -36,7 +36,7 @@ const PasswordRequests = () => {
     const [selectedRequestDetail, setSelectedRequestDetail] = useState(null);
 
     const handleSelectAll = (mobileIds) => {
-        let pendingIds = requests.filter(req => req.status === 'pending').map(req => req._id);
+        let pendingIds = requests.filter(req => req.status === 'pending').map(req => req.id);
         if (Array.isArray(mobileIds) && typeof mobileIds[0] === 'string') {
             pendingIds = mobileIds; 
         }
@@ -237,14 +237,14 @@ const PasswordRequests = () => {
                         <div className="flex items-center justify-center gap-2">
                             <button
                                 className="px-2.5 py-1.5 bg-success-50 text-success border border-success hover:bg-success-100 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
-                                onClick={() => openConfirmModal('approve', o._id)}
+                                onClick={() => openConfirmModal('approve', o.id)}
                             >
                                 <Check className="w-3.5 h-3.5 mr-1" />
                                 Approve
                             </button>
                             <button
                                 className="px-2.5 py-1.5 bg-red-50 text-danger border border-red-200 hover:bg-red-100 rounded text-xs font-medium transition-colors flex items-center cursor-pointer"
-                                onClick={() => openConfirmModal('reject', o._id)}
+                                onClick={() => openConfirmModal('reject', o.id)}
                             >
                                 <X className="w-3.5 h-3.5 mr-1" />
                                 Reject
@@ -282,14 +282,14 @@ const PasswordRequests = () => {
                 <div className="grid grid-cols-2 w-full gap-3 mt-4 pt-4 border-t border-gray-50" onClick={e => e.stopPropagation()}>
                     <button
                         className="w-full py-2.5 bg-[#0A437A] text-white rounded-lg text-sm font-semibold hover:bg-primary-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); openConfirmModal('approve', o._id); }}
+                        onClick={(e) => { e.stopPropagation(); openConfirmModal('approve', o.id); }}
                     >
                         <Check className="w-4 h-4 shrink-0" />
                         <span className="truncate">Approve</span>
                     </button>
                     <button
                         className="w-full py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                        onClick={(e) => { e.stopPropagation(); openConfirmModal('reject', o._id); }}
+                        onClick={(e) => { e.stopPropagation(); openConfirmModal('reject', o.id); }}
                     >
                         <X className="w-4 h-4 shrink-0" />
                         <span className="truncate">Reject</span>
@@ -420,7 +420,7 @@ const PasswordRequests = () => {
                     totalItems={pagination.totalDocs}
                     totalPages={pagination.totalPages}
                     fetchMore={() => fetchRequests(pagination.page + 1)}
-                    getItemId={(o) => o._id}
+                    getItemId={(o) => o.id}
                 />
             </div>
 

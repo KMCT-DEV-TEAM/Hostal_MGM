@@ -38,7 +38,7 @@ const AdminAttendance = () => {
                     <AttendanceWindowsTable
                         showHostel={true}
                         showWarden={true}
-                        onRowClick={(window) => navigate(`/dashboard/attendance/${window._id || window.id}`)}
+                        onRowClick={(window) => navigate(`/dashboard/attendance/${window.id || window.id}`)}
                     />
                 </div>
             </div>

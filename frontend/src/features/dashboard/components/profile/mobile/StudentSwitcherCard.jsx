@@ -18,10 +18,10 @@ const StudentSwitcherCard = ({ user, activeStudentId, setActiveStudent, setStude
 
             <div className="flex flex-col gap-3">
                 {user.students.map((student) => {
-                    const isActive = student._id === activeStudentId;
+                    const isActive = student.id === activeStudentId;
                     return (
                         <button
-                            key={student._id}
+                            key={student.id}
                             onClick={() => {
                                 if (!isActive) {
                                     setStudentToSwitch(student);

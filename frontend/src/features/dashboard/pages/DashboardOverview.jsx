@@ -789,7 +789,7 @@ function DashboardOverview() {
 
                 return (
                     <div
-                        key={log._id}
+                        key={log.id}
                         className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#F8FAFC] border border-[#EEF2F7] rounded-xl px-4 py-3 mt-3 gap-2 sm:gap-4"
                     >
                         <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">

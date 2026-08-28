@@ -52,7 +52,7 @@ export default function MentorDetailsModal({
         return () => {
             isMounted = false;
         };
-    }, [initialMentor?._id, role]);
+    }, [initialMentor?.id, role]);
 
     const handleRelease = async (reason) => {
         if (!assignmentToRelease) return;
@@ -61,7 +61,7 @@ export default function MentorDetailsModal({
             await mentorService.endMentorAssignment(assignmentToRelease, { reason });
             showSuccessToast('Mentor released successfully');
             // Refresh mentor details
-            const response = await mentorService.getMentorById(role, mentor._id);
+            const response = await mentorService.getMentorById(role, mentor.id);
             if (response?.data) setMentor(response.data);
         } catch (error) {
             console.error("Failed to release mentor", error);
@@ -190,7 +190,7 @@ export default function MentorDetailsModal({
                                                         fullWidth={false}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setAssignmentToRelease(t._id);
+                                                            setAssignmentToRelease(t.id);
                                                         }}
                                                         className="text-danger hover:bg-danger/5 border border-danger text-[10px] py-1 px-3"
                                                     >
