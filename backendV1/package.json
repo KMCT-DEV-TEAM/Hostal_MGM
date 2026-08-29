@@ -6,8 +6,8 @@
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "dev": "nodemon --env-file=.env src/server.js",
-    "start": "node --env-file=.env src/server.js",
-    "server": "nodemon --env-file=.env src/server.js",
+    "start": "node src/server.js",
+    "server": "node src/server.js",
     "seedSuperAdmin": "node seeds/seedSuperAdmin.js",
     "prisma": "prisma",
     "studio": "prisma studio",
