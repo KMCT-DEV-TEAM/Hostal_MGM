@@ -1,0 +1,111 @@
+components:
+  schemas:
+    Push_Keys:
+      type: object
+      required:
+        - p256dh
+        - auth
+      properties:
+        p256dh:
+          type: string
+          description: Client public key
+          example: 'BNE6gDIqW4WqnIkNUmh7qG4tUyWTztn_W4XOResr1kIcLG3f8_bR5qkx2aF5EmreHdIp2HFgX2zW3Hg5TUGbVUM'
+        auth:
+          type: string
+          description: Authentication secret
+          example: 'wmwdFZjJ9u7t7qm9l-U88-bCfvf7HABMy7bCwEZvbQo'
+
+    Push_Subscription_Request:
+      type: object
+      required:
+        - endpoint
+        - keys
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          description: Unique browser push subscription endpoint URL
+          example: 'https://fcm.googleapis.com/fcm/send/e1234567890'
+        keys:
+          $ref: '#/components/schemas/Push_Keys'
+
+    Push_Unregister_Request:
+      type: object
+      required:
+        - endpoint
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          description: Browser push subscription endpoint URL to deactivate
+          example: 'https://fcm.googleapis.com/fcm/send/e1234567890'
+
+    Push_Subscription_Item:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 'd60f5713-ad67-45f4-8e6a-03159080e44f'
+        recipient:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            model:
+              type: string
+              enum: [User, Student, Parent]
+              example: User
+        endpoint:
+          type: string
+          format: uri
+          example: 'https://fcm.googleapis.com/fcm/send/e1234567890'
+        keys:
+          $ref: '#/components/schemas/Push_Keys'
+        isActive:
+          type: boolean
+          example: true
+        inactiveAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Push_Subscription_Response:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Push subscription registered successfully
+        data:
+          $ref: '#/components/schemas/Push_Subscription_Item'
+
+    Push_Subscriptions_List_Response:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Active subscriptions retrieved
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              endpoint:
+                type: string
+                format: uri
+              keys:
+                $ref: '#/components/schemas/Push_Keys'

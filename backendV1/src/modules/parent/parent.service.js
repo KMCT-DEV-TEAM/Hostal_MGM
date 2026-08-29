@@ -34,82 +34,120 @@ export const createParentDb = async (data) => {
   let parentRecord;
   let temporaryPassword = null;
 
-  await prisma.$transaction(async (tx) => {
-    let existingParent = email ? await parentRepository.findParentByEmail(email, tx) : null;
+  try {
+    await prisma.$transaction(async (tx) => {
+      let existingParent = await parentRepository.findParentByEmailOrPhone(email, phone, tx);
 
-    if (existingParent) {
-      const existingLink = await parentRepository.findStudentParentLink(studentId, existingParent.id, tx);
+      if (existingParent) {
+        const existingLink = await parentRepository.findStudentParentLink(studentId, existingParent.id, tx);
 
-      if (existingLink) {
+        if (existingLink) {
+          const conflictError = new Error("This parent is already linked to the student.");
+          conflictError.code = "PARENT_ALREADY_LINKED";
+          conflictError.statusCode = 409;
+          throw conflictError;
+        }
+
+        if (!resolutionAction) {
+          const nameDiffers = existingParent.parentName !== parentName;
+          const phoneDiffers = existingParent.phone !== phone;
+          const emailDiffers = Boolean(email && existingParent.email && existingParent.email.toLowerCase() !== email.toLowerCase());
+
+          if (nameDiffers || phoneDiffers || emailDiffers) {
+            const studentLinks = await parentRepository.getLinkedStudents(existingParent.id, tx);
+            const linkedStudents = studentLinks.map(link => link.studentId).filter(Boolean);
+
+            const conflictError = new Error("Parent email or phone already exists with different details");
+            conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
+            conflictError.statusCode = 409;
+            conflictError.conflictData = {
+              existing: {
+                name: existingParent.parentName,
+                phone: existingParent.phone,
+                email: existingParent.email,
+                linkedStudents: linkedStudents
+              },
+              submitted: {
+                name: parentName,
+                phone: phone,
+                email: email || existingParent.email
+              }
+            };
+            throw conflictError;
+          }
+        }
+
+        if (resolutionAction === 'update_existing' || (!resolutionAction && existingParent.parentName === parentName && existingParent.phone === phone)) {
+          parentRecord = await parentRepository.updateParentRecord(existingParent, { parentName, phone, address }, tx);
+        } else {
+          parentRecord = existingParent;
+        }
+      } else {
+        temporaryPassword = generateRandomPassword();
+        const hashedPassword = await hashPassword(temporaryPassword);
+
+        parentRecord = await parentRepository.createParentRecord({
+          parentName,
+          phone,
+          email,
+          address,
+          isVerified,
+          password: hashedPassword,
+          tempPassword: true,
+        }, tx);
+      }
+
+      const linkCount = await parentRepository.countStudentParentLinks(studentId, tx);
+      const shouldDefaultGuardian = defaultGuardian || linkCount === 0;
+
+      if (shouldDefaultGuardian) {
+        await parentRepository.clearDefaultGuardian(studentId, tx);
+      }
+
+      await parentRepository.createStudentParentLink({
+        studentId,
+        parentId: parentRecord.id,
+        relationship: relationship,
+        defaultGuardian: shouldDefaultGuardian,
+        status: "active"
+      }, tx);
+    });
+  } catch (error) {
+    if (error.code === "P2002") {
+      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(", ") : error.meta?.target || "";
+      if (target.includes("student_id") || target.includes("parent_id") || target.includes("studentId_parentId")) {
         const conflictError = new Error("This parent is already linked to the student.");
         conflictError.code = "PARENT_ALREADY_LINKED";
         conflictError.statusCode = 409;
         throw conflictError;
       }
 
-      if (!resolutionAction) {
-        const nameDiffers = existingParent.parentName !== parentName;
-        const phoneDiffers = existingParent.phone !== phone;
+      const existing = await parentRepository.findParentByEmailOrPhone(email, phone);
+      if (existing) {
+        const studentLinks = await parentRepository.getLinkedStudents(existing.id);
+        const linkedStudents = studentLinks.map(link => link.studentId).filter(Boolean);
 
-        if (nameDiffers || phoneDiffers) {
-          const studentLinks = await parentRepository.getLinkedStudents(existingParent.id, tx);
-          const linkedStudents = studentLinks.map(link => link.studentId).filter(Boolean);
-
-          const conflictError = new Error("Parent email already exists with different details");
-          conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
-          conflictError.statusCode = 409;
-          conflictError.conflictData = {
-            existing: {
-              name: existingParent.parentName,
-              phone: existingParent.phone,
-              email: existingParent.email,
-              linkedStudents: linkedStudents
-            },
-            submitted: {
-              name: parentName,
-              phone: phone,
-              email: existingParent.email
-            }
-          };
-          throw conflictError;
-        }
+        const conflictError = new Error("Parent email or phone already exists with different details");
+        conflictError.code = "PARENT_EXISTS_WITH_DIFFERENT_DATA";
+        conflictError.statusCode = 409;
+        conflictError.conflictData = {
+          existing: {
+            name: existing.parentName,
+            phone: existing.phone,
+            email: existing.email,
+            linkedStudents: linkedStudents
+          },
+          submitted: {
+            name: parentName,
+            phone: phone,
+            email: email || existing.email
+          }
+        };
+        throw conflictError;
       }
-
-      if (resolutionAction === 'update_existing' || (!resolutionAction && existingParent.parentName === parentName && existingParent.phone === phone)) {
-        parentRecord = await parentRepository.updateParentRecord(existingParent, { parentName, phone, address }, tx);
-      } else {
-        parentRecord = existingParent;
-      }
-    } else {
-      temporaryPassword = generateRandomPassword();
-      const hashedPassword = await hashPassword(temporaryPassword);
-
-      parentRecord = await parentRepository.createParentRecord({
-        parentName,
-        phone,
-        email,
-        address,
-        isVerified,
-        password: hashedPassword,
-        tempPassword: true,
-      }, tx);
     }
-
-    const linkCount = await parentRepository.countStudentParentLinks(studentId, tx);
-    const shouldDefaultGuardian = defaultGuardian || linkCount === 0;
-
-    if (shouldDefaultGuardian) {
-      await parentRepository.clearDefaultGuardian(studentId, tx);
-    }
-
-    await parentRepository.createStudentParentLink({
-      studentId,
-      parentId: parentRecord.id,
-      relationship: relationship,
-      defaultGuardian: shouldDefaultGuardian,
-      status: "active"
-    }, tx);
-  });
+    throw error;
+  }
 
   // Response Compatibility Mapping
   return {
@@ -617,6 +655,7 @@ export const getParentStudentsService = async (parentId, filters = {}) => {
     const activeHostel = link.student.studentHostels[0];
     return {
       _id: link.student.id,
+      id: link.student.id,
       studentId: link.student.admissionNo,
       name: link.student.name,
       roomNumber: activeHostel?.roomNumber || null,

@@ -51,6 +51,7 @@ import userRoutes from './modules/users/user.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
 import furnitureRoutes from './modules/furnitures/furniture.routes.js';
 import passRoutes from './modules/passes/pass.routes.js';
+import pushRoutes from './modules/push/push.routes.js';
 
 import studentRoutes from './modules/students/student.routes.js';
 import studentHostelRoutes from './modules/student-hostel/studentHostel.routes.js';
@@ -60,6 +61,7 @@ import mentorRoutes from './modules/mentors/mentor.routes.js';
 import mentorAssignmentRoutes from './modules/mentor-assignment/mentorAssignment.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import profileRoutes from './modules/profile/profile.routes.js';
+import visitorRoutes, { parentVisitorRouter } from './modules/visitor/visitor.routes.js';
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
@@ -74,6 +76,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/otps', otpRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/push', pushRoutes);
 
 app.use('/api/students', studentRoutes);
 app.use('/api/student-hostels', studentHostelRoutes);
@@ -83,6 +86,9 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/passes', passRoutes);
 app.use('/api/mentors', mentorRoutes);
 app.use('/api/mentor-assignments', mentorAssignmentRoutes);
+app.use('/api/parent/students/:studentId/visitors', parentVisitorRouter);
+app.use('/api/parent/visitors', parentVisitorRouter);
+app.use('/api/visitor', visitorRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);

@@ -52,7 +52,7 @@ export default function StudentsTable({
   const role = useAuthStore((state) => state.user?.role);
   const canManage = canEdit && (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN);
   const showActionsColumn = canManage;
-  const getStudentId = (s) => s.id ?? s.id;
+  const getStudentId = (s) => s.id ?? s._id;
   const { t } = useTranslation();
 
   const [searchTerm, setSearchTerm] = useState(searchValue);

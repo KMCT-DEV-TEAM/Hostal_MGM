@@ -2,8 +2,28 @@ import { prisma } from "../../config/prisma.js";
 
 class ParentRepository {
   async findParentByEmail(email, tx = prisma) {
-    return await tx.parent.findUnique({
-      where: { email },
+    if (!email) return null;
+    return await tx.parent.findFirst({
+      where: {
+        email: { equals: email, mode: "insensitive" }
+      },
+    });
+  }
+
+  async findParentByEmailOrPhone(email, phone, tx = prisma) {
+    const conditions = [];
+    if (email) {
+      conditions.push({ email: { equals: email, mode: "insensitive" } });
+    }
+    if (phone) {
+      conditions.push({ phone: { equals: phone } });
+    }
+    if (conditions.length === 0) return null;
+
+    return await tx.parent.findFirst({
+      where: {
+        OR: conditions,
+      },
     });
   }
 
