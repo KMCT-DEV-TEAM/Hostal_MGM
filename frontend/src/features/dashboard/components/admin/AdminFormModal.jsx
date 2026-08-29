@@ -20,7 +20,43 @@ const AdminFormModal = ({
     isVerifying
 }) => {
     const { t } = useTranslation();
-    const [errors, setErrors] = React.useState({});
+    const [errors, setErrors] = useState({});
+
+    React.useEffect(() => {
+        if (activeModal === 'admin') {
+            setErrors({});
+        }
+    }, [activeModal, editingAdmin]);
+
+    const validate = () => {
+        let newErrors = {};
+        let hasError = false;
+        if (!adminForm.name || !adminForm.name.trim()) {
+            newErrors.name = 'First Name is required';
+            hasError = true;
+        }
+        if (!adminForm.phone) {
+            newErrors.phone = 'Phone number is required';
+            hasError = true;
+        } else if (adminForm.phone.length !== 10) {
+            newErrors.phone = 'Phone number must be exactly 10 digits';
+            hasError = true;
+        }
+        if (!adminForm.email) {
+            newErrors.email = 'Email is required';
+            hasError = true;
+        } else if (!isEmailVerified && !editingAdmin) {
+            newErrors.email = 'Please verify your email';
+            hasError = true;
+        }
+        if (!adminForm.organization) {
+            newErrors.organization = 'Organization is required';
+            hasError = true;
+        }
+
+        setErrors(newErrors);
+        return !hasError;
+    };
 
     return (
         <Modal
@@ -29,7 +65,13 @@ const AdminFormModal = ({
             title={editingAdmin ? t('edit_admin') : t('add_admin')}
             subtitle={t('add_admin_desc')}
             asForm={true}
-            onSubmit={handleSaveAdmin}
+            onSubmit={(e) => {
+                if (!validate()) {
+                    e.preventDefault();
+                    return;
+                }
+                handleSaveAdmin(e);
+            }}
             maxWidth="max-w-xl"
             bottomSheetOnMobile={true}
             footer={
@@ -37,17 +79,7 @@ const AdminFormModal = ({
                     <button
                         disabled={isSubmitting}
                         onClick={(e) => {
-                            let newErrors = { ...errors };
-                            let hasError = false;
-                            if (!adminForm.name || !adminForm.name.trim()) { newErrors.firstName = 'Name is required'; hasError = true; }
-                            if (!adminForm.phone) { newErrors.phone = 'Phone number is required'; hasError = true; }
-                            else if (adminForm.phone.length !== 10) { newErrors.phone = 'Phone number must be exactly 10 digits'; hasError = true; }
-                            if (!adminForm.email) { newErrors.email = 'Email is required'; hasError = true; }
-                            else if (!isEmailVerified && !editingAdmin) { newErrors.email = 'Please verify your email'; hasError = true; }
-                            if (!adminForm.organization) { newErrors.organization = 'Organization is required'; hasError = true; }
-                            
-                            setErrors(newErrors);
-                            if (hasError) {
+                            if (!validate()) {
                                 e.preventDefault();
                             }
                         }}
@@ -72,23 +104,27 @@ const AdminFormModal = ({
                     <div className="border-b border-gray-100 mb-4" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="col-span-1 sm:col-span-2">
-                            <label className="block text-[10px] font-medium text-black mb-1">{t('full_name', 'Full Name')} <span className="text-red-500">*</span></label>
+                            <label className="block text-[10px] font-medium text-black mb-1">{t('first_name', 'First Name')} <span className="text-red-500">*</span></label>
                             <input
                                 type="text"
-                                required
-                                pattern="[A-Za-z\s]+"
-                                title="Only letters and spaces are allowed"
-                                placeholder="Full Name"
+                                placeholder={t('first_name_placeholder', 'First name')}
                                 value={adminForm.name || ''}
                                 onChange={(e) => {
                                     const val = e.target.value;
                                     const cleanVal = val.replace(/[^a-zA-Z\s]/g, '');
                                     if (val !== cleanVal) {
                                         setErrors(prev => ({ ...prev, name: 'Only letters and spaces are allowed' }));
+                                    } else if (!cleanVal.trim()) {
+                                        setErrors(prev => ({ ...prev, name: 'First Name is required' }));
                                     } else {
                                         setErrors(prev => ({ ...prev, name: '' }));
                                     }
                                     setAdminForm({ ...adminForm, name: cleanVal });
+                                }}
+                                onBlur={() => {
+                                    if (!adminForm.name || !adminForm.name.trim()) {
+                                        setErrors(prev => ({ ...prev, name: 'First Name is required' }));
+                                    }
                                 }}
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                             />

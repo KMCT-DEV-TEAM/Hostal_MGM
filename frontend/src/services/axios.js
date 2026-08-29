@@ -139,7 +139,8 @@ apiClient.interceptors.response.use(
 
     const isAuthRequest =
       url.includes('/auth/login') ||
-      url.includes('/auth/refresh');
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/verify-password');
 
     const shouldRefresh = response.status === 401;
 
