@@ -189,16 +189,28 @@ export const updateOrganization = asyncHandler(async (req, res) => {
 
 export const deleteOrganization = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { isActive, status } = req.body || {};
   
   const organization = await prisma.organization.findUnique({ where: { id } });
   if (!organization) {
     return sendError(res, 404, "Organization not found");
   }
 
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !organization.isActive;
+  }
+
   // Acting as a toggle status
   const updated = await prisma.organization.update({
     where: { id },
-    data: { isActive: !organization.isActive }
+    data: { isActive: newIsActive }
   });
 
   if (req.user?.id || req.user?._id) {

@@ -141,8 +141,8 @@ const DepartmentManagement = () => {
         fetchCourses();
     }, []);
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -150,13 +150,21 @@ const DepartmentManagement = () => {
         if (!statusToUpdate) return;
         setIsStatusUpdating(true);
         try {
-            await DepartmentService.toggleStatus(statusToUpdate.id);
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            await DepartmentService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
             // Re-fetch or locally update the status
             setDepartments((prevDepartments) =>
                 prevDepartments.map((Department) =>
-                    Department.id === statusToUpdate.id ? { ...Department, isActive: !Department.isActive } : Department
+                    Department.id === statusToUpdate.id ? { ...Department, isActive: isTargetActive } : Department
                 )
             );
+            fetchDepartments();
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
             showSuccessToast('Status Updated', 'Department status changed successfully');
@@ -471,7 +479,7 @@ const DepartmentManagement = () => {
                 onConfirm={confirmStatusChange}
                 isSubmitting={isStatusUpdating}
                 title="Change Status"
-                message="Are you sure you want to change the status of this Department?"
+                message={`Are you sure you want to change the status of this Department to ${statusToUpdate?.targetStatus || 'the new status'}?`}
             />
 
 

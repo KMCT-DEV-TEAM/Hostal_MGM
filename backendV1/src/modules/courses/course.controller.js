@@ -63,7 +63,7 @@ export const deleteCourse = asyncHandler(async (req, res) => {
 export const toggleCourseStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
-    const updatedCourse = await toggleCourseStatusService(id, req.user);
+    const updatedCourse = await toggleCourseStatusService(id, req.user, req.body);
     return sendSuccess(res, 200, 'Course status updated successfully', updatedCourse);
   } catch (error) {
     if (error.message === 'Course not found' || error.message === 'Unauthorized') {

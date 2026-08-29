@@ -72,7 +72,7 @@ export const updateComplaintCategoryDb = async (id, data) => {
   });
 };
 
-export const toggleComplaintCategoryStatusDb = async (id) => {
+export const toggleComplaintCategoryStatusDb = async (id, statusData = {}) => {
   const category = await prisma.complaintCategory.findUnique({
     where: { id }
   });
@@ -81,9 +81,21 @@ export const toggleComplaintCategoryStatusDb = async (id) => {
     throw new Error('Complaint Category not found');
   }
 
+  const { isActive, status } = statusData;
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !category.isActive;
+  }
+
   return await prisma.complaintCategory.update({
     where: { id },
-    data: { isActive: !category.isActive }
+    data: { isActive: newIsActive }
   });
 };
 

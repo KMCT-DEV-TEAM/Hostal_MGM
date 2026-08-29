@@ -119,7 +119,11 @@ export default function WardenTable({
                                 { value: "Inactive", label: t("inactive") },
                             ]}
                             value={isActive ? "Active" : "Inactive"}
-                            onChange={() => handleStatusChangeClick?.(w.id, isActive ? "Active" : "Inactive")}
+                            onChange={(val) => {
+                                if ((val === "Active" && !isActive) || (val === "Inactive" && isActive)) {
+                                    handleStatusChangeClick?.(w.id, val);
+                                }
+                            }}
                             triggerClassName={`px-3 py-1.5 text-xs font-regular border transition-colors ${isActive ? "bg-green-50 text-success border-green-200 hover:bg-green-100" : "bg-red-50 text-danger border-red-200 hover:bg-red-100"}`}
                         />
                     </div>

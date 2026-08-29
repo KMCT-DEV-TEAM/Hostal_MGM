@@ -51,7 +51,7 @@ export const deleteDepartment = asyncHandler(async (req, res) => {
 export const toggleDepartmentStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
-    const updatedDepartment = await toggleDepartmentStatusService(id, req.user);
+    const updatedDepartment = await toggleDepartmentStatusService(id, req.user, req.body);
     return sendSuccess(res, 200, 'Department status updated successfully', updatedDepartment);
   } catch (error) {
     if (error.message === 'Department not found' || error.message === 'Unauthorized') {

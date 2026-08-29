@@ -87,8 +87,8 @@ const ComplaintCategories = () => {
         fetchCategories();
     }, [page, debouncedSearch, statusFilter]);
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -96,12 +96,20 @@ const ComplaintCategories = () => {
         if (!statusToUpdate) return;
         try {
             setIsConfirming(true);
-            await ComplaintCategoryService.toggleStatus(statusToUpdate.id);
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            await ComplaintCategoryService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
             setComplaintCategories((prev) =>
                 prev.map((c) =>
-                    (c.id || c._id) === statusToUpdate.id ? { ...c, isActive: !c.isActive } : c
+                    (c.id || c._id) === statusToUpdate.id ? { ...c, isActive: isTargetActive } : c
                 )
             );
+            fetchCategories();
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
             showSuccessToast('Status Updated', 'Category status changed successfully');
@@ -398,7 +406,7 @@ const ComplaintCategories = () => {
                     <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status of this category?
+                            Are you sure you want to set the status of this category to <strong>{statusToUpdate?.targetStatus || 'the new status'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button

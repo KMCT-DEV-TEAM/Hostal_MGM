@@ -254,8 +254,8 @@ export default function Administrator() {
         }
     };
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -263,12 +263,18 @@ export default function Administrator() {
         if (!statusToUpdate) return;
         setIsStatusUpdating(true);
         try {
-            const res = await adminService.toggleStatus(statusToUpdate.id);
-            if (res && (res.data || res.success)) {
-                const newIsActive = statusToUpdate.currentStatus !== 'Active';
-                setAdmins(admins.map(w => w.id === statusToUpdate.id ? { ...w, isActive: newIsActive } : w));
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            const res = await adminService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
+            if (res && (res.data || res.success || res.admin)) {
+                setAdmins(admins.map(w => w.id === statusToUpdate.id ? { ...w, isActive: isTargetActive } : w));
                 fetchAdmins();
-                showSuccessToast('Status Updated', res?.message || `Administrator status changed to ${newIsActive ? 'Active' : 'Inactive'}`);
+                showSuccessToast('Status Updated', res?.message || `Administrator status changed to ${isTargetActive ? 'Active' : 'Inactive'}`);
             }
         } catch (error) {
             console.error("Failed to update status:", error);
@@ -743,7 +749,7 @@ export default function Administrator() {
                 onConfirm={confirmStatusChange}
                 isSubmitting={isStatusUpdating}
                 title="Change Status"
-                message="Are you sure you want to change the status of this admin?"
+                message={`Are you sure you want to change the status of this admin to ${statusToUpdate?.targetStatus || 'the selected status'}?`}
             />
 
 

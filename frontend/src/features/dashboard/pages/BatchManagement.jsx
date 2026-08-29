@@ -142,8 +142,8 @@ const BatchManagement = () => {
         fetchDepartments();
     }, []);
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -151,13 +151,21 @@ const BatchManagement = () => {
         if (!statusToUpdate) return;
         setIsStatusUpdating(true);
         try {
-            await BatchService.toggleStatus(statusToUpdate.id);
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            await BatchService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
             // Re-fetch or locally update the status
             setbatches((prevbatches) =>
                 prevbatches.map((batch) =>
-                    batch.id === statusToUpdate.id ? { ...batch, isActive: !batch.isActive } : batch
+                    batch.id === statusToUpdate.id ? { ...batch, isActive: isTargetActive } : batch
                 )
             );
+            fetchBatches();
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
             showSuccessToast('Status Updated', 'Batch status changed successfully');
@@ -475,7 +483,7 @@ const BatchManagement = () => {
                 onConfirm={confirmStatusChange}
                 isSubmitting={isStatusUpdating}
                 title="Change Status"
-                message="Are you sure you want to change the status of this Batch?"
+                message={`Are you sure you want to change the status of this Batch to ${statusToUpdate?.targetStatus || 'the new status'}?`}
             />
 
 

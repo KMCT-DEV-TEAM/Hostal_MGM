@@ -190,8 +190,8 @@ export default function AssistantWardenManagement() {
     };
 
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -199,15 +199,23 @@ export default function AssistantWardenManagement() {
         if (!statusToUpdate) return;
         try {
             setIsConfirming(true);
-            const res = await assistantWardenService.toggleStatus(statusToUpdate.id);
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            const res = await assistantWardenService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
             if (res && (res.success || res.data)) {
-                const newStatus = statusToUpdate.currentStatus === 'Active' ? 'Inactive' : 'Active';
-                setAssistantWardens(assistantWardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus, isActive: newStatus === 'Active' } : w));
-                showSuccessToast('Status Updated', res?.message || `AssistantWarden status changed to ${newStatus}`);
+                const newStatus = isTargetActive ? 'Active' : 'Inactive';
+                setAssistantWardens(assistantWardens.map(w => w.id === statusToUpdate.id ? { ...w, status: newStatus, isActive: isTargetActive } : w));
+                fetchAssistantWardens();
+                showSuccessToast('Status Updated', res?.message || `Assistant Warden status changed to ${newStatus}`);
             }
         } catch (error) {
             console.error("Failed to update status:", error);
-            showErrorToast('Action Failed', error?.message || 'Failed to change assistantWarden status');
+            showErrorToast('Action Failed', error?.message || 'Failed to change assistant warden status');
         } finally {
             setIsConfirming(false);
         }
@@ -656,7 +664,7 @@ export default function AssistantWardenManagement() {
                     <div className="bg-white rounded-t-2xl md:rounded-xl rounded-b-none shadow-xl w-full max-w-sm p-5 animate-slide-up md:animate-in md:slide-in-from-bottom-0 md:fade-in md:zoom-in-95 mt-auto md:mt-0 duration-200">
                         <h3 className="text-sm font-bold text-gray-900">Change Status</h3>
                         <p className="text-xs text-gray-500 mt-1 mb-6">
-                            Are you sure you want to change the status of this assistantWarden?
+                            Are you sure you want to set the status of this assistant warden to <strong>{statusToUpdate?.targetStatus || 'the new status'}</strong>?
                         </p>
                         <div className="flex gap-2 justify-end">
                             <button

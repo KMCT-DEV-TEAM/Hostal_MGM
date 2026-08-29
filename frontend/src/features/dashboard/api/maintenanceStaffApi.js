@@ -13,8 +13,8 @@ const maintenanceStaffApi = {
   updateEmail: (id, payload) =>
     api.patch(`/super-admin/${id}/email`, payload),
 
-  toggleStatus: (id) =>
-    api.patch(`/super-admin/maintenance-staff/${id}/toggle-status`),
+  toggleStatus: (id, payload) =>
+    api.patch(`/super-admin/maintenance-staff/${id}/toggle-status`, payload),
 
   bulkToggleStatus: (payload) =>
     api.post(`/super-admin/maintenance-staff/bulk-toggle-status`, payload),
