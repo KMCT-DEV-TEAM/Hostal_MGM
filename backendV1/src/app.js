@@ -51,6 +51,7 @@ import userRoutes from './modules/users/user.routes.js';
 import notificationRoutes from './modules/notification/notification.routes.js';
 import furnitureRoutes from './modules/furnitures/furniture.routes.js';
 import passRoutes from './modules/passes/pass.routes.js';
+import pushRoutes from './modules/push/push.routes.js';
 
 import studentRoutes from './modules/students/student.routes.js';
 import studentHostelRoutes from './modules/student-hostel/studentHostel.routes.js';
@@ -74,6 +75,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/otps', otpRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/push', pushRoutes);
 
 app.use('/api/students', studentRoutes);
 app.use('/api/student-hostels', studentHostelRoutes);
