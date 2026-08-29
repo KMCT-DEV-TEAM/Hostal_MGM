@@ -41,7 +41,7 @@ const parentApi = {
     api.patch(`/admin/parents/bulk-status`, payload),
 
   setDefaultGuardianByAdmin: (id) =>
-    api.patch(`/admin/parents/${id}/default-guardian`, {
+    api.patch(`/parents/${id}/default-guardian`, {
       defaultGuardian: true,
     }),
   //----super admin 
