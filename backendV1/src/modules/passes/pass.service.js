@@ -1902,7 +1902,7 @@ export const markStudentReturnedDb = async (passId, wardenId, hostelId) => {
         parent: { select: { id: true, parentName: true } }
       }
     });
-    
+
     // Attach the dynamically calculated returnStatus so the controller can use it for notifications
     updatedPass._returnStatus = returnStatus;
   });

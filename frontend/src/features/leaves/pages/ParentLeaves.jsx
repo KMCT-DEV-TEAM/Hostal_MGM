@@ -13,7 +13,7 @@ import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import InfoCard from '@/components/ui/InfoCard';
 import leaveService from '@/services/leave.service';
 import { useActiveStudent } from '@/hooks/useActiveStudent';
-import { formatDateReadable } from '@/utils/formatters';
+import { formatDateReadable, formatTime } from '@/utils/formatters';
 import { showErrorToast } from '@/utils/toast';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 import LeaveActionModal from '../components/modals/LeaveActionModal';
@@ -266,7 +266,7 @@ export default function ParentLeaves() {
             header: "In",
             renderCell: (r) => (
                 <span className="text-text-secondary text-sm">
-                    {r.expectedReturnTime || r.returnTime || '--'}
+                    {r.expectedReturnTime || r.expectedReturnAt || r.returnTime ? formatTime(r.expectedReturnTime || r.expectedReturnAt || r.returnTime) : '--'}
                 </span>
             )
         },
@@ -275,7 +275,7 @@ export default function ParentLeaves() {
             header: "Out",
             renderCell: (r) => (
                 <span className="text-text-secondary text-sm">
-                    {r.outTime || '--'}
+                    {r.outTime || r.fromDate ? formatTime(r.outTime || r.fromDate) : '--'}
                 </span>
             )
         },

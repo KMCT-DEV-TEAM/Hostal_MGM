@@ -5,7 +5,7 @@ import DataView from '@/components/ui/data-view/DataView';
 import LeaveStatusBadge from '../components/badges/LeaveStatusBadge';
 import LeaveReturnBadge from '../components/badges/LeaveReturnBadge';
 import LeaveStatsCards from '../components/stats/LeaveStatsCards';
-import { formatDateReadable } from '@/utils/formatters';
+import { formatDateReadable, formatTime } from '@/utils/formatters';
 
 export default function StudentLeavesDesktopView({
     pageTitle,
@@ -90,12 +90,12 @@ export default function StudentLeavesDesktopView({
         {
             key: "inTime",
             header: "In",
-            accessor: (r) => r.expectedReturnTime || '-----'
+            accessor: (r) => (r.expectedReturnTime || r.expectedReturnAt || r.returnTime) ? formatTime(r.expectedReturnTime || r.expectedReturnAt || r.returnTime) : '-----'
         },
         {
             key: "outTime",
             header: "Out",
-            accessor: (r) => r.outTime || '-----'
+            accessor: (r) => (r.outTime || r.fromDate) ? formatTime(r.outTime || r.fromDate) : '-----'
         },
         {
             key: "status",
