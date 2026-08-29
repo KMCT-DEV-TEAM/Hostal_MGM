@@ -1,12 +1,13 @@
 import { prisma } from "../config/prisma.js";
 import { sendError } from "../utils/response.js";
+import { ROLES } from "../constants/roles.js";
 
 const verifyStudentAccess = async (req, res, next) => {
   try {
     const roleLower = (req.user?.role || "").toLowerCase();
 
-    if (roleLower !== "parent") {
-      if (["admin", "superadmin", "super_admin", "warden", "assistant_warden", "mentor", "student"].includes(roleLower)) {
+    if (roleLower !== ROLES.PARENT) {
+      if ([ROLES.ADMIN, "superadmin", ROLES.SUPER_ADMIN, ROLES.WARDEN, ROLES.ASSISTANT_WARDEN, ROLES.MENTOR, ROLES.STUDENT].includes(roleLower)) {
         return next();
       }
       return sendError(res, 403, "Access denied. Only parents can access these resources.");

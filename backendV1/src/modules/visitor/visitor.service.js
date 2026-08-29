@@ -1,6 +1,7 @@
 import { prisma } from '../../config/prisma.js';
 import * as visitorRepository from './visitor.repository.js';
 import { orchestratorService } from '../notifications/services/orchestrator.service.js';
+import { ROLES } from '../../constants/roles.js';
 import {
     VISITOR_STATUS,
     VISIT_REQUEST_STATUS,
@@ -65,7 +66,6 @@ export const validateParentAndStudents = async (parentId, studentIds) => {
 
     return { parent: currentParent, students };
 };
-
 // ============================================================================
 // Visitor Creation & Confirmation
 // ============================================================================
@@ -119,7 +119,7 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
                     create: {
                         action: VISITOR_CHANGE_LOG_ACTIONS.CREATED,
                         performedById: user.id,
-                        performedByRole: 'parent',
+                        performedByRole: ROLES.PARENT,
                         timestamp: new Date()
                     }
                 }
@@ -147,7 +147,7 @@ export const createBrandNewVisitorProfile = async (payload, user) => {
     orchestratorService.triggerNotification({
         eventName: 'VISITOR_CREATED',
         target: [
-            { type: 'ROLE', filter: { role: { in: ['admin'] } } },
+            { type: 'ROLE', filter: { role: { in: [ROLES.ADMIN] } } },
             { type: 'MENTOR', filter: { studentIds } }
         ],
         data: {
@@ -196,7 +196,7 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
                         create: {
                             action: VISITOR_CHANGE_LOG_ACTIONS.REACTIVATED,
                             performedById: user.id,
-                            performedByRole: "parent",
+                            performedByRole: ROLES.PARENT,
                             reason: "Visitor reused after becoming inactive.",
                             timestamp: new Date()
                         }
@@ -227,7 +227,7 @@ export const confirmVisitorReuseProfile = async (payload, user) => {
     orchestratorService.triggerNotification({
         eventName: 'VISITOR_CREATED',
         target: [
-            { type: 'ROLE', filter: { role: { in: ['admin'] } } },
+            { type: 'ROLE', filter: { role: { in: [ROLES.ADMIN] } } },
             { type: 'MENTOR', filter: { studentIds } }
         ],
         data: {
@@ -291,7 +291,7 @@ export const updateVisitorStatus = async (visitorId, status, user, studentId = n
     const visitor = await visitorRepository.findVisitorWithStudentIds(visitorId);
     if (!visitor) throw createError('Visitor not found.', 404);
 
-    if (user.role === 'parent' || studentId) {
+    if (user.role === ROLES.PARENT || studentId) {
         if (![VISITOR_STATUS.INACTIVE, VISITOR_STATUS.ACTIVE].includes(status)) {
             throw createError('Parents can only change status to Active or Inactive.', 403);
         }
@@ -310,11 +310,11 @@ export const updateVisitorStatus = async (visitorId, status, user, studentId = n
         const visitorStudentIds = visitor.visitRequests.map(vr => vr.studentId);
         if (!visitorStudentIds.some(id => parentStudentIds.includes(id))) throw createError('Unauthorized to update this visitor.', 403);
 
-    } else if (['admin', 'super_admin'].includes(user.role)) {
+    } else if ([ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(user.role)) {
         if (![VISITOR_STATUS.INACTIVE, VISITOR_STATUS.ACTIVE, VISITOR_STATUS.BLACKLISTED].includes(status)) {
             throw createError('Admins can only change status to Inactive, Active, or Blacklisted.', 403);
         }
-    } else if (user.role === 'mentor') {
+    } else if (user.role === ROLES.MENTOR) {
         if (![VISITOR_STATUS.INACTIVE, VISITOR_STATUS.ACTIVE].includes(status)) {
             throw createError('Mentors can only change status to Inactive or Active.', 403);
         }
@@ -335,7 +335,7 @@ export const updateVisitorStatus = async (visitorId, status, user, studentId = n
     else if (status === VISITOR_STATUS.ACTIVE) actionName = VISITOR_CHANGE_LOG_ACTIONS.REACTIVATED;
     else if (status === VISITOR_STATUS.BLACKLISTED) actionName = VISITOR_CHANGE_LOG_ACTIONS.BLACKLISTED;
 
-    const roleName = user.role === 'parent' ? 'parent' : (user.role === 'mentor' ? 'mentor' : (user.role === 'super_admin' ? 'super admin' : 'admin'));
+    const roleName = user.role === ROLES.PARENT ? ROLES.PARENT : (user.role === ROLES.MENTOR ? ROLES.MENTOR : (user.role === ROLES.SUPER_ADMIN ? 'super admin' : ROLES.ADMIN));
 
     return await prisma.visitor.update({
         where: { id: visitorId },
@@ -363,19 +363,19 @@ const buildPrismaWhereClause = async (query, user, studentId = null) => {
     const visitRequestWhere = {};
     const studentWhere = {};
 
-    if (user.role === 'super_admin' && query.organization) {
+    if (user.role === ROLES.SUPER_ADMIN && query.organization) {
         studentWhere.organizationId = query.organization;
-    } else if (user.role === 'admin') {
+    } else if (user.role === ROLES.ADMIN) {
         studentWhere.organizationId = user.organizationId || user.organization;
-    } else if (user.role === 'warden') {
+    } else if (user.role === ROLES.WARDEN) {
         const wardenHostelIds = await visitorRepository.findWardenHostelIds(user.id);
         if (wardenHostelIds.length === 0) throw createError('Unauthorized: You are not assigned to any hostel.', 403);
         studentWhere.studentHostels = { some: { hostelId: { in: wardenHostelIds }, status: 'active' } };
-    } else if (user.role === 'mentor') {
+    } else if (user.role === ROLES.MENTOR) {
         const batchIds = await visitorRepository.findMentorBatchIds(user.id);
         if (batchIds.length === 0) throw createError('EMPTY_SCOPE', 200);
         studentWhere.batchId = { in: batchIds };
-    } else if (user.role === 'parent') {
+    } else if (user.role === ROLES.PARENT) {
         if (studentId) {
             studentWhere.id = studentId;
         } else {
@@ -383,7 +383,7 @@ const buildPrismaWhereClause = async (query, user, studentId = null) => {
             studentWhere.id = { in: studentIds };
         }
         visitRequestWhere.parentId = user.id;
-    } else if (user.role === 'student') {
+    } else if (user.role === ROLES.STUDENT) {
         studentWhere.id = user.id;
     }
 
@@ -441,12 +441,12 @@ export const listVisitors = async (query, user) => {
 };
 
 export const listParentVisitors = async (query, user, studentId = null) => {
-    const clonedUser = { ...user, role: 'parent' };
+    const clonedUser = { ...user, role: ROLES.PARENT };
     return await listVisitors(query, clonedUser);
 };
 
 export const listStudentVisitors = async (query, user) => {
-    const clonedUser = { ...user, role: 'student' };
+    const clonedUser = { ...user, role: ROLES.STUDENT };
     return await listVisitors(query, clonedUser);
 };
 
@@ -455,7 +455,7 @@ export const getVisitorDetails = async (visitorId, user, studentId = null) => {
 
     if (!visitor) throw createError('Visitor not found.', 404);
 
-    if (user.role === 'parent') {
+    if (user.role === ROLES.PARENT) {
         let parentStudentIds = [];
         if (studentId) {
             const link = await visitorRepository.findParentStudentLink(user.id, studentId);
@@ -468,7 +468,7 @@ export const getVisitorDetails = async (visitorId, user, studentId = null) => {
         if (!visitorStudentIds.some(id => parentStudentIds.includes(id))) {
             throw createError('Unauthorized: You do not have access to view this visitor.', 403);
         }
-    } else if (user.role === 'student') {
+    } else if (user.role === ROLES.STUDENT) {
         const visitorStudentIds = visitor.visitRequests.map(vr => vr.studentId);
         if (!visitorStudentIds.includes(user.id)) {
             throw createError('Unauthorized: You do not have access to view this visitor.', 403);
@@ -476,7 +476,7 @@ export const getVisitorDetails = async (visitorId, user, studentId = null) => {
     }
 
     let order = { [VISIT_REQUEST_STATUS.PENDING]: 1, [VISIT_REQUEST_STATUS.APPROVED]: 2 };
-    if (!['admin', 'super_admin', 'mentor'].includes(user.role)) {
+    if (![ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR].includes(user.role)) {
         order = { [VISIT_REQUEST_STATUS.APPROVED]: 1, [VISIT_REQUEST_STATUS.PENDING]: 2 };
     }
 
@@ -488,7 +488,7 @@ export const getVisitorDetails = async (visitorId, user, studentId = null) => {
     });
 
     // Mask sensitive info for restricted roles
-    if (['warden', 'mentor', 'student'].includes(user.role)) {
+    if ([ROLES.WARDEN, ROLES.MENTOR, ROLES.STUDENT].includes(user.role)) {
         visitor.phone = visitor.phone ? '*'.repeat(Math.max(0, visitor.phone.length - 4)) + visitor.phone.slice(-4) : null;
         visitor.idProofNumber = visitor.idProofNumber ? '*'.repeat(Math.max(0, visitor.idProofNumber.length - 4)) + visitor.idProofNumber.slice(-4) : null;
     }
@@ -514,7 +514,7 @@ export const getDashboardSummary = async (user) => {
     const cards = [];
 
     switch (role) {
-        case 'super_admin': {
+        case ROLES.SUPER_ADMIN: {
             const { total, pending, inside, todaysVisits } = await visitorRepository.getSuperAdminDashboardCounts({ today, endOfToday });
             cards.push(
                 { key: "total_visitors", title: "Total Visitors", value: total },
@@ -525,7 +525,7 @@ export const getDashboardSummary = async (user) => {
             break;
         }
 
-        case 'admin': {
+        case ROLES.ADMIN: {
             const organizationId = user.organizationId || user.organization;
             const { pending, approved, inside, todaysVisits } = await visitorRepository.getAdminDashboardCounts(organizationId, { today, endOfToday });
             cards.push(
@@ -537,7 +537,7 @@ export const getDashboardSummary = async (user) => {
             break;
         }
 
-        case 'warden': {
+        case ROLES.WARDEN: {
             const hostelIds = await visitorRepository.findWardenHostelIds(user.id);
             if (!hostelIds || hostelIds.length === 0) {
                 throw createError('Unauthorized: Not assigned to any hostel.', 403);
@@ -553,7 +553,7 @@ export const getDashboardSummary = async (user) => {
             break;
         }
 
-        case 'parent': {
+        case ROLES.PARENT: {
             const studentIds = await visitorRepository.findParentStudentIds(user.id);
 
             if (studentIds.length === 0) {
@@ -577,7 +577,7 @@ export const getDashboardSummary = async (user) => {
             break;
         }
 
-        case 'student': {
+        case ROLES.STUDENT: {
             const { approved, pending, todaysVisits, total } = await visitorRepository.getStudentDashboardCounts(user.id, { today, endOfToday });
             cards.push(
                 { key: "my_approved_visitors", title: "My Approved Visitors", value: approved },
@@ -606,11 +606,11 @@ export const listVisitorVisits = async (query, user, explicitStudentId = null) =
 
     const where = {};
 
-    if (user.role === 'super_admin') {
+    if (user.role === ROLES.SUPER_ADMIN) {
         if (query.hostel) {
             where.hostelId = query.hostel;
         }
-    } else if (user.role === 'admin') {
+    } else if (user.role === ROLES.ADMIN) {
         const organizationId = user.organizationId || user.organization;
         if (organizationId) {
             where.visitStudents = {
@@ -620,13 +620,13 @@ export const listVisitorVisits = async (query, user, explicitStudentId = null) =
         if (query.hostel) {
             where.hostelId = query.hostel;
         }
-    } else if (user.role === 'warden') {
+    } else if (user.role === ROLES.WARDEN) {
         const wardenHostelIds = await visitorRepository.findWardenHostelIds(user.id);
         if (!wardenHostelIds || wardenHostelIds.length === 0) {
             throw createError('Unauthorized: You are not assigned to any hostel.', 403);
         }
         where.hostelId = { in: wardenHostelIds };
-    } else if (user.role === 'mentor') {
+    } else if (user.role === ROLES.MENTOR) {
         const batchIds = await visitorRepository.findMentorBatchIds(user.id);
         if (batchIds.length === 0) {
             return { total: 0, page, limit, totalPages: 0, data: [] };
@@ -637,7 +637,7 @@ export const listVisitorVisits = async (query, user, explicitStudentId = null) =
         if (query.hostel) {
             where.hostelId = query.hostel;
         }
-    } else if (user.role === 'parent' || explicitStudentId) {
+    } else if (user.role === ROLES.PARENT || explicitStudentId) {
         let authorizedStudentIds = [];
         const studentParentLinks = await visitorRepository.findParentStudentIds(user.id);
 
@@ -658,7 +658,7 @@ export const listVisitorVisits = async (query, user, explicitStudentId = null) =
         where.visitStudents = {
             some: { studentId: { in: authorizedStudentIds } }
         };
-    } else if (user.role === 'student') {
+    } else if (user.role === ROLES.STUDENT) {
         where.visitStudents = {
             some: { studentId: user.id }
         };
@@ -777,13 +777,13 @@ export const getVisitDetails = async (visitId, user, explicitStudentId = null) =
     const visitStudentIds = visit.visitStudents.map(vs => vs.student.id);
     let visibleStudentIds = [...visitStudentIds];
 
-    if (user.role === 'admin') {
+    if (user.role === ROLES.ADMIN) {
         const organizationId = user.organizationId || user.organization;
         const orgMatch = visit.visitStudents.some(vs => vs.student.organizationId === organizationId);
         if (!orgMatch) {
             throw createError('Unauthorized: Organization mismatch.', 403);
         }
-    } else if (user.role === 'warden') {
+    } else if (user.role === ROLES.WARDEN) {
         const wardenHostels = await prisma.hostel.findMany({
             where: { wardens: { some: { id: user.id } } },
             select: { id: true }
@@ -792,12 +792,12 @@ export const getVisitDetails = async (visitId, user, explicitStudentId = null) =
         if (!wardenHostelIds.includes(visit.hostelId)) {
             throw createError('Unauthorized: You are not assigned to this hostel.', 403);
         }
-    } else if (user.role === 'student') {
+    } else if (user.role === ROLES.STUDENT) {
         if (!visitStudentIds.includes(user.id)) {
             throw createError('Unauthorized: Visit not assigned to this student.', 403);
         }
         visibleStudentIds = [user.id];
-    } else if (user.role === 'parent' || explicitStudentId) {
+    } else if (user.role === ROLES.PARENT || explicitStudentId) {
         let authorizedStudentIds = [];
         const studentParentLinks = await prisma.studentParent.findMany({
             where: { parentId: user.id, status: 'active' }
@@ -821,7 +821,7 @@ export const getVisitDetails = async (visitId, user, explicitStudentId = null) =
 
     let maskedIdProofNumber = null;
     if (visitor && visitor.idProofNumber) {
-        if (['super_admin', 'admin'].includes(user.role)) {
+        if ([ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(user.role)) {
             maskedIdProofNumber = visitor.idProofNumber;
         } else {
             const num = visitor.idProofNumber;
@@ -902,7 +902,7 @@ export const getVisitDetails = async (visitId, user, explicitStudentId = null) =
 };
 
 export const getSuperAdminHostelVisits = async (query, user) => {
-    if (user.role !== 'super_admin') {
+    if (user.role !== ROLES.SUPER_ADMIN) {
         throw createError('Unauthorized role.', 403);
     }
 
@@ -976,7 +976,7 @@ export const getSuperAdminHostelVisits = async (query, user) => {
 // ============================================================================
 
 export const authorizeVisitRequest = async (visitRequestId, user) => {
-    if (!['super_admin', 'admin', 'mentor'].includes(user.role)) {
+    if (![ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MENTOR].includes(user.role)) {
         throw createError('Unauthorized role.', 403);
     }
 
@@ -986,7 +986,7 @@ export const authorizeVisitRequest = async (visitRequestId, user) => {
         throw createError('VisitRequest not found.', 404);
     }
 
-    if (user.role === 'super_admin') {
+    if (user.role === ROLES.SUPER_ADMIN) {
         return visitRequest;
     }
 
@@ -995,7 +995,7 @@ export const authorizeVisitRequest = async (visitRequestId, user) => {
         throw createError('VisitRequest student data not found for authorization.', 500);
     }
 
-    if (user.role === 'admin') {
+    if (user.role === ROLES.ADMIN) {
         const userOrgId = user.organizationId || user.organization;
         if (!student.organizationId || student.organizationId !== userOrgId) {
             throw createError('Student is outside your organization scope.', 403);
@@ -1003,7 +1003,7 @@ export const authorizeVisitRequest = async (visitRequestId, user) => {
         return visitRequest;
     }
 
-    if (user.role === 'mentor') {
+    if (user.role === ROLES.MENTOR) {
         const activeBatchIds = await visitorRepository.findMentorBatchIds(user.id);
         if (!student.batchId || !activeBatchIds.includes(student.batchId)) {
             throw createError('Student is not in your assigned active batches.', 403);
@@ -1121,7 +1121,7 @@ export const rejectVisitRequest = async (visitRequestId, reason, user) => {
 // ============================================================================
 
 export const checkInVisitor = async (payload, wardenUser) => {
-    if (wardenUser.role !== 'warden') {
+    if (wardenUser.role !== ROLES.WARDEN) {
         throw createError('Unauthorized: Only wardens can manage visits.', 403);
     }
 
@@ -1268,7 +1268,7 @@ export const checkInVisitor = async (payload, wardenUser) => {
 // ============================================================================
 
 export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
-    if (wardenUser.role !== 'warden') {
+    if (wardenUser.role !== ROLES.WARDEN) {
         throw createError('Unauthorized: Only wardens can manage visits.', 403);
     }
 
@@ -1415,7 +1415,7 @@ export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
             eventName: 'VISIT_STUDENT_ADDED',
             target: {
                 type: 'USER',
-                filter: { role: 'student', userIds: newStudentIds }
+                filter: { role: ROLES.STUDENT, userIds: newStudentIds }
             },
             data: notificationData,
             sender: notificationSender
@@ -1432,7 +1432,7 @@ export const addStudentsToVisit = async (visitId, payload, wardenUser) => {
 // ============================================================================
 
 export const getSuperAdminHostelVisitors = async (query, user) => {
-    if (user.role !== 'super_admin') {
+    if (user.role !== ROLES.SUPER_ADMIN) {
         throw createError('Unauthorized role.', 403);
     }
 
@@ -1513,7 +1513,7 @@ export const getSuperAdminHostelVisitors = async (query, user) => {
 // ============================================================================
 
 export const blacklistVisitor = async (visitorId, reason, user) => {
-    if (user.role !== 'super_admin') {
+    if (user.role !== ROLES.SUPER_ADMIN) {
         throw createError('Unauthorized role.', 403);
     }
 
@@ -1595,7 +1595,7 @@ export const blacklistVisitor = async (visitorId, reason, user) => {
             await orchestratorService.triggerNotification({
                 eventName: 'VISITOR_BLACKLISTED_SECURITY_ALERT',
                 target: [
-                    { type: 'ROLE', filter: { role: 'warden' } }
+                    { type: 'ROLE', filter: { role: ROLES.WARDEN } }
                 ],
                 data: {
                     visitorName: visitor.name,
@@ -1620,7 +1620,7 @@ export const blacklistVisitor = async (visitorId, reason, user) => {
 };
 
 export const removeBlacklistVisitor = async (visitorId, user) => {
-    if (user.role !== 'super_admin') {
+    if (user.role !== ROLES.SUPER_ADMIN) {
         throw createError('Unauthorized role.', 403);
     }
 
@@ -1726,7 +1726,7 @@ export const updateVisitorProfile = async (visitorId, payload, user, explicitStu
                 visitorId,
                 action: VISITOR_CHANGE_LOG_ACTIONS.UPDATED,
                 performedById: user.id,
-                performedByRole: 'parent',
+                performedByRole: ROLES.PARENT,
                 timestamp: new Date()
             }
         });
