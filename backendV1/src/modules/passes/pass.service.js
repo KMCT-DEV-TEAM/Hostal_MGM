@@ -1,3 +1,4 @@
+import { ROLES } from "../../constants/roles.js";
 import { prisma } from "../../config/prisma.js";
 import { parseISTDateStart, parseISTDateEnd, parseISTDateTime, getISTTimeStr } from "../../utils/date.util.js";
 
@@ -204,9 +205,9 @@ export const getPassDetails = async ({ passId, actor }) => {
 
   const whereClause = { id: passId };
 
-  if (role === "student") {
+  if (role === ROLES.STUDENT) {
     whereClause.studentId = actor.id;
-  } else if (role === "parent") {
+  } else if (role === ROLES.PARENT) {
     whereClause.student = {
       studentParents: {
         some: { parentId: actor.id }
@@ -267,7 +268,7 @@ export const getPassDetails = async ({ passId, actor }) => {
 
   // Tenant isolation (except for super admin)
   if (role !== "super_admin") {
-    if (role === "student") {
+    if (role === ROLES.STUDENT) {
       if (pass.student?.organizationId !== pass.organizationId) {
         const error = new Error("You don't have permission to view this pass.");
         error.statusCode = 403;
@@ -283,20 +284,20 @@ export const getPassDetails = async ({ passId, actor }) => {
   }
 
   // Role-specific authorization checks
-  if (role === "student") {
+  if (role === ROLES.STUDENT) {
     if (pass.studentId !== actor.id) {
       const error = new Error("You don't have permission to view this pass.");
       error.statusCode = 403;
       throw error;
     }
-  } else if (role === "parent") {
+  } else if (role === ROLES.PARENT) {
     const isLinked = pass.student?.studentParents?.some(sp => sp.parentId === actor.id);
     if (!isLinked) {
       const error = new Error("Forbidden. You do not have authorization to access this student's records.");
       error.statusCode = 403;
       throw error;
     }
-  } else if (role === "warden" || role === "assistant_warden") {
+  } else if (role === ROLES.WARDEN || role === "assistant_warden") {
     const wardenLink = await prisma.hostelWarden.findFirst({
       where: {
         userId: actor.id,
@@ -308,7 +309,7 @@ export const getPassDetails = async ({ passId, actor }) => {
       error.statusCode = 403;
       throw error;
     }
-  } else if (role === "mentor") {
+  } else if (role === ROLES.MENTOR) {
     const activeAssignments = await prisma.mentorAssignment.findMany({
       where: {
         mentorId: actor.id,
@@ -322,7 +323,7 @@ export const getPassDetails = async ({ passId, actor }) => {
       error.statusCode = 403;
       throw error;
     }
-  } else if (role === "admin" || role === "super_admin") {
+  } else if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
     // Admin and super admin have general organization-wide/global access.
   } else {
     const error = new Error("Access denied. Unauthorized role.");
@@ -459,12 +460,12 @@ export const updatePass = async ({ passId, actor, data }) => {
     throw error;
   }
 
-  if (userRole === "student" && pass.studentId !== userId) {
+  if (userRole === ROLES.STUDENT && pass.studentId !== userId) {
     const error = new Error("You do not have permission to modify this pass.");
     error.statusCode = 403;
     throw error;
   }
-  if (userRole === "parent" && pass.parentId !== userId) {
+  if (userRole === ROLES.PARENT && pass.parentId !== userId) {
     const error = new Error("You do not have permission to modify this pass.");
     error.statusCode = 403;
     throw error;
@@ -527,13 +528,13 @@ export const updatePass = async ({ passId, actor, data }) => {
   let resetParent = false;
   let resetAdmin = false;
 
-  if (userRole === "student") {
+  if (userRole === ROLES.STUDENT) {
     if (pass.status === "pending_admin" || pass.status === "approved") {
       resetParent = true;
       resetAdmin = true;
       newStatus = "pending_parent";
     }
-  } else if (userRole === "parent") {
+  } else if (userRole === ROLES.PARENT) {
     if (pass.status === "approved" || pass.status === "pending_admin") {
       resetAdmin = true;
       newStatus = "pending_admin";
@@ -569,7 +570,7 @@ export const updatePass = async ({ passId, actor, data }) => {
     await tx.passTimeline.create({
       data: {
         passId,
-        action: userRole === "student" ? "student_edited_leave" : "parent_edited_leave",
+        action: userRole === ROLES.STUDENT ? "student_edited_leave" : "parent_edited_leave",
         actorId: userId,
         actorRole: userRole,
         remarks: "Leave request modified."
@@ -667,12 +668,12 @@ export const cancelPass = async ({ passId, actor, data }) => {
     throw error;
   }
 
-  if (userRole === "student" && pass.studentId !== userId) {
+  if (userRole === ROLES.STUDENT && pass.studentId !== userId) {
     const error = new Error("You do not have permission to cancel this pass.");
     error.statusCode = 403;
     throw error;
   }
-  if (userRole === "parent") {
+  if (userRole === ROLES.PARENT) {
     const parentLink = await prisma.studentParent.findFirst({
       where: { parentId: userId, studentId: pass.studentId }
     });
@@ -682,7 +683,7 @@ export const cancelPass = async ({ passId, actor, data }) => {
       throw error;
     }
   }
-  if (userRole === "warden" || userRole === "assistant_warden") {
+  if (userRole === ROLES.WARDEN || userRole === "assistant_warden") {
     const wardenLink = await prisma.hostelWarden.findFirst({
       where: { userId: userId, hostelId: pass.hostelId }
     });
@@ -692,7 +693,7 @@ export const cancelPass = async ({ passId, actor, data }) => {
       throw error;
     }
   }
-  if (userRole === "mentor") {
+  if (userRole === ROLES.MENTOR) {
     const activeAssignments = await prisma.mentorAssignment.findMany({
       where: { mentorId: userId, status: "ACTIVE" },
       select: { batchId: true }
@@ -704,7 +705,7 @@ export const cancelPass = async ({ passId, actor, data }) => {
       throw error;
     }
   }
-  if (userRole === "admin") {
+  if (userRole === ROLES.ADMIN) {
     if (actor.organizationId !== pass.organizationId) {
       const error = new Error("You don't have permission to cancel this pass.");
       error.statusCode = 403;
@@ -728,10 +729,10 @@ export const cancelPass = async ({ passId, actor, data }) => {
     await tx.passTimeline.create({
       data: {
         passId,
-        action: (userRole === "student" || userRole === "parent") ? "cancelled" : "admin_cancelled",
+        action: (userRole === ROLES.STUDENT || userRole === ROLES.PARENT) ? "cancelled" : "admin_cancelled",
         actorId: userId,
         actorRole: userRole,
-        remarks: (userRole === "student" || userRole === "parent") ? "Cancelled by user." : remarks
+        remarks: (userRole === ROLES.STUDENT || userRole === ROLES.PARENT) ? "Cancelled by user." : remarks
       }
     });
 
@@ -1086,7 +1087,7 @@ export const approvePassAsAdmin = async ({ passId, actor, remarks }) => {
         passId,
         action: "admin_approved",
         actorId: adminId,
-        actorRole: role === "super_admin" ? "super_admin" : "admin",
+        actorRole: role === ROLES.SUPER_ADMIN ? "super_admin" : "admin",
         remarks: remarks || "Approved by admin"
       }
     });
@@ -1145,7 +1146,7 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
 
   let where = { isActive: true };
 
-  if (scope.role === "mentor") {
+  if (scope.role === ROLES.MENTOR) {
     const studentsInBatches = await prisma.student.findMany({
       where: {
         batchId: { in: scope.batchIds },
@@ -1165,7 +1166,7 @@ export const getManagementHostelsDb = async (scope, query = {}) => {
     const validHostelIds = allocations.map(a => a.hostelId);
 
     where.id = { in: validHostelIds };
-  } else if (scope.role === "admin" && scope.organizationId) {
+  } else if (scope.role === ROLES.ADMIN && scope.organizationId) {
     const orgHostels = await prisma.hostelOrganization.findMany({
       where: { organizationId: scope.organizationId },
       select: { hostelId: true }
@@ -1271,7 +1272,10 @@ export const getManagementHostelPassesDb = async (query, scope, hostelId) => {
   const sortField = ["createdAt", "fromDate"].includes(query.sortBy) ? query.sortBy : "createdAt";
   const sortDir = query.sortOrder === "asc" ? "asc" : "desc";
 
-  const where = { hostelId };
+  const where = {};
+  if (hostelId) {
+    where.hostelId = hostelId;
+  }
 
   if (query.status) {
     where.status = query.status;
@@ -1289,12 +1293,12 @@ export const getManagementHostelPassesDb = async (query, scope, hostelId) => {
   }
 
   // Mentor student scope
-  if (scope.role === "mentor") {
+  if (scope.role === ROLES.MENTOR) {
     where.student = {
       ...where.student,
       batchId: { in: scope.batchIds }
     };
-  } else if (scope.role === "admin") {
+  } else if (scope.role === ROLES.ADMIN) {
     where.organizationId = scope.organizationId;
   }
 
@@ -1385,7 +1389,7 @@ export const getManagementDashboardStatsDb = async (scope) => {
   endOfToday.setHours(23, 59, 59, 999);
 
   let matchQuery = {};
-  if (scope.role === "admin" && scope.organizationId) {
+  if (scope.role === ROLES.ADMIN && scope.organizationId) {
     matchQuery = {
       student: { organizationId: scope.organizationId }
     };
@@ -1432,9 +1436,9 @@ export const getManagementDashboardStatsDb = async (scope) => {
     prisma.pass.count({ where: { ...matchQuery, passType: "out_pass" } }),
     prisma.pass.count({ where: { ...matchQuery, passType: "out_pass", outPassCategory: "in_house" } }),
     prisma.pass.count({ where: { ...matchQuery, passType: "out_pass", outPassCategory: "out_house" } }),
-    scope.role === "super_admin" ? prisma.organization.count({ where: { isActive: true } }) : Promise.resolve(0),
-    scope.role === "super_admin" ? prisma.hostel.count({ where: { isActive: true } }) : Promise.resolve(0),
-    scope.role === "super_admin" ? prisma.student.count({ where: { isActive: true } }) : Promise.resolve(0),
+    scope.role === ROLES.SUPER_ADMIN ? prisma.organization.count({ where: { isActive: true } }) : Promise.resolve(0),
+    scope.role === ROLES.SUPER_ADMIN ? prisma.hostel.count({ where: { isActive: true } }) : Promise.resolve(0),
+    scope.role === ROLES.SUPER_ADMIN ? prisma.student.count({ where: { isActive: true } }) : Promise.resolve(0),
   ]);
 
   const response = {
@@ -1452,7 +1456,7 @@ export const getManagementDashboardStatsDb = async (scope) => {
     outHouseCount,
   };
 
-  if (scope.role === "super_admin") {
+  if (scope.role === ROLES.SUPER_ADMIN) {
     response.totalOrganizations = totalOrganizations;
     response.totalHostels = totalHostels;
     response.totalStudents = totalStudents;
@@ -1620,7 +1624,7 @@ export const rejectManagementPassDb = async (passId, scope, remarks) => {
       throw error;
     }
 
-    if (scope.role === "admin") {
+    if (scope.role === ROLES.ADMIN) {
       if (!pass.hostel || pass.organizationId !== scope.organizationId) {
         const error = new Error("You don't have permission to reject passes for this hostel.");
         error.statusCode = 403;

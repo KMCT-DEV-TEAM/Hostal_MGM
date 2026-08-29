@@ -40,7 +40,7 @@ const LeaveCard = ({ data, onEdit }) => {
 
     return (
         <div
-            onClick={() => navigate(`/dashboard/leaves/details/${data._id}`)}
+            onClick={() => navigate(`/dashboard/leaves/details/${data.id ?? data._id}`)}
             className="bg-white rounded-2xl p-5 border border-gray-50 shadow-sm flex flex-col gap-4 active:scale-[0.98] transition-transform cursor-pointer"
         >
             {/* Header */}
@@ -92,7 +92,7 @@ const LeaveCard = ({ data, onEdit }) => {
                         size='sm'
                         onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/dashboard/leaves/details/${data._id}`);
+                            navigate(`/dashboard/leaves/details/${data.id ?? data._id}`);
                         }}
                         className="rounded-xl"
                     >

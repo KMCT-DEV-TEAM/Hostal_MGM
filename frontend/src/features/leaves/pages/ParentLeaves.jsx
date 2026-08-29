@@ -136,9 +136,9 @@ export default function ParentLeaves() {
             };
 
             if (actionType === 'approved') {
-                await leaveService.approveLeaveByParent(request._id, payload);
+                await leaveService.approveLeaveByParent(request.id ?? request._id, payload);
             } else if (actionType === 'rejected') {
-                await leaveService.rejectLeaveByParent(request._id, payload);
+                await leaveService.rejectLeaveByParent(request.id ?? request._id, payload);
             }
 
             showSuccessToast(`Pass ${actionType} successfully`);
@@ -361,7 +361,7 @@ export default function ParentLeaves() {
                             onSearchChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                             searchPlaceholder="Search requests..."
                             canSelect={false}
-                            onRowClick={(item) => setViewId(item._id)}
+                            onRowClick={(item) => setViewId(item.id ?? item._id)}
                             toolbarEndSlot={toolbarEndSlot}
                             page={page}
                             setPage={setPage}
