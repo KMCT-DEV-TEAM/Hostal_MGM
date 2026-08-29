@@ -6,6 +6,12 @@ const errorMiddleware = (err, req, res, next) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || "Internal Server Error";
 
+  // Body-parser JSON syntax error (e.g. empty body or invalid JSON)
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    statusCode = 400;
+    message = "Invalid or empty JSON payload in request body.";
+  }
+
   // Prisma unique constraint violation
   if (err.code === "P2002") {
     statusCode = 400;
