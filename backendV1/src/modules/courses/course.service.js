@@ -76,7 +76,7 @@ export const getCoursesService = async (query, user) => {
   };
 };
 
-export const toggleCourseStatusService = async (id, user) => {
+export const toggleCourseStatusService = async (id, user, statusData = {}) => {
   const course = await prisma.course.findUnique({ where: { id } });
   
   if (!course) {
@@ -88,9 +88,21 @@ export const toggleCourseStatusService = async (id, user) => {
     throw new Error('Unauthorized');
   }
 
+  const { isActive, status } = statusData;
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !course.isActive;
+  }
+
   return prisma.course.update({
     where: { id },
-    data: { isActive: !course.isActive }
+    data: { isActive: newIsActive }
   });
 };
 

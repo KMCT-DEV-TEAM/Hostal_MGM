@@ -98,7 +98,7 @@ export const getBatchesService = async (queryParams, user) => {
   };
 };
 
-export const toggleBatchStatusService = async (id, user) => {
+export const toggleBatchStatusService = async (id, user, statusData = {}) => {
   const batch = await prisma.batch.findUnique({
     where: { id },
     include: { department: { include: { course: true } } }
@@ -112,9 +112,21 @@ export const toggleBatchStatusService = async (id, user) => {
     throw new Error('Unauthorized');
   }
 
+  const { isActive, status } = statusData;
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !batch.isActive;
+  }
+
   return prisma.batch.update({
     where: { id },
-    data: { isActive: !batch.isActive }
+    data: { isActive: newIsActive }
   });
 };
 

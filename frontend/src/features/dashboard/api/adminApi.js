@@ -13,8 +13,8 @@ const adminApi = {
   updateEmail: (id, payload) =>
     api.patch(`/super-admin/${id}/email`, payload),
 
-  toggleStatus: (id) =>
-    api.patch(`/super-admin/admins/${id}/toggle-status`),
+  toggleStatus: (id, payload) =>
+    api.patch(`/super-admin/admins/${id}/toggle-status`, payload),
 
   bulkToggleStatus: (payload) =>
     api.post(`/super-admin/admins/bulk-toggle-status`, payload),

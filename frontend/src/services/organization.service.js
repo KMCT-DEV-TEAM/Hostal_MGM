@@ -41,8 +41,8 @@ export async function updateOrganization(id, payload) {
  * Toggle Organization active/inactive status
  * @param {string} id 
  */
-export async function toggleStatus(id) {
-  const response = await organizationApi.toggleStatus(id);
+export async function toggleStatus(id, payload) {
+  const response = await organizationApi.toggleStatus(id, payload);
   return response.data;
 }
 

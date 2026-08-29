@@ -120,13 +120,15 @@ const updateUserDb = async (id, data) => {
   return user;
 };
 
-const toggleUserActiveStatusByRoleDb = async (id, role) => {
+const toggleUserActiveStatusByRoleDb = async (id, role, targetIsActive) => {
   const user = await User.findOne({ _id: id, role });
   if (!user) return null;
 
+  const newIsActive = typeof targetIsActive === "boolean" ? targetIsActive : !user.isActive;
+
   const updatedUser = await User.findOneAndUpdate(
     { _id: id, role },
-    { $set: { isActive: !user.isActive } },
+    { $set: { isActive: newIsActive } },
     { new: true, runValidators: true }
   );
 

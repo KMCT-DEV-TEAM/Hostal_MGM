@@ -310,11 +310,26 @@ export const updateAssistantWardenHostel = asyncHandler(async (req, res) => {
 
 export const toggleAssistantWardenStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { isActive, status } = req.body || {};
   const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) {
+    return sendError(res, 404, "User not found");
+  }
   
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !user.isActive;
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: { isActive: !user.isActive }
+    data: { isActive: newIsActive }
   });
 
   return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
@@ -469,17 +484,33 @@ export const updateAdminOrganization = asyncHandler(async (req, res) => {
 
 export const toggleAdminStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { isActive, status } = req.body || {};
 
   const admin = await prisma.user.findUnique({ where: { id } });
   if (!admin) {
     return sendError(res, 404, "Admin not found");
   }
 
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !admin.isActive;
+  }
+
   const updatedAdmin = await prisma.user.update({
     where: { id },
-    data: { isActive: !admin.isActive },
+    data: { isActive: newIsActive },
     include: { organization: true },
   });
+
+  if (!updatedAdmin.isActive) {
+    getIo()?.to(id.toString()).emit("accountDeactivated");
+  }
 
   getIo()?.emit('userUpdated', { role: 'admin', id: updatedAdmin.id });
 
@@ -722,11 +753,26 @@ export const updateWardenHostel = asyncHandler(async (req, res) => {
 
 export const toggleWardenStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { isActive, status } = req.body || {};
   const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) {
+    return sendError(res, 404, "User not found");
+  }
   
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !user.isActive;
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: { isActive: !user.isActive }
+    data: { isActive: newIsActive }
   });
 
   return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
@@ -892,15 +938,27 @@ export const updateMaintenanceStaff = asyncHandler(async (req, res) => {
 
 export const toggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { isActive, status } = req.body || {};
   const user = await prisma.user.findUnique({ where: { id } });
   
   if (!user) {
     return sendError(res, 404, "User not found");
   }
 
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !user.isActive;
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: { isActive: !user.isActive }
+    data: { isActive: newIsActive }
   });
 
   const io = getIo();

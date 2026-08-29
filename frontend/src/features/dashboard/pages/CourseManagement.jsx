@@ -141,8 +141,8 @@ const CourseManagement = () => {
         };
     }, []);
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -150,13 +150,21 @@ const CourseManagement = () => {
         if (!statusToUpdate) return;
         setIsStatusUpdating(true);
         try {
-            await CourseService.toggleStatus(statusToUpdate.id);
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            await CourseService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
             // Re-fetch or locally update the status
             setcourses((prevcourses) =>
                 prevcourses.map((course) =>
-                    course.id === statusToUpdate.id ? { ...course, isActive: !course.isActive } : course
+                    course.id === statusToUpdate.id ? { ...course, isActive: isTargetActive } : course
                 )
             );
+            fetchCourses();
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
             showSuccessToast('Status Updated', 'Course status changed successfully');
@@ -476,7 +484,7 @@ const CourseManagement = () => {
                 onConfirm={confirmStatusChange}
                 isSubmitting={isStatusUpdating}
                 title="Change Status"
-                message="Are you sure you want to change the status of this Course?"
+                message={`Are you sure you want to change the status of this Course to ${statusToUpdate?.targetStatus || 'the new status'}?`}
             />
 
 
