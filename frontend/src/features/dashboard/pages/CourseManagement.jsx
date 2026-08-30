@@ -182,15 +182,15 @@ const CourseManagement = () => {
             setEditingId(course.id);
 
             // Extract suffix code
-            const orgId = course.organizationId?.id || course.organizationId;
-            const org = organizations.find(o => o.id === orgId);
-            const prefix = org ? `${org.code}-` : '';
+            const orgIdValue = course.organizationId?.id || course.organizationId;
+            const orgCode = course.organization?.code || (organizations.find(o => o.id === orgIdValue)?.code);
+            const prefix = orgCode ? `${orgCode}-` : '';
             const suffixCode = course.code?.startsWith(prefix) ? course.code.substring(prefix.length) : course.code;
 
             setFormData({
                 name: course.name || '',
                 code: suffixCode || '',
-                organizationId: orgId || '',
+                organizationId: orgIdValue || '',
                 status: course.isActive ? 'Active' : 'Inactive',
                 isActive: course.isActive,
                 originalIsActive: course.isActive
