@@ -1,4 +1,10 @@
 import nodemailer from "nodemailer";
+import dns from "node:dns";
+
+// Force IPv4 DNS resolution across Node to prevent ENETUNREACH in cloud environments (like Render)
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 const getTransporter = () => {
   const user = (process.env.EMAIL_USER || "").trim();
@@ -13,14 +19,15 @@ const getTransporter = () => {
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // SSL on port 465 is the most reliable across cloud platforms
+    secure: true, // SSL on port 465
+    family: 4,    // Force IPv4 address to avoid ENETUNREACH on IPv6 in cloud hosts
     auth: {
       user,
       pass,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
   });
 };
 
