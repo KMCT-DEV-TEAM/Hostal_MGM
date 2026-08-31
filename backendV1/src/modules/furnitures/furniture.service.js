@@ -115,8 +115,7 @@ export const createFurnitureTypeService = async (data, openingStock, actor) => {
       });
     }
 
-    // Map `id` to `_id` to maintain Mongoose `.lean()` structure equivalent
-    return { ...newType, _id: newType.id };
+    return newType;
   });
 };
 
@@ -414,7 +413,7 @@ export const deleteFurnitureTypeService = async (typeId, actor) => {
         performedByRole: actor.role,
         remarks: "Deleted Type cascade",
       }));
-      
+
       await tx.furnitureAssetHistory.createMany({
         data: timelines
       });
@@ -489,7 +488,7 @@ export const getFurnitureTypeDistributionService = async (matchQuery) => {
   });
 
   return distributionRaw.map(d => ({
-    _id: typeMap.get(d.furnitureTypeId),
+    id: d.furnitureTypeId,
     count: d._count._all
   }));
 };
@@ -512,28 +511,28 @@ export const getFurnitureAssetsListService = async (matchQuery, skip, limit) => 
   });
 
   return assets.map(asset => ({
-    _id: asset.id,
+    id: asset.id,
     furnitureId: asset.furnitureId,
     furnitureTypeId: asset.furnitureTypeId,
     typeInfo: asset.furnitureType ? {
-      _id: asset.furnitureType.id,
+      id: asset.furnitureType.id,
       name: asset.furnitureType.name,
       prefix: asset.furnitureType.prefix
     } : null,
     organization: asset.furnitureType?.organization ? {
-      _id: asset.furnitureType.organization.id,
+      id: asset.furnitureType.organization.id,
       name: asset.furnitureType.organization.name
     } : null,
     hostel: asset.furnitureType?.hostel ? {
-      _id: asset.furnitureType.hostel.id,
+      id: asset.furnitureType.hostel.id,
       name: asset.furnitureType.hostel.name
     } : null,
-    status: asset.status.toLowerCase(), // Re-lowercase for frontend compatibility
+    status: asset.status.toLowerCase(),
     remarks: asset.remarks,
     createdAt: asset.createdAt,
     updatedAt: asset.updatedAt,
     studentId: asset.student ? {
-      _id: asset.student.id,
+      id: asset.student.id,
       name: asset.student.name,
       admissionNo: asset.student.admissionNo
     } : null
@@ -576,7 +575,7 @@ export const getFurnitureTypesListService = async (matchQuery, skip, limit) => {
     }
     const status = group.status.toLowerCase();
     const count = group._count._all;
-    
+
     if (countMap[group.furnitureTypeId][status] !== undefined) {
       countMap[group.furnitureTypeId][status] = count;
       if (['available', 'allocated', 'maintenance'].includes(status)) {
@@ -591,14 +590,14 @@ export const getFurnitureTypesListService = async (matchQuery, skip, limit) => {
     };
 
     return {
-      _id: type.id,
+      id: type.id,
       name: type.name,
       prefix: type.prefix,
       description: type.description,
       isActive: type.isActive,
       createdAt: type.createdAt,
-      organization: type.organization ? { _id: type.organization.id, name: type.organization.name } : null,
-      hostel: type.hostel ? { _id: type.hostel.id, name: type.hostel.name } : null,
+      organization: type.organization ? { id: type.organization.id, name: type.organization.name } : null,
+      hostel: type.hostel ? { id: type.hostel.id, name: type.hostel.name } : null,
       ...counts
     };
   });
@@ -607,7 +606,7 @@ export const getFurnitureTypesListService = async (matchQuery, skip, limit) => {
 export const changeLifecycleStatusService = async (asset, newStatus, actionName, actor, remarks) => {
   return await prisma.$transaction(async (tx) => {
     const updateData = { status: newStatus, updatedById: actor.id };
-    
+
     if (["AVAILABLE", "MAINTENANCE", "SCRAP"].includes(newStatus)) {
       updateData.studentId = null;
     }
@@ -653,7 +652,7 @@ export const getFurnitureAssetDetailsService = async (assetId) => {
   if (!asset) return null;
 
   return {
-    _id: asset.id,
+    id: asset.id,
     furnitureId: asset.furnitureId,
     status: asset.status.toLowerCase(),
     createdAt: asset.createdAt,
@@ -665,15 +664,15 @@ export const getFurnitureAssetDetailsService = async (assetId) => {
       assignedDate: asset.updatedAt
     } : null,
     timeline: asset.histories.map(h => ({
-      _id: h.id,
+      id: h.id,
       action: h.action,
       previousStatus: h.previousStatus ? h.previousStatus.toLowerCase() : null,
       currentStatus: h.currentStatus ? h.currentStatus.toLowerCase() : null,
       remarks: h.remarks,
       createdAt: h.createdAt,
       student: h.student ? {
-        name: h.student.name,
-        _id: h.student.id
+        id: h.student.id,
+        name: h.student.name
       } : null,
       performedBy: h.performedBy ? {
         name: h.performedBy.name,

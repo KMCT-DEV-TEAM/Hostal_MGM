@@ -98,18 +98,30 @@ export const validateAllocate = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "No assets provided." });
     }
 
-    const student = await prisma.student.findUnique({ where: { id: studentId } });
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        studentHostels: {
+          where: { status: "active" },
+          take: 1
+        }
+      }
+    });
+
     if (!student) {
       return res.status(404).json({ success: false, message: "Student Not Found" });
     }
 
     if (!student.isActive) {
-      return res.status(400).json({ success: false, message: `Student ${student.name || student.firstName} is inactive.` });
+      return res.status(400).json({ success: false, message: `Student ${student.name || student.firstName || ""} is inactive.` });
     }
 
-    if (!student.hostelId) {
-      return res.status(400).json({ success: false, message: `Student ${student.name || student.firstName} is not assigned to a hostel. Please assign a hostel to this student first.` });
+    const activeAllocation = student.studentHostels?.[0];
+    if (!activeAllocation || !activeAllocation.hostelId) {
+      return res.status(400).json({ success: false, message: `Student ${student.name || student.firstName || ""} is not assigned to a hostel. Please assign a hostel to this student first.` });
     }
+
+    student.hostelId = activeAllocation.hostelId;
 
     const validatedAssets = [];
 

@@ -1,0 +1,297 @@
+components:
+  schemas:
+    Furniture_CreateTypeRequest:
+      type: object
+      required:
+        - name
+        - prefix
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Name of the furniture type (e.g. Study Table, Wooden Bed).
+          example: "Wooden Chair"
+        prefix:
+          type: string
+          maxLength: 10
+          description: Unique prefix code without spaces (e.g. CHR, TBL, BED).
+          example: "CHR"
+        description:
+          type: string
+          description: Detailed description of the furniture type.
+          example: "Standard ergonomics wooden study chair with cushion"
+        openingStock:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          default: 0
+          description: Initial number of assets to auto-generate upon creation.
+          example: 25
+        isActive:
+          type: boolean
+          default: true
+          description: Whether this furniture type is active.
+          example: true
+        organizationId:
+          type: string
+          format: uuid
+          description: Organization ID (Admin scope auto-injects if omitted).
+          example: "a1b2c3d4-e5f6-7890-abcd-1234567890ab"
+        hostelId:
+          type: string
+          format: uuid
+          description: Hostel ID (Warden scope auto-injects if omitted).
+          example: "b2c3d4e5-f6a7-8901-bcde-234567890abc"
+
+    Furniture_UpdateTypeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: "Executive Wooden Chair"
+        prefix:
+          type: string
+          maxLength: 10
+          description: Prefix can only be changed if no allocated assets exist.
+          example: "ECHR"
+        description:
+          type: string
+          example: "Updated premium study chair"
+        isActive:
+          type: boolean
+          example: true
+
+    Furniture_AdjustCountRequest:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          minimum: 0
+          description: Total target count of furniture assets for this type.
+          example: 30
+
+    Furniture_AllocateRequest:
+      type: object
+      required:
+        - studentId
+      properties:
+        studentId:
+          type: string
+          format: uuid
+          description: UUID of the student to receive the furniture asset(s).
+          example: "c3d4e5f6-a7b8-9012-cdef-34567890abcd"
+        assetId:
+          type: string
+          format: uuid
+          description: UUID of single furniture asset to allocate.
+          example: "d4e5f6a7-b8c9-0123-defa-4567890abcde"
+        assetIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of UUIDs of furniture assets to bulk allocate.
+          example: ["d4e5f6a7-b8c9-0123-defa-4567890abcde", "e5f6a7b8-c9d0-1234-efab-567890abcdef"]
+
+    Furniture_ChangeStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [available, maintenance, inactive, lost, scrap]
+          description: New lifecycle status for unallocated furniture asset.
+          example: "maintenance"
+        remarks:
+          type: string
+          description: Optional explanation or notes for the status change.
+          example: "Leg broken, sent for wood repair"
+
+    Furniture_TypeItem:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Study Desk"
+        prefix:
+          type: string
+          example: "SDK"
+        description:
+          type: string
+          example: "Standard room desk"
+        isActive:
+          type: boolean
+          example: true
+        totalAssets:
+          type: integer
+          example: 50
+        organizationId:
+          type: object
+          properties:
+            _id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        hostelId:
+          type: object
+          properties:
+            _id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Furniture_ActiveTypeItem:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Study Desk"
+        prefix:
+          type: string
+          example: "SDK"
+
+    Furniture_AssetItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "d4e5f6a7-b8c9-0123-defa-4567890abcde"
+        furnitureId:
+          type: string
+          example: "SDK-0001"
+        status:
+          type: string
+          enum: [AVAILABLE, ALLOCATED, MAINTENANCE, LOST, SCRAP, INACTIVE]
+          example: "AVAILABLE"
+        condition:
+          type: string
+          example: "GOOD"
+        remarks:
+          type: string
+          nullable: true
+          example: null
+        furnitureTypeId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        hostelId:
+          type: string
+          format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-234567890abc"
+        studentId:
+          type: string
+          format: uuid
+          nullable: true
+          example: null
+        allocatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        returnedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Furniture_AvailableAssetItem:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+          example: "d4e5f6a7-b8c9-0123-defa-4567890abcde"
+        furnitureId:
+          type: string
+          example: "SDK-0001"
+
+    Furniture_DashboardSummaryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Dashboard data retrieved."
+        data:
+          type: object
+          properties:
+            summary:
+              type: object
+              properties:
+                totalTypes:
+                  type: integer
+                  example: 5
+                totalAssets:
+                  type: integer
+                  example: 200
+                availableAssets:
+                  type: integer
+                  example: 150
+                allocatedAssets:
+                  type: integer
+                  example: 40
+                maintenanceAssets:
+                  type: integer
+                  example: 5
+                lostAssets:
+                  type: integer
+                  example: 2
+                scrapAssets:
+                  type: integer
+                  example: 3
+                inactiveAssets:
+                  type: integer
+                  example: 0
+            distribution:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  prefix:
+                    type: string
+                  totalCount:
+                    type: integer
+                  availableCount:
+                    type: integer
+                  allocatedCount:
+                    type: integer
+                  maintenanceCount:
+                    type: integer
