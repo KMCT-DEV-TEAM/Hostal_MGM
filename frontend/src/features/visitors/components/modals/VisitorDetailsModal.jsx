@@ -208,7 +208,16 @@ export default function VisitorDetailsModal({
     if (!visitor) return null;
 
     const visitorName = visitor.visitorName || visitor.name;
-    const linkedStudents = visitor.linkedStudents || visitor.students || [];
+    const linkedStudents = visitor.visitRequests?.map(req => ({
+        ...req.student,
+        id: req.id,
+        studentId: req.studentId,
+        relationship: req.relationship,
+        requestStatus: req.status,
+        date: req.createdAt,
+        purpose: req.purpose,
+        remarks: req.remarks
+    })) || visitor.linkedStudents || visitor.students || [];
     const studentNames = linkedStudents.length > 0 ? linkedStudents.map(s => s.name).join(', ') : '';
     const subtitle = `Linked to: ${studentNames || 'N/A'}`;
 

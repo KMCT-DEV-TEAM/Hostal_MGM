@@ -13,7 +13,7 @@ export const visitorApi = {
     getParentVisitors: (params) => api.get(`${BASE_URL}/parent/visitors`, { params }),
 
     // 3. List Student Visitors
-    getStudentVisitors: (params) => api.get(`${BASE_URL}/student/visitors`, { params }),
+    getStudentVisitors: (params) => api.get(`${BASE_URL}`, { params }),
 
     // 4. List All Visitors (Management)
     getAllVisitors: (params) => api.get(BASE_URL, { params }),
