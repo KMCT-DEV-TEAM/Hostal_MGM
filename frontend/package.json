@@ -7,7 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "serve -s dist -p ${PORT:-3000}"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -24,6 +25,7 @@
     "react-qr-code": "^2.2.0",
     "react-router-dom": "^7.17.0",
     "recharts": "^3.8.1",
+    "serve": "^14.2.4",
     "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.25",
     "tailwind-scrollbar": "^4.0.2",
