@@ -394,7 +394,11 @@ export default function HostelManagement() {
 
     const openEditHostelModal = (hostel) => {
         setEditingHostel(hostel);
-        setHostelForm({ ...hostel, hosteltype: hostel.hosteltype || hostel.hostelType?.toLowerCase() });
+        setHostelForm({ 
+            ...hostel, 
+            hosteltype: hostel.hosteltype || hostel.hostelType?.toLowerCase(),
+            status: hostel.isActive ? 'Active' : 'Inactive'
+        });
         setActiveModal('hostel');
     };
 
