@@ -295,7 +295,7 @@ export default function VisitorDetailsModal({
                         title="Visitor Information"
                         subtitle="Basic personal details"
                         headerAction={
-                            visitor.status === 'Active' && user?.role === ROLES.WARDEN && (
+                            visitor.status === 'ACTIVE' && user?.role === ROLES.WARDEN && (
                                 <Button
                                     size="sm"
                                     fullWidth={false}

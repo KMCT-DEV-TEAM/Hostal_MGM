@@ -283,8 +283,8 @@ const VisitorHistoryPage = () => {
                         label: "Status",
                         options: [
                             { label: 'All Status', value: '' },
-                            { label: 'Checked In', value: 'Checked In' },
-                            { label: 'Completed', value: 'Completed' },
+                            { label: 'Checked In', value: 'CHECKED_IN' },
+                            { label: 'Completed', value: 'COMPLETED' },
                         ]
                     },
                     {
