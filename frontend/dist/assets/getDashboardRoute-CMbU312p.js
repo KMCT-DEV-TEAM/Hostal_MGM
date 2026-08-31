@@ -1,0 +1,1 @@
+import{h as a}from"./index-B19PsTWD.js";const r=e=>{switch(e){case a.SUPER_ADMIN:case a.ADMIN:case a.WARDEN:case a.ASSISTANT_WARDEN:case a.STUDENT:case a.MAINTENANCE_STAFF:return"/dashboard";default:return"/user/login"}};export{r as g};
