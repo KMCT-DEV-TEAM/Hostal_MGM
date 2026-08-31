@@ -16,13 +16,8 @@ export const NotificationType = {
 
 export const NotificationStatus = {
   PENDING: 'PENDING',
-  QUEUED: 'QUEUED',
-  PROCESSING: 'PROCESSING',
-  SENT: 'SENT',
   DELIVERED: 'DELIVERED',
-  READ: 'READ',
-  FAILED: 'FAILED',
-  RETRYING: 'RETRYING'
+  FAILED: 'FAILED'
 };
 
 export const RecipientModel = {

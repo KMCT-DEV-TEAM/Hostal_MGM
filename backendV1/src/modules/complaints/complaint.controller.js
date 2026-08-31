@@ -4,7 +4,7 @@ import * as complaintService from './complaint.service.js';
 import { createLogDb } from '../logs/log.service.js';
 import { getIo } from '../../config/socket.js';
 import { orchestratorService } from '../notification/services/orchestrator.service.js';
-import { buildSender } from '../notifications/utils/sender.util.js';
+import { buildSender } from '../notification/utils/sender.util.js';
 import { prisma } from '../../config/prisma.js';
 
 // @desc    Create a new complaint

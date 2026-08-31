@@ -59,7 +59,11 @@ class TemplateService {
             throw new Error(`No templates registered for event: ${eventName}`);
         }
 
-        const audienceTemplates = eventTemplates[audience];
+        let audienceTemplates = eventTemplates[audience];
+        if (!audienceTemplates && typeof audience === 'string') {
+            audienceTemplates = eventTemplates[audience.toUpperCase()] || eventTemplates[audience.toLowerCase()];
+        }
+
         if (!audienceTemplates) {
             return null;
         }

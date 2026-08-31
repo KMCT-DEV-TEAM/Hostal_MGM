@@ -1,9 +1,14 @@
 import { logger } from '../../../utils/logger.js';
 import { isRetryableError } from '../utils/retry.util.js';
+import { InAppProvider } from '../providers/inApp.provider.js';
+import { PushProvider } from '../providers/push.provider.js';
 
 class DispatcherService {
     constructor() {
         this.providers = new Map();
+        // Register default channel providers
+        this.registerProvider('in-app', new InAppProvider());
+        this.registerProvider('push', new PushProvider());
     }
 
     /**
@@ -14,6 +19,7 @@ class DispatcherService {
             throw new Error(`Provider for channel '${channel}' must implement an async send() method.`);
         }
         this.providers.set(channel, provider);
+        console.log(`[Notification DEBUG - Dispatcher] Registered provider for channel: '${channel}'`);
     }
 
     _getTimeout(channel) {
@@ -64,9 +70,11 @@ class DispatcherService {
      * Dispatches the notification payload using the appropriate provider.
      */
     async dispatch(channel, payload, recipientDetails) {
+        console.log(`[Notification DEBUG - Dispatcher] Dispatching channel [${channel}] to recipient [${recipientDetails?.id}] (${recipientDetails?.recipientType})`);
         const provider = this.providers.get(channel);
 
         if (!provider) {
+            console.error(`[Notification DEBUG - Dispatcher] ❌ NO provider registered for channel: [${channel}]. Available providers:`, Array.from(this.providers.keys()));
             throw new Error(`No provider registered for channel: ${channel}`);
         }
 
@@ -78,8 +86,10 @@ class DispatcherService {
         while (attempt <= MAX_RETRIES) {
             try {
                 const result = await this._executeWithTimeout(provider, payload, recipientDetails, timeoutMs, channel);
+                console.log(`[Notification DEBUG - Dispatcher] ✅ Dispatch SUCCESS for channel [${channel}] to recipient [${recipientDetails?.id}]`);
                 return this._standardizeResponse(channel, result);
             } catch (error) {
+                console.error(`[Notification DEBUG - Dispatcher] ❌ Dispatch ERROR for channel [${channel}] to recipient [${recipientDetails?.id}]:`, error.message);
                 if (!isRetryableError(error, policy)) {
                     throw error;
                 }

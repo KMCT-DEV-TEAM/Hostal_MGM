@@ -3,9 +3,9 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import { createStudentWithParentDb, updateStudentDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
 import { verifyOtpDb, deleteOtpDb } from "../otps/otp.service.js";
 import { createLogDb } from "../logs/log.service.js";
-import { orchestratorService } from "../notifications/services/orchestrator.service.js";
+import { orchestratorService } from "../notification/services/orchestrator.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
-import { buildSender } from "../notifications/utils/sender.util.js";
+import { buildSender } from "../notification/utils/sender.util.js";
 import { prisma } from "../../config/prisma.js";
 
 export const createStudent = asyncHandler(async (req, res) => {
