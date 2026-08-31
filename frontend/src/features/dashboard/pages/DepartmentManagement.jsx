@@ -23,11 +23,11 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
-import DepartmentHeader from '../components/Department/DepartmentHeader';
-import DepartmentTable from '../components/Department/DepartmentTable';
+import DepartmentHeader from '../components/department/DepartmentHeader';
+import DepartmentTable from '../components/department/DepartmentTable';
 
-import DepartmentDetailView from '../components/Department/DepartmentDetailView';
-import DepartmentFormModal from '../components/Department/DepartmentFormModal';
+import DepartmentDetailView from '../components/department/DepartmentDetailView';
+import DepartmentFormModal from '../components/department/DepartmentFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import Dropdown from '@/components/ui/Dropdown';
 
