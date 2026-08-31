@@ -6,7 +6,6 @@ import { PushProvider } from '../providers/push.provider.js';
 class DispatcherService {
     constructor() {
         this.providers = new Map();
-        // Register default channel providers
         this.registerProvider('in-app', new InAppProvider());
         this.registerProvider('push', new PushProvider());
     }
