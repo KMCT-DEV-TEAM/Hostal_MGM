@@ -4,31 +4,28 @@ import visitorApi from '@/features/visitors/api/visitorApi';
  * Parent Endpoints
  */
 export async function createVisitorProfile(payload) {
-    const { studentId, ...restPayload } = payload;
-    const response = await visitorApi.createVisitorProfileV2(studentId, restPayload);
+    const response = await visitorApi.createVisitorProfileV2(payload);
     return response.data;
 }
 
 export async function reuseVisitorProfile(payload) {
-    const { studentId, visitorId, ...restPayload } = payload;
-    const response = await visitorApi.reuseVisitorProfileV2(studentId, visitorId, restPayload);
+    const { visitorId, ...restPayload } = payload;
+    const response = await visitorApi.reuseVisitorProfileV2(visitorId, restPayload);
     return response.data;
 }
 
 export async function updateVisitorProfile(visitorId, payload) {
-    const { studentId, ...restPayload } = payload;
-    const response = await visitorApi.updateVisitorProfileV2(studentId, visitorId, restPayload);
+    const response = await visitorApi.updateVisitorProfileV2(visitorId, payload);
     return response.data;
 }
 
 export async function getParentVisitors(params) {
-    const { studentId, ...restParams } = params;
-    const response = await visitorApi.getParentVisitorsV2(studentId, restParams);
+    const response = await visitorApi.getParentVisitorsV2(params);
     return response.data;
 }
 
 export async function unassignVisitor(studentId, visitorId) {
-    const response = await visitorApi.unassignVisitorV2(studentId, visitorId);
+    const response = await visitorApi.unassignVisitorV2(visitorId, { studentId });
     return response.data;
 }
 

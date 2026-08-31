@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { formatDateReadable, formatDateTimeReadable } from '@/utils/formatters';
+import { formatDateReadable, formatDateTimeReadable, formatTime } from '@/utils/formatters';
 import leaveService from '@/services/leave.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import TimelineStep from '@/components/ui/TimelineStep';
@@ -10,45 +10,6 @@ import ActivityLog from '@/components/ui/ActivityLog';
 import DetailsSkeletonLoader from '@/components/ui/DetailsSkeletonLoader';
 import { useActiveStudent } from '@/hooks/useActiveStudent';
 import { ROLES } from '@/constants/roles';
-
-const getTimelineConfig = (action) => {
-    switch (action) {
-        // Success / Positive
-        case 'parent_approved':
-        case 'admin_approved':
-            return { label: 'Approved', color: 'text-green-600', bg: 'bg-green-50', nodeColor: 'bg-green-500' };
-        case 'warden_marked_out':
-            return { label: 'Left Hostel', color: 'text-blue-600', bg: 'bg-blue-50', nodeColor: 'bg-blue-500' };
-        case 'warden_marked_returned':
-        case 'returned':
-            return { label: 'Returned', color: 'text-green-600', bg: 'bg-green-50', nodeColor: 'bg-green-500' };
-        case 'completed':
-            return { label: 'Completed', color: 'text-green-600', bg: 'bg-green-50', nodeColor: 'bg-green-500' };
-
-        // Danger / Negative
-        case 'parent_rejected':
-        case 'admin_rejected':
-            return { label: 'Rejected', color: 'text-red-600', bg: 'bg-red-50', nodeColor: 'bg-red-500' };
-        case 'admin_cancelled':
-        case 'student_cancelled_request':
-        case 'parent_cancelled_request':
-        case 'cancelled':
-            return { label: 'Cancelled', color: 'text-red-600', bg: 'bg-red-50', nodeColor: 'bg-red-500' };
-
-        // Neutral / Info
-        case 'created':
-            return { label: 'Created', color: 'text-blue-600', bg: 'bg-blue-50', nodeColor: 'bg-blue-500' };
-        case 'updated':
-        case 'student_edited_leave':
-        case 'parent_edited_leave':
-            return { label: 'Updated', color: 'text-orange-600', bg: 'bg-orange-50', nodeColor: 'bg-orange-500' };
-        case 'approval_reset':
-            return { label: 'Reset', color: 'text-gray-600', bg: 'bg-gray-100', nodeColor: 'bg-gray-500' };
-
-        default:
-            return { label: 'Activity', color: 'text-gray-600', bg: 'bg-gray-100', nodeColor: 'bg-gray-400' };
-    }
-};
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -136,9 +97,10 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
 
     // Calculate duration
     let duration = '-----';
-    if (isHomePass && request.totalDays) {
-        duration = `${request.totalDays} Days`;
-    } else if (!isHomePass) {
+    if (isHomePass) {
+        const days = request.totalDays || (request.fromDate && request.toDate ? Math.ceil((new Date(request.toDate) - new Date(request.fromDate)) / (1000 * 60 * 60 * 24)) : null);
+        duration = days ? `${days} Days` : '-----';
+    } else {
         duration = request.outPassCategory === 'in_house' ? 'In House' : 'Out House';
     }
 
@@ -202,11 +164,11 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
         }
         return {
             label: 'Pending',
-            color: '#6B7280',
-            bg: '#F3F4F6',
-            nodeColor: '#D1D5DB',
-            avatarBg: '#E5E7EB',
-            avatarColor: '#6B7280'
+            color: 'var(--color-warning)',
+            bg: '#FEF3C7', // A soft amber/warning background
+            nodeColor: 'var(--color-warning)',
+            avatarBg: '#FEF3C7',
+            avatarColor: 'var(--color-warning)'
         };
     };
 
@@ -218,45 +180,6 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
             return rawDate.substring(0, lastCommaIndex) + ' |' + rawDate.substring(lastCommaIndex + 1);
         }
         return rawDate;
-    };
-
-    const handleApprove = async () => {
-        if (!window.confirm("Are you sure you want to approve this request?")) return;
-        try {
-            await leaveService.approvePass(role, request.id ?? request._id, { remarks: 'Approved by Admin' });
-            onClose(); // Ideally refetch here, but closing modal is ok
-        } catch (err) {
-            console.error(err);
-            alert("Failed to approve");
-        }
-    };
-
-    const handleReject = async () => {
-        const remarks = window.prompt("Enter rejection remarks (required):");
-        if (!remarks) return;
-        try {
-            await leaveService.rejectPass(role, request.id ?? request._id, { remarks });
-            onClose(); // Ideally refetch here, but closing modal is ok
-        } catch (err) {
-            console.error(err);
-            alert("Failed to reject");
-        }
-    };
-
-    const handleCancel = async () => {
-        const remarks = window.prompt("Enter cancellation remarks (required):");
-        if (!remarks) return;
-        try {
-            if (role === ROLES.SUPER_ADMIN) {
-                await leaveService.cancelLeaveSuperAdmin(request.id ?? request._id, { remarks });
-            } else {
-                await leaveService.cancelLeaveAdmin(request.id ?? request._id, { remarks });
-            }
-            onClose();
-        } catch (err) {
-            console.error(err);
-            alert(err?.response?.data?.message || "Failed to cancel request");
-        }
     };
 
     return (
@@ -319,8 +242,8 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                 </>
                             ) : (
                                 <>
-                                    <DetailRow label="Date" value={formatDateReadable(request.date)} />
-                                    <DetailRow label="Outing Time" value={`${request.outTime || '--'} to ${request.expectedReturnTime || '--'}`} />
+                                    <DetailRow label="Date" value={formatDateReadable(request.fromDate || request.date)} />
+                                    <DetailRow label="Outing Time" value={`${formatTime(request.fromDate || request.outTime) || '--'} to ${formatTime(request.expectedReturnAt || request.expectedReturnTime) || '--'}`} />
                                 </>
                             )}
                             <DetailRow label={isHomePass ? 'Duration' : 'Category'} value={duration} />
@@ -377,7 +300,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                                 {
                                     status: parentStatus,
                                     title: isParentApproved ? 'Approved by Parent' : (isParentRejected ? 'Rejected by Parent' : 'Parent Approval pending'),
-                                    subtitle: request.parentApproval?.actorName ? `${request.parentApproval.actorName} - Parent` : 'Parent',
+                                    subtitle: request.parentApproval?.actorName ? `${request.parentApproval.actorName} - Parent` : (request.parentId?.parentName ? `${request.parentId.parentName} - Parent` : 'Parent'),
                                     date: request.parentApproval?.actionAt
                                 },
 
@@ -437,7 +360,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
                             />
                             <DetailRow
                                 label="Leave Period"
-                                value={isHomePass ? `${formatDateReadable(request.fromDate)} - ${formatDateReadable(request.toDate)}` : formatDateReadable(request.date)}
+                                value={isHomePass ? `${formatDateReadable(request.fromDate)} - ${formatDateReadable(request.toDate)}` : formatDateReadable(request.fromDate || request.date)}
                                 icon={<svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
                             />
                             <DetailRow

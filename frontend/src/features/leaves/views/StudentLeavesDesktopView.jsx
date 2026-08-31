@@ -41,7 +41,10 @@ export default function StudentLeavesDesktopView({
         {
             key: "days",
             header: "Days",
-            accessor: (r) => r.totalDays ? `${r.totalDays} days` : '-----',
+            accessor: (r) => {
+                const days = r.totalDays || (r.fromDate && r.toDate ? Math.ceil((new Date(r.toDate) - new Date(r.fromDate)) / (1000 * 60 * 60 * 24)) : null);
+                return days ? `${days} days` : '-----';
+            },
         },
         {
             key: "status",
@@ -75,10 +78,10 @@ export default function StudentLeavesDesktopView({
         {
             key: "date",
             header: "Date",
-            accessor: (r) => formatDateReadable(r.date),
+            accessor: (r) => formatDateReadable(r.fromDate || r.date),
             renderCell: (r) => (
                 <span className="font-medium text-text-secondary text-sm">
-                    {formatDateReadable(r.date)}
+                    {formatDateReadable(r.fromDate || r.date)}
                 </span>
             )
         },
@@ -130,15 +133,19 @@ export default function StudentLeavesDesktopView({
     const cardConfig = {
         avatar: () => isHomePass ? "HP" : "OP",
         title: (r) => isHomePass ? 'Home Leave Application' : (r.outPassCategory === 'in_house' ? 'In House Permission' : 'Out House Permission'),
-        subtitle: (r) => isHomePass
-            ? (r.totalDays ? `${r.totalDays} Day${r.totalDays > 1 ? 's' : ''}` : '')
-            : (r.expectedReturnTime && r.outTime ? `${r.outTime} - ${r.expectedReturnTime}` : ''),
+        subtitle: (r) => {
+            if (isHomePass) {
+                const days = r.totalDays || (r.fromDate && r.toDate ? Math.ceil((new Date(r.toDate) - new Date(r.fromDate)) / (1000 * 60 * 60 * 24)) : null);
+                return days ? `${days} Day${days > 1 ? 's' : ''}` : '';
+            }
+            return (r.expectedReturnTime || r.expectedReturnAt) && (r.outTime || r.fromDate) ? `${formatTime(r.outTime || r.fromDate)} - ${formatTime(r.expectedReturnTime || r.expectedReturnAt)}` : '';
+        },
         status: (r) => null, // LeaveStatusBadge will be rendered custom if needed, or we just rely on fields
         fields: isHomePass ? [
             { label: "Duration", accessor: (r) => `${formatDateReadable(r.fromDate)} - ${formatDateReadable(r.toDate)}`, icon: Calendar },
             { label: "Status", render: (r) => <LeaveStatusBadge status={r.status} /> }
         ] : [
-            { label: "Date", accessor: (r) => formatDateReadable(r.date), icon: Calendar },
+            { label: "Date", accessor: (r) => formatDateReadable(r.fromDate || r.date), icon: Calendar },
             { label: "Status", render: (r) => <LeaveStatusBadge status={r.status} /> }
         ],
         onEdit: (r) => ['pending_parent', 'pending_warden', 'approved'].includes(r.status) ? () => openEditModal(r) : undefined,
