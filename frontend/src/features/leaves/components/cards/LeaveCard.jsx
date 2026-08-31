@@ -21,12 +21,15 @@ const LeaveCard = ({ data, onEdit }) => {
         : (data.outPassCategory === 'in_house' ? 'In House Permission' : 'Out House Permission');
 
     const durationText = isHomePass
-        ? (data.totalDays ? `${data.totalDays} Day${data.totalDays > 1 ? 's' : ''}` : '')
-        : (data.expectedReturnTime && data.outTime ? `${data.outTime} - ${data.expectedReturnTime}` : '');
+        ? (() => {
+            const days = data.totalDays || (data.fromDate && data.toDate ? Math.ceil((new Date(data.toDate) - new Date(data.fromDate)) / (1000 * 60 * 60 * 24)) : null);
+            return days ? `${days} Day${days > 1 ? 's' : ''}` : '';
+        })()
+        : ((data.expectedReturnTime || data.expectedReturnAt) && (data.outTime || data.fromDate) ? `${formatTime(data.outTime || data.fromDate)} - ${formatTime(data.expectedReturnTime || data.expectedReturnAt)}` : '');
 
     const dateRange = isHomePass
         ? `${formatDateReadable(data.fromDate)} - ${formatDateReadable(data.toDate)}`
-        : formatDateReadable(data.date);
+        : formatDateReadable(data.fromDate || data.date);
 
     // Editable logic
     const isEditable = ['pending_parent', 'pending_warden'].includes(data.status);
