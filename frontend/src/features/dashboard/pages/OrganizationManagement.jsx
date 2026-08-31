@@ -298,7 +298,7 @@ const OrganizationManagement = () => {
         setIsExporting(true);
         try {
             const params = { page: 1, limit: 100000 };
-            if (debouncedSearch) params.search = debouncedSearch;
+            if (searchQuery) params.search = searchQuery;
 
             // Allow export modal filter to override table filter completely
             if (exportFilters.isActive === 'true') {

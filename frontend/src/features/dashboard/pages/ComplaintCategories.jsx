@@ -9,7 +9,7 @@ import {
 import ComplaintCategoryService from '../../../services/complaintCategory.service';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
-import ComplaintCategoryHeader from '../components/complaintCategory/ComplaintCategoryHeader';
+import ComplaintCategoryHeader from '../components/ComplaintCategory/ComplaintCategoryHeader';
 import ComplaintCategoryTable from '../components/ComplaintCategory/ComplaintCategoryTable';
 
 import ComplaintCategoryDetailView from '../components/ComplaintCategory/ComplaintCategoryDetailView';
