@@ -110,6 +110,7 @@ export default function ParentLeaves() {
     useEffect(() => {
         setSearchQuery('');
         setPage(1);
+        setRequests([]); // Clear data to prevent flickering stale rows under new headers
     }, [isHomePass, passType]);
 
     useEffect(() => {

@@ -20,6 +20,15 @@ export function useLeaves(filters, isAggregate = false, options = {}) {
   const [error, setError] = useState(null);
 
   const memoizedFilters = useDeepCompareMemoize(filters || {});
+  const prevPassTypeRef = useRef(filters?.passType);
+
+  // Clear data instantly when passType changes to prevent stale data flickering under new columns
+  useEffect(() => {
+    if (filters?.passType !== prevPassTypeRef.current) {
+      setData([]);
+      prevPassTypeRef.current = filters?.passType;
+    }
+  }, [filters?.passType]);
 
   const fetchLeaves = useCallback(() => {
     if (!role || !enabled) {
