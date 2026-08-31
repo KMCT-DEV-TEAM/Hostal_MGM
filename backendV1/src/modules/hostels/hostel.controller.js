@@ -179,6 +179,7 @@ export const deleteHostel = asyncHandler(async (req, res) => {
 
 export const toggleHostelStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { isActive, status } = req.body || {};
 
   if (!isUUID(id)) {
     return sendError(res, 400, 'Invalid hostel ID format');
@@ -190,10 +191,21 @@ export const toggleHostelStatus = asyncHandler(async (req, res) => {
     return sendError(res, 404, 'Hostel not found');
   }
 
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !existingHostel.isActive;
+  }
+
   const updatedHostel = await prisma.hostel.update({
     where: { id },
     data: {
-      isActive: !existingHostel.isActive
+      isActive: newIsActive
     }
   });
 

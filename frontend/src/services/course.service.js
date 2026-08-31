@@ -15,8 +15,8 @@ const updateCourse = async (id, data) => {
   return response.data;
 };
 
-const toggleStatus = async (id) => {
-  const response = await apiClient.patch(`/courses/${id}/status`);
+const toggleStatus = async (id, data) => {
+  const response = await apiClient.patch(`/courses/${id}/status`, data);
   return response.data;
 };
 

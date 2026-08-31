@@ -46,8 +46,8 @@ export async function updateHostel(id, payload) {
  * Toggle Hostel active/inactive status
  * @param {string} id 
  */
-export async function toggleStatus(id) {
-  const response = await hostelApi.toggleStatus(id);
+export async function toggleStatus(id, payload) {
+  const response = await hostelApi.toggleStatus(id, payload);
   return response.data;
 }
 

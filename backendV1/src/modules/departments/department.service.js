@@ -94,7 +94,7 @@ export const getDepartmentsService = async (query, user) => {
   };
 };
 
-export const toggleDepartmentStatusService = async (id, user) => {
+export const toggleDepartmentStatusService = async (id, user, statusData = {}) => {
   const department = await prisma.department.findUnique({
     where: { id },
     include: { course: true }
@@ -108,9 +108,21 @@ export const toggleDepartmentStatusService = async (id, user) => {
     throw new Error('Unauthorized');
   }
 
+  const { isActive, status } = statusData;
+  let newIsActive;
+  if (typeof isActive === "boolean") {
+    newIsActive = isActive;
+  } else if (typeof status === "string") {
+    newIsActive = status.toLowerCase() === "active";
+  } else if (typeof isActive === "string") {
+    newIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+  } else {
+    newIsActive = !department.isActive;
+  }
+
   return prisma.department.update({
     where: { id },
-    data: { isActive: !department.isActive }
+    data: { isActive: newIsActive }
   });
 };
 

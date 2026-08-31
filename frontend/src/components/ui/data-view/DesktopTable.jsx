@@ -61,7 +61,7 @@ export default function DesktopTable({
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 text-sm text-gray-700 relative">
-                    {loading && (!data || data.length === 0) ? (
+                    {loading ? (
                         Array.from({ length: 5 }).map((_, rowIndex) => (
                             <tr key={`skeleton-${rowIndex}`} className="animate-pulse bg-gray-50/30">
                                 {canSelect && (

@@ -265,12 +265,22 @@ const updateAdminOrganization = asyncHandler(async (req, res) => {
 
 const toggleAdminStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { isActive, status } = req.body || {};
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Admin ID");
     }
 
-    const admin = await toggleUserActiveStatusByRoleDb(id, "admin");
+    let targetIsActive;
+    if (typeof isActive === "boolean") {
+      targetIsActive = isActive;
+    } else if (typeof status === "string") {
+      targetIsActive = status.toLowerCase() === "active";
+    } else if (typeof isActive === "string") {
+      targetIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+    }
+
+    const admin = await toggleUserActiveStatusByRoleDb(id, "admin", targetIsActive);
 
     if (!admin) {
       return sendError(res, 404, "Admin not found");
@@ -562,12 +572,22 @@ const updateWardenHostel = asyncHandler(async (req, res) => {
 
 const toggleWardenStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { isActive, status } = req.body || {};
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Warden ID");
     }
 
-    const warden = await toggleUserActiveStatusByRoleDb(id, "warden");
+    let targetIsActive;
+    if (typeof isActive === "boolean") {
+      targetIsActive = isActive;
+    } else if (typeof status === "string") {
+      targetIsActive = status.toLowerCase() === "active";
+    } else if (typeof isActive === "string") {
+      targetIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+    }
+
+    const warden = await toggleUserActiveStatusByRoleDb(id, "warden", targetIsActive);
 
     if (!warden) {
       return sendError(res, 404, "Warden not found");
@@ -858,6 +878,7 @@ const updateAssistantWardenHostel = asyncHandler(async (req, res) => {
 
 const toggleAssistantWardenStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { isActive, status } = req.body || {};
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Assistant Warden ID");
@@ -872,7 +893,16 @@ const toggleAssistantWardenStatus = asyncHandler(async (req, res) => {
         return sendError(res, 403, "You do not have permission to change the status of this Assistant Warden");
     }
 
-    const assistantWarden = await toggleUserActiveStatusByRoleDb(id, "assistant_warden");
+    let targetIsActive;
+    if (typeof isActive === "boolean") {
+      targetIsActive = isActive;
+    } else if (typeof status === "string") {
+      targetIsActive = status.toLowerCase() === "active";
+    } else if (typeof isActive === "string") {
+      targetIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+    }
+
+    const assistantWarden = await toggleUserActiveStatusByRoleDb(id, "assistant_warden", targetIsActive);
 
     const message = assistantWarden.isActive 
       ? "Assistant Warden activated successfully" 
@@ -1106,12 +1136,22 @@ const updateMaintenanceStaff = asyncHandler(async (req, res) => {
 
 const toggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const { isActive, status } = req.body || {};
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, 400, "Invalid Maintenance Staff ID");
     }
 
-    const staff = await toggleUserActiveStatusByRoleDb(id, "maintenance_staff");
+    let targetIsActive;
+    if (typeof isActive === "boolean") {
+      targetIsActive = isActive;
+    } else if (typeof status === "string") {
+      targetIsActive = status.toLowerCase() === "active";
+    } else if (typeof isActive === "string") {
+      targetIsActive = isActive.toLowerCase() === "active" || isActive === "true";
+    }
+
+    const staff = await toggleUserActiveStatusByRoleDb(id, "maintenance_staff", targetIsActive);
 
     if (!staff) {
       return sendError(res, 404, "Maintenance Staff not found");

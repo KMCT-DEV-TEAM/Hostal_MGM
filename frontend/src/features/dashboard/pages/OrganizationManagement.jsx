@@ -48,7 +48,6 @@ const OrganizationManagement = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [statusFilter, setStatusFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -85,7 +84,7 @@ const OrganizationManagement = () => {
             const res = await organizationService.getOrganizations({
                 page,
                 limit,
-                search: debouncedSearch,
+                search: searchQuery,
                 status: statusFilter
             });
             if (res && res.data) {
@@ -102,23 +101,22 @@ const OrganizationManagement = () => {
         }
     };
 
+    const fetchOrgsRef = React.useRef(fetchOrganizations);
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-            setPage(1); // Reset to page 1 on new search
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
+        fetchOrgsRef.current = fetchOrganizations;
+    });
 
     useEffect(() => {
         fetchOrganizations();
-    }, [page, limit, debouncedSearch, statusFilter]);
+    }, [page, limit, searchQuery, statusFilter]);
 
     useEffect(() => {
         const socket = initSocket();
 
         const handleOrgEvent = () => {
-            fetchOrganizations();
+            if (fetchOrgsRef.current) {
+                fetchOrgsRef.current();
+            }
         };
 
         socket.on('organizationCreated', handleOrgEvent);
@@ -132,8 +130,8 @@ const OrganizationManagement = () => {
         };
     }, []);
 
-    const handleStatusChangeClick = (id, currentStatus) => {
-        setStatusToUpdate({ id, currentStatus });
+    const handleStatusChangeClick = (id, targetStatus) => {
+        setStatusToUpdate({ id, targetStatus });
         setIsStatusConfirmOpen(true);
     };
 
@@ -141,13 +139,21 @@ const OrganizationManagement = () => {
         if (!statusToUpdate) return;
         setIsStatusUpdating(true);
         try {
-            await organizationService.toggleStatus(statusToUpdate.id);
+            const isTargetActive = typeof statusToUpdate.targetStatus === 'boolean'
+                ? statusToUpdate.targetStatus
+                : statusToUpdate.targetStatus === 'Active' || statusToUpdate.targetStatus === 'active';
+
+            await organizationService.toggleStatus(statusToUpdate.id, {
+                status: isTargetActive ? 'Active' : 'Inactive',
+                isActive: isTargetActive
+            });
             // Re-fetch or locally update the status
             setOrgs((prevOrgs) =>
                 prevOrgs.map((org) =>
-                    org.id === statusToUpdate.id ? { ...org, isActive: !org.isActive } : org
+                    org.id === statusToUpdate.id ? { ...org, isActive: isTargetActive } : org
                 )
             );
+            fetchOrganizations();
             setIsStatusConfirmOpen(false);
             setStatusToUpdate(null);
             showSuccessToast('Status Updated', 'Organization status changed successfully');
@@ -352,7 +358,12 @@ const OrganizationManagement = () => {
                     loading={loading}
                     error={error}
                     searchValue={searchQuery}
-                    onSearch={(val) => { setSearchQuery(val); setPage(1); }}
+                    onSearch={(val) => { 
+                        if (val !== searchQuery) {
+                            setSearchQuery(val); 
+                            setPage(1); 
+                        }
+                    }}
                     statusFilter={statusFilter}
                     onStatusFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
                     onExport={initiateExport}
@@ -456,7 +467,7 @@ const OrganizationManagement = () => {
                 onConfirm={confirmStatusChange}
                 isSubmitting={isStatusUpdating}
                 title="Change Status"
-                message="Are you sure you want to change the status of this organization?"
+                message={`Are you sure you want to change the status of this organization to ${statusToUpdate?.targetStatus || 'the new status'}?`}
             />
 
 

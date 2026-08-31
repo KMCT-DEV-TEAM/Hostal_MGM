@@ -13,8 +13,8 @@ const organizationApi = {
   updateOrganization: (id, payload) =>
     api.patch(`/organizations/${id}`, payload),
 
-  toggleStatus: (id) =>
-    api.patch(`/organizations/${id}/toggle-status`),
+  toggleStatus: (id, payload) =>
+    api.patch(`/organizations/${id}/toggle-status`, payload),
 
   bulkToggleStatus: ({ids, isActive}) =>
     api.patch("/organizations/bulk-status", {ids, isActive}),

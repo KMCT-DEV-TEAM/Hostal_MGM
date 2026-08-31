@@ -16,8 +16,8 @@ const hostelApi = {
   updateHostel: (id, payload) =>
     api.patch(`/super-admin/hostels/${id}`, payload),
 
-  toggleStatus: (id) =>
-    api.patch(`/super-admin/hostels/${id}/toggle-status`),
+  toggleStatus: (id, payload) =>
+    api.patch(`/super-admin/hostels/${id}/toggle-status`, payload),
 
   bulkToggleStatus: ({ ids, isActive }) =>
     api.patch("/super-admin/hostels/bulk-status", { ids, isActive }),

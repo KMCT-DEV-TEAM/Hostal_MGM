@@ -78,7 +78,7 @@ export const deleteBatch = asyncHandler(async (req, res) => {
 export const toggleBatchStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
-    const updatedBatch = await toggleBatchStatusService(id, req.user);
+    const updatedBatch = await toggleBatchStatusService(id, req.user, req.body);
     return sendSuccess(res, 200, 'Batch status updated successfully', updatedBatch);
   } catch (error) {
     if (error.message === 'Batch not found' || error.message === 'Unauthorized') {
