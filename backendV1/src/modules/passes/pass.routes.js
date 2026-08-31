@@ -2,7 +2,7 @@ import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 import { ROLES } from "../../constants/roles.js";
-import { createPass, getMyPassesUnified, getPasses, getPassDetails, updatePass, cancelPass, approvePass, rejectPass, getManagementHostels, getManagementHostelPasses, getManagementDashboardStats, markStudentLeftHostel, markStudentReturned, getWardenPasses } from "./pass.controller.js";
+import { createPass, getMyPassesUnified, getPasses, getPassDetails, updatePass, cancelPass, approvePass, rejectPass, getManagementHostels, getManagementHostelPasses, getAllManagementPasses, getManagementDashboardStats, markStudentLeftHostel, markStudentReturned, getWardenPasses } from "./pass.controller.js";
 import { validateCreatePass, validateGetPassesUnified, validateGetPasses, validatePassIdParam, validateUpdatePass, validateCancelPass, validateHostelIdParam, validateRejectPass } from "./pass.validation.js";
 import verifyStudentAccess from "../../middlewares/verifyStudentAccess.middleware.js";
 
@@ -55,6 +55,13 @@ router.get(
   authMiddleware,
   roleMiddleware(ROLES.MENTOR, ROLES.ADMIN, ROLES.SUPER_ADMIN),
   getManagementHostels
+);
+
+router.get(
+  "/hostels/all",
+  authMiddleware,
+  roleMiddleware(ROLES.MENTOR, ROLES.ADMIN, ROLES.SUPER_ADMIN),
+  getAllManagementPasses
 );
 
 router.get(

@@ -1,3 +1,4 @@
+import { ROLES } from "../../constants/roles.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin, getManagementHostelsDb, getManagementHostelPassesDb, getManagementDashboardStatsDb, rejectParentPassDb, rejectMentorPassDb, rejectManagementPassDb, markStudentLeftHostelDb, markStudentReturnedDb } from "./pass.service.js";
@@ -193,7 +194,7 @@ const getPassApproverRecipients = async (studentId, organizationId) => {
 
   const admins = await prisma.user.findMany({
     where: {
-      role: "admin",
+      role: ROLES.ADMIN,
       organizationId: organizationId,
       isActive: true
     },
@@ -237,14 +238,14 @@ export const updatePass = asyncHandler(async (req, res) => {
 
   const studentName = updatedPass.studentId?.name || "";
 
-  if (req.user.role === "student") {
+  if (req.user.role === ROLES.STUDENT) {
     orchestratorService.triggerNotification({
       sender: buildSender(req.user),
       eventName: 'PASS_MODIFIED',
       target: { type: 'PARENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
       data: { passTypeLabel, studentName, link }
     }).catch(err => console.error("Notification Error:", err));
-  } else if (req.user.role === "parent") {
+  } else if (req.user.role === ROLES.PARENT) {
     const studentDoc = await prisma.student.findUnique({
       where: { id: updatedPass.studentId?.id || updatedPass.studentId }
     });
@@ -298,7 +299,7 @@ export const cancelPass = asyncHandler(async (req, res) => {
   }
 
   await createLogDb({
-    action: req.user.role === "student" || req.user.role === "parent" ? "Cancelled Pass" : "Admin Cancelled Pass",
+    action: req.user.role === ROLES.STUDENT || req.user.role === ROLES.PARENT ? "Cancelled Pass" : "Admin Cancelled Pass",
     entityType: "Pass",
     entityId: req.params.id,
     user: req.user.id,
@@ -316,7 +317,7 @@ export const approvePass = asyncHandler(async (req, res) => {
   const role = (req.user?.role || "").toLowerCase();
 
   let updatedPass;
-  if (role === "parent") {
+  if (role === ROLES.PARENT) {
     updatedPass = await approvePassAsParent({ passId: id, actor: req.user, remarks });
 
     const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
@@ -342,7 +343,7 @@ export const approvePass = asyncHandler(async (req, res) => {
           { type: 'STUDENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
           { type: 'PARENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
           approverTarget,
-          { type: 'ROLE', filter: { role: 'warden', organizationId: studentDoc.organizationId } }
+          { type: 'ROLE', filter: { role: ROLES.WARDEN, organizationId: studentDoc.organizationId } }
         ],
         data: { passTypeLabel, studentName, parentName, link }
       }).catch(err => console.error("Notification Error:", err));
@@ -358,7 +359,7 @@ export const approvePass = asyncHandler(async (req, res) => {
       status: "success"
     });
 
-  } else if (role === "mentor") {
+  } else if (role === ROLES.MENTOR) {
     updatedPass = await approvePassAsMentor({ passId: id, actor: req.user, remarks });
 
     const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
@@ -386,7 +387,7 @@ export const approvePass = asyncHandler(async (req, res) => {
       status: "success"
     });
 
-  } else if (role === "admin" || role === "super_admin") {
+  } else if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
     updatedPass = await approvePassAsAdmin({ passId: id, actor: req.user, remarks });
 
     const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : 'Out Pass';
@@ -452,7 +453,7 @@ const buildMentorScope = async (req) => {
   const batchIds = activeAssignments.map(({ batchId }) => batchId);
 
   return {
-    role: "mentor",
+    role: ROLES.MENTOR,
     organizationId: req.user.organizationId,
     batchIds,
     actorId: req.user.id
@@ -460,22 +461,22 @@ const buildMentorScope = async (req) => {
 };
 
 const buildAdminScope = (req) => ({
-  role: "admin",
+  role: ROLES.ADMIN,
   organizationId: req.user.organizationId,
   actorId: req.user.id
 });
 
 const buildSuperAdminScope = (req) => ({
-  role: "super_admin",
+  role: ROLES.SUPER_ADMIN,
   organizationId: null,
   actorId: req.user.id
 });
 
 export const getManagementHostels = asyncHandler(async (req, res) => {
   let scope;
-  if (req.user.role === "mentor") {
+  if (req.user.role === ROLES.MENTOR) {
     scope = await buildMentorScope(req);
-  } else if (req.user.role === "admin") {
+  } else if (req.user.role === ROLES.ADMIN) {
     scope = buildAdminScope(req);
   } else {
     scope = buildSuperAdminScope(req);
@@ -485,11 +486,25 @@ export const getManagementHostels = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, "Hostels loaded successfully.", { data: hostels, pagination });
 });
 
+export const getAllManagementPasses = asyncHandler(async (req, res) => {
+  let scope;
+  if (req.user.role === ROLES.MENTOR) {
+    scope = await buildMentorScope(req);
+  } else if (req.user.role === ROLES.ADMIN) {
+    scope = buildAdminScope(req);
+  } else {
+    scope = buildSuperAdminScope(req);
+  }
+
+  const { passes, pagination } = await getManagementHostelPassesDb(req.query, scope, null);
+  return sendSuccess(res, 200, "All passes loaded successfully.", { data: passes, pagination });
+});
+
 export const getManagementHostelPasses = asyncHandler(async (req, res) => {
   let scope;
-  if (req.user.role === "mentor") {
+  if (req.user.role === ROLES.MENTOR) {
     scope = await buildMentorScope(req);
-  } else if (req.user.role === "admin") {
+  } else if (req.user.role === ROLES.ADMIN) {
     scope = buildAdminScope(req);
   } else {
     scope = buildSuperAdminScope(req);
@@ -498,11 +513,11 @@ export const getManagementHostelPasses = asyncHandler(async (req, res) => {
   const { hostelId } = req.params;
 
   let hostelQuery = { id: hostelId, isActive: true };
-  if (scope.role === 'admin') {
+  if (scope.role === ROLES.ADMIN) {
     hostelQuery.organizations = {
       some: { organizationId: scope.organizationId }
     };
-  } else if (scope.role === 'mentor') {
+  } else if (scope.role === ROLES.MENTOR) {
     const studentsInBatches = await prisma.student.findMany({
       where: {
         batchId: { in: scope.batchIds },
@@ -538,15 +553,15 @@ export const getManagementHostelPasses = asyncHandler(async (req, res) => {
 export const getManagementDashboardStats = asyncHandler(async (req, res, next) => {
   const { role } = req.user;
 
-  if (role === "mentor") {
+  if (role === ROLES.MENTOR) {
     // Delegate to the dashboard service for mentors
     return getMentorDashboardStats(req, res, next);
   }
 
   let scope;
-  if (role === "admin") {
+  if (role === ROLES.ADMIN) {
     scope = buildAdminScope(req);
-  } else if (role === "super_admin") {
+  } else if (role === ROLES.SUPER_ADMIN) {
     scope = buildSuperAdminScope(req);
   } else {
     return sendError(res, 403, "Access denied");
@@ -563,7 +578,7 @@ export const rejectPass = asyncHandler(async (req, res) => {
   const role = req.user.role;
   let updatedPass;
 
-  if (role === "parent") {
+  if (role === ROLES.PARENT) {
     // Basic verification since we didn't add the verifyStudentAccess middleware to this specific route.
     // Parent should only reject passes for students linked to them.
     const parentId = req.user.id;
@@ -580,13 +595,13 @@ export const rejectPass = asyncHandler(async (req, res) => {
 
     updatedPass = await rejectParentPassDb(id, parentId, remarks);
 
-  } else if (role === "mentor") {
+  } else if (role === ROLES.MENTOR) {
     const scope = await buildMentorScope(req);
     updatedPass = await rejectMentorPassDb(id, scope.actorId, scope.batchIds, remarks);
 
-  } else if (role === "admin" || role === "super_admin") {
+  } else if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
     let scope;
-    if (role === "admin") scope = buildAdminScope(req);
+    if (role === ROLES.ADMIN) scope = buildAdminScope(req);
     else scope = buildSuperAdminScope(req);
 
     updatedPass = await rejectManagementPassDb(id, scope, remarks);
@@ -600,9 +615,9 @@ export const rejectPass = asyncHandler(async (req, res) => {
   const link = `/dashboard/leaves/${passTypeSlug}`;
 
   const studentName = updatedPass.student.name;
-  const remarksText = remarks || (role === "parent" ? "Parent rejected the pass request." : "Rejected");
+  const remarksText = remarks || (role === ROLES.PARENT ? "Parent rejected the pass request." : "Rejected");
 
-  if (role === "parent") {
+  if (role === ROLES.PARENT) {
     const parentName = req.user.name;
     await orchestratorService.triggerNotification({
       sender: buildSender(req.user),
@@ -631,7 +646,7 @@ export const rejectPass = asyncHandler(async (req, res) => {
       data: { passTypeLabel, studentName, approvedBy, remarks: remarksText, link }
     }).catch(err => console.error("Notification Error:", err));
 
-    if (role === "admin" || role === "super_admin") {
+    if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
       if (updatedPass.parentId) {
         await orchestratorService.triggerNotification({
           sender: buildSender(req.user),
@@ -643,7 +658,7 @@ export const rejectPass = asyncHandler(async (req, res) => {
     }
 
     await createLogDb({
-      action: role === "mentor" ? "Mentor Rejected Pass" : "Admin/Super Admin Rejected Pass",
+      action: role === ROLES.MENTOR ? "Mentor Rejected Pass" : "Admin/Super Admin Rejected Pass",
       entityType: "Pass",
       entityId: id,
       user: req.user.id || req.user._id,
@@ -737,6 +752,6 @@ export const getWardenPasses = asyncHandler(async (req, res) => {
 
   if (!wardenLink) return sendError(res, 403, "It looks like you aren't assigned to any active hostel right now.");
 
-  const { passes, pagination } = await getManagementHostelPassesDb(req.query, { role: "warden" }, wardenLink.hostelId);
+  const { passes, pagination } = await getManagementHostelPassesDb(req.query, { role: ROLES.WARDEN }, wardenLink.hostelId);
   return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });

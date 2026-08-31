@@ -4,7 +4,7 @@ import { Filter, Calendar, Clock, Building, User, ArrowLeftToLine } from 'lucide
 import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import { formatDateReadable } from '@/utils/formatters';
+import { formatDateReadable, formatTime } from '@/utils/formatters';
 import LeaveStatusBadge from '../badges/LeaveStatusBadge';
 import LeaveReturnBadge from '../badges/LeaveReturnBadge';
 
@@ -43,7 +43,7 @@ export default function LeavesDetailView({
         setConfirmModal({ isOpen: false, id: null, value: null, type: null });
     };
 
-    const getStudentName = (r) => r.studentInfo?.name || r.studentName || 'Unknown';
+    const getStudentName = (r) => r.studentId?.name || r.studentInfo?.name || r.studentName || 'Unknown';
 
     const getReturnStatus = (r) => {
         if (r.returnTracking?.returnedAt) {
@@ -78,16 +78,16 @@ export default function LeavesDetailView({
             key: "location",
             header: isRoomCol ? "Room No" : "Hostel",
             renderCell: (r) => {
-                if (isRoomCol) return <span className="font-medium text-gray-600">{r.studentInfo?.roomNumber || '--'}</span>;
+                if (isRoomCol) return <span className="font-medium text-gray-600">{r.studentId?.roomNumber || r.studentInfo?.roomNumber || '--'}</span>;
                 return (
                     <span
                         className="text-[#0A437A] font-semibold hover:underline cursor-pointer"
                         onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelInfo?._id || r.hostelId?._id || r.hostel)}`);
+                            navigate(`/dashboard/leaves/${passType || 'home-pass'}/${encodeURIComponent(r.hostelId?.id || r.hostelId?._id || r.hostelInfo?._id || r.hostel)}`);
                         }}
                     >
-                        {r.hostelInfo?.name || r.hostelId?.name || r.hostel}
+                        {r.hostelId?.name || r.hostelInfo?.name || r.hostel}
                     </span>
                 );
             }
@@ -100,19 +100,31 @@ export default function LeavesDetailView({
         {
             key: "type",
             header: isHomePass ? "Days" : "Type",
-            accessor: (r) => isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : r.type || r.outPassCategory,
-            renderCell: (r) => <span className="capitalize text-gray-500">{isHomePass ? (r.totalDays ? `${r.totalDays} days` : '-----') : r.type || r.outPassCategory}</span>
+            accessor: (r) => {
+                if (isHomePass) {
+                    const days = r.totalDays || (r.fromDate && r.toDate ? Math.ceil((new Date(r.toDate) - new Date(r.fromDate)) / (1000 * 60 * 60 * 24)) : null);
+                    return days ? `${days} days` : '-----';
+                }
+                return r.type || r.outPassCategory;
+            },
+            renderCell: (r) => {
+                if (isHomePass) {
+                    const days = r.totalDays || (r.fromDate && r.toDate ? Math.ceil((new Date(r.toDate) - new Date(r.fromDate)) / (1000 * 60 * 60 * 24)) : null);
+                    return <span className="capitalize text-gray-500">{days ? `${days} days` : '-----'}</span>;
+                }
+                return <span className="capitalize text-gray-500">{r.type || r.outPassCategory}</span>;
+            }
         },
         ...(isHomePass ? [] : [
             {
                 key: "out",
                 header: "Out",
-                accessor: (r) => r.outTime || '--',
+                accessor: (r) => (r.outTime || r.fromDate) ? formatTime(r.outTime || r.fromDate) : '--',
             },
             {
                 key: "in",
                 header: "In",
-                accessor: (r) => r.expectedReturnTime || r.returnTime || '--',
+                accessor: (r) => (r.expectedReturnAt || r.expectedReturnTime || r.returnTime) ? formatTime(r.expectedReturnAt || r.expectedReturnTime || r.returnTime) : '--',
             }
         ]),
         {

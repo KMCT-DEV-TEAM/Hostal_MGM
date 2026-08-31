@@ -54,9 +54,9 @@ export default function LeaveDetails() {
             };
 
             if (actionType === 'approved') {
-                await leaveService.approveLeaveByParent(request._id, payload);
+                await leaveService.approveLeaveByParent(request.id ?? request._id, payload);
             } else if (actionType === 'rejected') {
-                await leaveService.rejectLeaveByParent(request._id, payload);
+                await leaveService.rejectLeaveByParent(request.id ?? request._id, payload);
             }
 
             showSuccessToast(`Pass ${actionType} successfully`);

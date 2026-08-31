@@ -223,7 +223,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
     const handleApprove = async () => {
         if (!window.confirm("Are you sure you want to approve this request?")) return;
         try {
-            await leaveService.approvePass(request._id, { remarks: 'Approved by Admin' });
+            await leaveService.approvePass(role, request.id ?? request._id, { remarks: 'Approved by Admin' });
             onClose(); // Ideally refetch here, but closing modal is ok
         } catch (err) {
             console.error(err);
@@ -235,7 +235,7 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
         const remarks = window.prompt("Enter rejection remarks (required):");
         if (!remarks) return;
         try {
-            await leaveService.rejectPass(request._id, { remarks });
+            await leaveService.rejectPass(role, request.id ?? request._id, { remarks });
             onClose(); // Ideally refetch here, but closing modal is ok
         } catch (err) {
             console.error(err);
@@ -248,9 +248,9 @@ export default function LeaveDetailsModal({ isOpen, onClose, leaveId, userRole }
         if (!remarks) return;
         try {
             if (role === ROLES.SUPER_ADMIN) {
-                await leaveService.cancelLeaveSuperAdmin(request._id, { remarks });
-            } else if (role === ROLES.ADMIN) {
-                await leaveService.cancelLeaveAdmin(request._id, { remarks });
+                await leaveService.cancelLeaveSuperAdmin(request.id ?? request._id, { remarks });
+            } else {
+                await leaveService.cancelLeaveAdmin(request.id ?? request._id, { remarks });
             }
             onClose();
         } catch (err) {

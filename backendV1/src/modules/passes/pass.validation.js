@@ -138,7 +138,7 @@ export const validateCreatePass = async (req, res, next) => {
         });
       }
 
-      const dayStart = new Date(passDate);
+      const dayStart = new Date(date);
       dayStart.setUTCHours(0, 0, 0, 0);
       const dayEnd = new Date(dayStart);
       dayEnd.setUTCHours(23, 59, 59, 999);

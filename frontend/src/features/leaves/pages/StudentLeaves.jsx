@@ -108,6 +108,7 @@ export default function StudentLeaves() {
     useEffect(() => {
         setSearchQuery('');
         setPage(1);
+        setRequests([]); // Clear data to prevent flickering stale rows under new headers
     }, [passType, isHomePass]);
 
     useEffect(() => {

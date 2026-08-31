@@ -13,7 +13,7 @@ import LeaveStatsCards from '../components/stats/LeaveStatsCards';
 import InfoCard from '@/components/ui/InfoCard';
 import leaveService from '@/services/leave.service';
 import { useActiveStudent } from '@/hooks/useActiveStudent';
-import { formatDateReadable } from '@/utils/formatters';
+import { formatDateReadable, formatTime } from '@/utils/formatters';
 import { showErrorToast } from '@/utils/toast';
 import LeaveDetailsModal from '../components/modals/LeaveDetailsModal';
 import LeaveActionModal from '../components/modals/LeaveActionModal';
@@ -110,6 +110,7 @@ export default function ParentLeaves() {
     useEffect(() => {
         setSearchQuery('');
         setPage(1);
+        setRequests([]); // Clear data to prevent flickering stale rows under new headers
     }, [isHomePass, passType]);
 
     useEffect(() => {
@@ -136,9 +137,9 @@ export default function ParentLeaves() {
             };
 
             if (actionType === 'approved') {
-                await leaveService.approveLeaveByParent(request._id, payload);
+                await leaveService.approveLeaveByParent(request.id ?? request._id, payload);
             } else if (actionType === 'rejected') {
-                await leaveService.rejectLeaveByParent(request._id, payload);
+                await leaveService.rejectLeaveByParent(request.id ?? request._id, payload);
             }
 
             showSuccessToast(`Pass ${actionType} successfully`);
@@ -266,7 +267,7 @@ export default function ParentLeaves() {
             header: "In",
             renderCell: (r) => (
                 <span className="text-text-secondary text-sm">
-                    {r.expectedReturnTime || r.returnTime || '--'}
+                    {r.expectedReturnTime || r.expectedReturnAt || r.returnTime ? formatTime(r.expectedReturnTime || r.expectedReturnAt || r.returnTime) : '--'}
                 </span>
             )
         },
@@ -275,7 +276,7 @@ export default function ParentLeaves() {
             header: "Out",
             renderCell: (r) => (
                 <span className="text-text-secondary text-sm">
-                    {r.outTime || '--'}
+                    {r.outTime || r.fromDate ? formatTime(r.outTime || r.fromDate) : '--'}
                 </span>
             )
         },
@@ -361,7 +362,7 @@ export default function ParentLeaves() {
                             onSearchChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                             searchPlaceholder="Search requests..."
                             canSelect={false}
-                            onRowClick={(item) => setViewId(item._id)}
+                            onRowClick={(item) => setViewId(item.id ?? item._id)}
                             toolbarEndSlot={toolbarEndSlot}
                             page={page}
                             setPage={setPage}

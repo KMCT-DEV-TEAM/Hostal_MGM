@@ -11,12 +11,12 @@ export async function createLeave(payload) {
 }
 
 export async function getMyLeaves(params) {
-  const response = await leaveApi.getMyLeaves(params);
+  const response = await leaveApi.getLeaves(params);
   return response.data;
 }
 
 export async function getUnifiedPasses(params) {
-  const response = await leaveApi.getUnifiedPasses(params);
+  const response = await leaveApi.getLeaves(params);
   return response.data;
 }
 
@@ -35,61 +35,128 @@ export async function cancelLeave(id, payload) {
   return response.data;
 }
 
-
 /**
- * Admin Endpoints (Placeholders for future backend endpoints)
+ * Management Endpoints (Admin, Super Admin, Mentor)
  */
 export async function getLeavesByAdmin(params) {
-  const response = await leaveApi.getLeavesByAdmin(params);
+  const { hostelId, ...rest } = params;
+  const response = await leaveApi.getManagementHostelLeaves(hostelId, rest);
   return response.data;
 }
 
 export async function getAdminHostels(params) {
-  const response = await leaveApi.getAdminHostels(params);
+  const response = await leaveApi.getManagementHostels(params);
   return response.data;
 }
 
 export async function getAdminDashboardStats(params) {
-  const response = await leaveApi.getAdminDashboardStats(params);
+  const response = await leaveApi.getDashboardStats(params);
   return response.data;
 }
+
 export async function getLeaveByIdAdmin(id) {
-  const response = await leaveApi.getLeaveByIdAdmin(id);
+  const response = await leaveApi.getLeaveById(id);
   return response.data;
 }
 
 export async function getSuperAdminDashboardStats(params) {
-  const response = await leaveApi.getSuperAdminDashboardStats(params);
+  const response = await leaveApi.getDashboardStats(params);
   return response.data;
 }
 
 export async function getLeaveByIdSuperAdmin(id) {
-  const response = await leaveApi.getLeaveByIdSuperAdmin(id);
+  const response = await leaveApi.getLeaveById(id);
   return response.data;
 }
 
 export async function getLeavesBySuperAdmin(params) {
-  const response = await leaveApi.getLeavesBySuperAdmin(params);
+  const { hostelId, ...rest } = params;
+  const response = await leaveApi.getManagementHostelLeaves(hostelId, rest);
   return response.data;
 }
 
 export async function cancelLeaveAdmin(id, payload) {
-  const response = await leaveApi.cancelLeaveByAdmin(id, payload);
+  const response = await leaveApi.cancelLeave(id, payload);
   return response.data;
 }
 
 export async function cancelLeaveSuperAdmin(id, payload) {
-  const response = await leaveApi.cancelLeaveBySuperAdmin(id, payload);
+  const response = await leaveApi.cancelLeave(id, payload);
   return response.data;
 }
 
 export async function getSuperAdminHostels(params) {
-  const response = await leaveApi.getSuperAdminHostels(params);
+  const response = await leaveApi.getManagementHostels(params);
   return response.data;
 }
 
+export async function updateLeaveStatusByAdmin(id, payload) {
+  // Using approve as the default patch status endpoint
+  const response = await leaveApi.approveLeave(id, payload);
+  return response.data;
+}
+
+export async function approveLeaveByAdmin(id, payload) {
+  const response = await leaveApi.approveLeave(id, payload);
+  return response.data;
+}
+
+export async function rejectLeaveByAdmin(id, payload) {
+  const response = await leaveApi.rejectLeave(id, payload);
+  return response.data;
+}
+
+export async function getLeavesByMentor(params) {
+  const { hostelId, ...rest } = params;
+  const response = await leaveApi.getManagementHostelLeaves(hostelId, rest);
+  return response.data;
+}
+
+export async function getMentorDashboardStats(params) {
+  const response = await leaveApi.getDashboardStats(params);
+  return response.data;
+}
+
+export async function getMentorHostels(params) {
+  const response = await leaveApi.getManagementHostels(params);
+  return response.data;
+}
+
+export async function getLeaveByIdMentor(id) {
+  const response = await leaveApi.getLeaveById(id);
+  return response.data;
+}
+
+export async function approveLeaveByMentor(id, payload) {
+  const response = await leaveApi.approveLeave(id, payload);
+  return response.data;
+}
+
+export async function rejectLeaveByMentor(id, payload) {
+  const response = await leaveApi.rejectLeave(id, payload);
+  return response.data;
+}
+
+export async function cancelLeaveByMentor(id, payload) {
+  const response = await leaveApi.cancelLeave(id, payload);
+  return response.data;
+}
+
+/**
+ * Warden Endpoints
+ */
 export async function getLeavesByWarden(params) {
-  const response = await leaveApi.getLeavesByWarden(params);
+  const response = await leaveApi.getWardenList(params);
+  return response.data;
+}
+
+export async function getLeaveByIdWarden(id) {
+  const response = await leaveApi.getLeaveById(id);
+  return response.data;
+}
+
+export async function getWardenDashboardStats(params) {
+  const response = await leaveApi.getDashboardStats(params);
   return response.data;
 }
 
@@ -103,100 +170,38 @@ export async function markStudentReturned(id) {
   return response.data;
 }
 
-export async function updateLeaveStatusByAdmin(id, payload) {
-  const response = await leaveApi.updateLeaveStatusByAdmin(id, payload);
-  return response.data;
-}
-
-export async function approveLeaveByAdmin(id, payload) {
-  const response = await leaveApi.approveLeaveByAdmin(id, payload);
-  return response.data;
-}
-
-export async function rejectLeaveByAdmin(id, payload) {
-  const response = await leaveApi.rejectLeaveByAdmin(id, payload);
-  return response.data;
-}
-
 /**
- * Parent Endpoints (Placeholders for future backend endpoints)
+ * Parent Endpoints
  */
 export async function getLeavesByParent(params) {
   const { studentId, ...restParams } = params;
-  const response = await leaveApi.getLeavesByParentV2(studentId, restParams);
+  const response = await leaveApi.getParentList({ ...restParams, studentId });
   return response.data;
 }
 
 export async function getUnifiedPassesParent(params) {
   const { studentId, ...restParams } = params;
-  const response = await leaveApi.getUnifiedPassesParentV2(studentId, restParams);
+  const response = await leaveApi.getLeaves({ ...restParams, studentId });
   return response.data;
 }
 
 export async function approveLeaveByParent(id, payload) {
-  const { studentId, ...restPayload } = payload;
-  const response = await leaveApi.approveLeaveByParentV2(studentId, id, restPayload);
+  const response = await leaveApi.approveLeave(id, payload);
   return response.data;
 }
 
 export async function rejectLeaveByParent(id, payload) {
-  const { studentId, ...restPayload } = payload;
-  const response = await leaveApi.rejectLeaveByParentV2(studentId, id, restPayload);
+  const response = await leaveApi.rejectLeave(id, payload);
   return response.data;
 }
 
 export async function getLeaveByIdParent(id, studentId) {
-  const response = await leaveApi.getLeaveByIdParentV2(studentId, id);
+  // studentId is no longer strictly required for the API path since we use /passes/:id
+  const response = await leaveApi.getLeaveById(id);
   return response.data;
 }
 
-
-export async function getLeaveByIdWarden(id) {
-  const response = await leaveApi.getLeaveByIdWarden(id);
-  return response.data;
-}
-
-export async function getWardenDashboardStats(params) {
-  const response = await leaveApi.getWardenDashboardStats(params);
-  return response.data;
-}
-
-export async function getLeavesByMentor(params) {
-  const response = await leaveApi.getLeavesByMentor(params);
-  return response.data;
-}
-
-export async function getMentorDashboardStats(params) {
-  const response = await leaveApi.getMentorDashboardStats(params);
-  return response.data;
-}
-
-export async function getMentorHostels(params) {
-  const response = await leaveApi.getMentorHostels(params);
-  return response.data;
-}
-
-export async function getLeaveByIdMentor(id) {
-  const response = await leaveApi.getLeaveByIdMentor(id);
-  return response.data;
-}
-
-export async function approveLeaveByMentor(id, payload) {
-  const response = await leaveApi.approveLeaveByMentor(id, payload);
-  return response.data;
-}
-
-export async function rejectLeaveByMentor(id, payload) {
-  const response = await leaveApi.rejectLeaveByMentor(id, payload);
-  return response.data;
-}
-
-export async function cancelLeaveByMentor(id, payload) {
-  const response = await leaveApi.cancelLeaveByMentor(id, payload);
-  return response.data;
-}
-
-// Set up Role Resolvers (matching the structure of other services)
+// Set up Role Resolvers
 const LEAVE_FETCHERS = {
   [ROLES.ADMIN]: getLeavesByAdmin,
   [ROLES.SUPER_ADMIN]: getLeavesBySuperAdmin,
@@ -229,14 +234,8 @@ const LEAVE_DETAILS_FETCHERS = {
 };
 
 export const getLeaves = createRoleResolver(LEAVE_FETCHERS, 'leave');
-
 export const getLeaveHostels = createRoleResolver(LEAVE_HOSTELS_FETCHERS, 'leave hostels');
-
-export const updateLeaveStatus = createRoleResolver(
-  LEAVE_STATUS_UPDATE_FETCHERS,
-  'leave status update'
-);
-
+export const updateLeaveStatus = createRoleResolver(LEAVE_STATUS_UPDATE_FETCHERS, 'leave status update');
 export const getLeaveDetails = createRoleResolver(LEAVE_DETAILS_FETCHERS, 'leave details');
 
 const APPROVE_FETCHERS = {
