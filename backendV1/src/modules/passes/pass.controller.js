@@ -280,26 +280,39 @@ export const cancelPass = asyncHandler(async (req, res) => {
     data: req.body
   });
 
-  const reason = req.body?.remarks || req.body?.reason || "Cancelled by admin.";
+  const isStudent = (req.user.role || '').toLowerCase() === 'student';
+  const isParent = (req.user.role || '').toLowerCase() === 'parent';
+
+  const defaultReason = isStudent
+    ? "Withdrawn by student."
+    : isParent
+    ? "Cancelled by parent."
+    : "Cancelled by admin.";
+
+  const reason = req.body?.remarks || req.body?.reason || defaultReason;
+  const eventName = isStudent ? 'PASS_STUDENT_CANCELLED' : (isParent ? 'PASS_PARENT_CANCELLED' : 'PASS_ADMIN_CANCELLED');
+
+  const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : (updatedPass.passType === 'out_pass' ? 'Out Pass' : 'Emergency Pass');
+  const studentName = updatedPass.student?.name || updatedPass.studentName || "Student";
 
   orchestratorService.triggerNotification({
     sender: buildSender(req.user),
-    eventName: 'PASS_ADMIN_CANCELLED',
+    eventName: eventName,
     target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
-    data: { reason }
+    data: { reason, passTypeLabel, studentName }
   }).catch(err => console.error("Notification Error:", err));
 
-  if (updatedPass.parentId) {
+  if (updatedPass.parentId || updatedPass.studentId) {
     orchestratorService.triggerNotification({
       sender: buildSender(req.user),
-      eventName: 'PASS_ADMIN_CANCELLED',
+      eventName: eventName,
       target: { type: 'PARENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
-      data: { reason }
+      data: { reason, passTypeLabel, studentName }
     }).catch(err => console.error("Notification Error:", err));
   }
 
   await createLogDb({
-    action: req.user.role === ROLES.STUDENT || req.user.role === ROLES.PARENT ? "Cancelled Pass" : "Admin Cancelled Pass",
+    action: isStudent ? "Withdrew Pass" : (isParent ? "Cancelled Pass" : "Admin Cancelled Pass"),
     entityType: "Pass",
     entityId: req.params.id,
     user: req.user.id,

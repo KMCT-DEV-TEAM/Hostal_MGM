@@ -449,6 +449,126 @@ export default {
         }
     },
 
+    PASS_STUDENT_CANCELLED: {
+        student: {
+            "in-app": {
+                title: "Pass Request Withdrawn",
+                message: "Your {{passTypeLabel}} request has been successfully withdrawn."
+            },
+            push: {
+                title: "Pass Request Withdrawn",
+                body: "Your {{passTypeLabel}} request has been successfully withdrawn."
+            },
+            email: {
+                subject: "Confirmation: Pass Request Withdrawn",
+                html: `
+                    <p>Hello <strong>{{studentName}}</strong>,</p>
+                    <p>Your <strong>{{passTypeLabel}}</strong> request has been successfully withdrawn.</p>
+                    <p><strong>Reason:</strong> {{reason}}</p>
+                `
+            }
+        },
+        parent: {
+            "in-app": {
+                title: "Pass Cancelled by {{studentName}}",
+                message: "Your ward, {{studentName}}, has cancelled their {{passTypeLabel}} request. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Cancelled by Ward",
+                body: "Your ward, {{studentName}}, has cancelled their {{passTypeLabel}} request."
+            },
+            email: {
+                subject: "Notice: Ward's Pass Request Cancelled",
+                html: `
+                    <p>Hello,</p>
+                    <p>Your ward, <strong>{{studentName}}</strong>, has cancelled their <strong>{{passTypeLabel}}</strong> request.</p>
+                    <p><strong>Reason:</strong> {{reason}}</p>
+                `
+            }
+        },
+        admin: {
+            "in-app": {
+                title: "Pass Withdrawn by Student",
+                message: "{{studentName}} has withdrawn their {{passTypeLabel}} request. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Withdrawn",
+                body: "{{studentName}} has withdrawn their {{passTypeLabel}} request."
+            }
+        },
+        warden: {
+            "in-app": {
+                title: "Pass Withdrawn by Student",
+                message: "{{studentName}} has withdrawn their {{passTypeLabel}} request. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Withdrawn",
+                body: "{{studentName}} has withdrawn their {{passTypeLabel}} request."
+            }
+        },
+        mentor: {
+            "in-app": {
+                title: "Pass Withdrawn by Student",
+                message: "{{studentName}} has withdrawn their {{passTypeLabel}} request. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Withdrawn",
+                body: "{{studentName}} has withdrawn their {{passTypeLabel}} request."
+            }
+        }
+    },
+
+    PASS_PARENT_CANCELLED: {
+        student: {
+            "in-app": {
+                title: "Pass Cancelled by Parent",
+                message: "Your {{passTypeLabel}} request was cancelled by your parent/guardian. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Cancelled by Parent",
+                body: "Your {{passTypeLabel}} request was cancelled by your parent/guardian."
+            },
+            email: {
+                subject: "Notice: Pass Request Cancelled by Parent",
+                html: `
+                    <p>Hello <strong>{{studentName}}</strong>,</p>
+                    <p>Your parent/guardian has cancelled your <strong>{{passTypeLabel}}</strong> request.</p>
+                    <p><strong>Reason:</strong> {{reason}}</p>
+                `
+            }
+        },
+        parent: {
+            "in-app": {
+                title: "Pass Request Cancelled",
+                message: "You have cancelled the {{passTypeLabel}} request for {{studentName}}."
+            },
+            push: {
+                title: "Pass Request Cancelled",
+                body: "You have cancelled the {{passTypeLabel}} request for {{studentName}}."
+            }
+        },
+        admin: {
+            "in-app": {
+                title: "Pass Cancelled by Parent",
+                message: "A pass request for {{studentName}} was cancelled by their parent. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Cancelled by Parent",
+                body: "A pass request for {{studentName}} was cancelled by their parent."
+            }
+        },
+        warden: {
+            "in-app": {
+                title: "Pass Cancelled by Parent",
+                message: "A pass request for {{studentName}} was cancelled by their parent. Reason: {{reason}}"
+            },
+            push: {
+                title: "Pass Cancelled by Parent",
+                body: "A pass request for {{studentName}} was cancelled by their parent."
+            }
+        }
+    },
+
     WARDEN_MARKED_OUT: {
         student: {
             "in-app": {

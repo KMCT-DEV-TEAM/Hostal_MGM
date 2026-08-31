@@ -38,6 +38,6 @@ export const MENTOR_ASSIGNMENT_STATUS = {
 };
 
 export const PARENT_STATUS = {
-  ACTIVE: 'ACTIVE',
-  INACTIVE: 'INACTIVE',
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
 };
