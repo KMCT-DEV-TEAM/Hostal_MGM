@@ -41,7 +41,7 @@ export const getStudentPassesUnifiedDb = async (studentId, query) => {
   }
 
   if (query.passType) where.passType = query.passType;
-  if (query.category) where.outPassCategory = query.category;
+  if (query.outPassCategory) where.outPassCategory = query.outPassCategory;
 
   if (query.fromDate || query.toDate) {
     const dateFilter = {};
