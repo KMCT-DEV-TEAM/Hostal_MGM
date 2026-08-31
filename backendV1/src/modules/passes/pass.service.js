@@ -1283,8 +1283,8 @@ export const getManagementHostelPassesDb = async (query, scope, hostelId) => {
   if (query.passType && query.passType !== "all") {
     where.passType = query.passType;
   }
-  if (query.category && query.category !== "all") {
-    where.outPassCategory = query.category;
+  if (query.outPassCategory && query.outPassCategory !== "all") {
+    where.outPassCategory = query.outPassCategory;
   }
   if (query.search) {
     where.student = {
@@ -1393,6 +1393,16 @@ export const getManagementDashboardStatsDb = async (scope) => {
     matchQuery = {
       student: { organizationId: scope.organizationId }
     };
+  }
+
+  if (scope.query?.passType) {
+    matchQuery.passType = scope.query.passType;
+  }
+  if (scope.query?.outPassCategory) {
+    matchQuery.outPassCategory = scope.query.outPassCategory;
+  }
+  if (scope.query?.hostelId) {
+    matchQuery.hostelId = scope.query.hostelId;
   }
 
   const [
