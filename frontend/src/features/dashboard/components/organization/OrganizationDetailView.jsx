@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Users } from 'lucide-react';
+import { X, Building2, Fingerprint, Hash, ToggleRight, MapPin, Phone, Mail, Users } from 'lucide-react';
 import InfoRow from '@/components/ui/InfoRow';
 
 const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
@@ -37,7 +37,8 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                             <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
                             <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Organization</p>
                             <div className="space-y-1">
-                                <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedOrganizationDetail.code}</InfoRow>
+                                <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Code</>}>{selectedOrganizationDetail.code || '-'}</InfoRow>
+                                <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Organization Number</>}>{selectedOrganizationDetail.organisationNumber || '-'}</InfoRow>
                                 <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedOrganizationDetail.name}</InfoRow>
                                 <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                     <span className="flex items-center">
@@ -80,7 +81,8 @@ const OrganizationDetailView = ({ selectedOrganizationDetail, setView }) => {
                     <div className="lg:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
                         <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Organization Summary</h3>
                         <div className="space-y-1">
-                            <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedOrganizationDetail.code}</InfoRow>
+                            <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Code</>}>{selectedOrganizationDetail.code || '-'}</InfoRow>
+                            <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Organization Number</>}>{selectedOrganizationDetail.organisationNumber || '-'}</InfoRow>
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedOrganizationDetail.name}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">

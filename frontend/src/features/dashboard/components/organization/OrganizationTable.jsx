@@ -57,7 +57,8 @@ export default function OrganizationTable({
 
     useEffect(() => {
         onSearch?.(debouncedSearchTerm);
-    }, [debouncedSearchTerm, onSearch]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debouncedSearchTerm]);
 
     // 1. Column Configuration
     const columns = [

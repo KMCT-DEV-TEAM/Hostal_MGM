@@ -17,12 +17,51 @@ const OrganizationFormModal = ({
     const { t } = useTranslation();
     const [errors, setErrors] = React.useState({});
 
+    React.useEffect(() => {
+        if (!isModalOpen) {
+            setErrors({});
+        }
+    }, [isModalOpen]);
+
+    const handleLocalSubmit = (e) => {
+        e.preventDefault();
+        
+        const newErrors = {};
+        if (!formData.name?.trim()) newErrors.name = `${t('org_name') || 'Organization name'} is required`;
+        else if (errors.name && !errors.name.includes('is required')) newErrors.name = errors.name;
+
+        if (!formData.code?.trim()) newErrors.code = `${t('code') || 'Code'} is required`;
+        if (!formData.organisationNumber?.trim()) newErrors.organisationNumber = `${t('org_number') || 'Organization number'} is required`;
+        
+        if (!formData.email?.trim()) {
+            newErrors.email = `${t('email_address') || 'Email address'} is required`;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            newErrors.email = 'Invalid email format';
+        } else if (errors.email && !errors.email.includes('is required') && errors.email !== 'Invalid email format') {
+            newErrors.email = errors.email;
+        }
+        
+        if (!formData.phone || formData.phone.length < 10) {
+            newErrors.phone = `${t('phone_number') || 'Phone number'} is required and must be valid`;
+        }
+
+        if (!formData.address?.trim()) newErrors.address = `${t('full_address') || 'Full address'} is required`;
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        handleSubmit(e);
+    };
+
     if (!isModalOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-end md:items-center justify-center p-0 md:p-4">
             <form
-                onSubmit={handleSubmit}
+                onSubmit={handleLocalSubmit}
+                noValidate
                 className="
                     bg-white
                     rounded-t-2xl md:rounded-2xl rounded-b-none md:rounded-b-2xl
@@ -76,7 +115,6 @@ const OrganizationFormModal = ({
                                         }
                                         handleInputChange({ target: { name: 'name', value: cleanVal } });
                                     }}
-                                    required
                                     className={`w-full p-2.5 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs outline-none focus:border-[#0A437A]`}
                                     placeholder={t('org_name_placeholder')}
                                 />
@@ -89,13 +127,14 @@ const OrganizationFormModal = ({
                                     value={formData.code}
                                     onChange={(e) => {
                                         const val = e.target.value.toUpperCase();
+                                        setErrors(prev => ({ ...prev, code: '' }));
                                         handleInputChange({ target: { name: 'code', value: val } });
                                     }}
-                                    required
                                     disabled={isEditMode}
-                                    className={`w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A] ${isEditMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                                    className={`w-full p-2.5 border ${errors.code ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs outline-none focus:border-[#0A437A] ${isEditMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
                                     placeholder="KMCTENG"
                                 />
+                                {errors.code && <p className="text-red-500 text-[10px] mt-1">{errors.code}</p>}
                             </div>
                             <div>
                                 <label className="block text-xs mb-1.5 font-medium">{t('org_number')} <span className="text-red-500">*</span></label>
@@ -104,12 +143,13 @@ const OrganizationFormModal = ({
                                     value={formData.organisationNumber}
                                     onChange={(e) => {
                                         const val = e.target.value.toUpperCase();
+                                        setErrors(prev => ({ ...prev, organisationNumber: '' }));
                                         handleInputChange({ target: { name: 'organisationNumber', value: val } });
                                     }}
-                                    required
-                                    className="w-full p-2.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#0A437A]"
+                                    className={`w-full p-2.5 border ${errors.organisationNumber ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs outline-none focus:border-[#0A437A]`}
                                     placeholder="ORG001"
                                 />
+                                {errors.organisationNumber && <p className="text-red-500 text-[10px] mt-1">{errors.organisationNumber}</p>}
                             </div>
                         </div>
                     </section>
@@ -140,7 +180,6 @@ const OrganizationFormModal = ({
                                         }
                                     }}
                                     type="email"
-                                    required
                                     placeholder="info@example.com"
                                     className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 />
@@ -182,12 +221,15 @@ const OrganizationFormModal = ({
                                 <textarea
                                     name="address"
                                     value={formData.address}
-                                    onChange={handleInputChange}
-                                    required
+                                    onChange={(e) => {
+                                        setErrors(prev => ({ ...prev, address: '' }));
+                                        handleInputChange(e);
+                                    }}
                                     rows="3"
                                     placeholder={t('full_address_placeholder')}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                    className={`w-full px-3 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 />
+                                {errors.address && <p className="text-red-500 text-[10px] mt-1">{errors.address}</p>}
                             </div>
                         </div>
                     </section>
@@ -195,7 +237,7 @@ const OrganizationFormModal = ({
                     <div className="flex justify-end gap-3 pt-4">
                         <button
                             type="submit"
-                            disabled={isSubmitting || (formData.phone?.length !== 10)}
+                            disabled={isSubmitting}
                             className="px-6 py-2.5 text-xs font-medium text-white bg-[#0A437A] rounded-lg hover:bg-secondary transition-colors flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
