@@ -1,0 +1,574 @@
+paths:
+  /visitors/super-admin/visitors/{visitorId}/blacklist:
+    patch:
+      tags:
+        - Visitors
+      summary: Super Admin blacklists a visitor
+      description: Allows Super Admin to blacklist a visitor profile, cancelling active visit requests and firing security alerts if visitor is currently checked in.
+      operationId: blacklistVisitor
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitorId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  example: Repeated unauthorized property access
+      responses:
+        '200':
+          description: Visitor blacklisted successfully.
+        '403':
+          description: Forbidden - Super Admin role required.
+        '404':
+          description: Visitor profile not found.
+        '409':
+          description: Visitor is already blacklisted or deleted.
+
+  /visitors/super-admin/visitors/{visitorId}/remove-blacklist:
+    patch:
+      tags:
+        - Visitors
+      summary: Super Admin removes visitor from blacklist
+      description: Allows Super Admin to restore a blacklisted visitor profile to INACTIVE status.
+      operationId: removeBlacklistVisitor
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitorId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Visitor blacklist status removed successfully.
+        '403':
+          description: Forbidden - Super Admin role required.
+        '404':
+          description: Visitor profile not found.
+        '409':
+          description: Visitor is not currently blacklisted.
+
+  /visitors/super-admin/visitors/hostels:
+    get:
+      tags:
+        - Visitors
+      summary: Get hostel-wise visitor profile summary for Super Admin
+      description: Returns hostel-wise visitor statistics (total visitors, pending approvals, approved visitors) for Super Admin.
+      operationId: getSuperAdminHostelVisitors
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Hostel visitor summary fetched successfully.
+        '403':
+          description: Forbidden - Super Admin role required.
+
+  /visitors/{visitId}/students:
+    patch:
+      tags:
+        - Visitors
+      summary: Warden adds students to an active visit
+      description: Allows an assigned Warden to add additional approved students to an ongoing checked-in visit.
+      operationId: addStudentsToVisit
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - selectedStudentIds
+              properties:
+                selectedStudentIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                expectedExitTime:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Students added to visit successfully.
+        '400':
+          description: Validation error or visit not active.
+        '403':
+          description: Unauthorized warden for hostel.
+        '404':
+          description: Visit not found.
+
+  /visitors/check-in:
+    post:
+      tags:
+        - Visitors
+      summary: Warden checks in a visitor
+      description: Allows an assigned Warden to check in a visitor profile or parent for approved students.
+      operationId: checkInVisitor
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - visitor
+                - selectedStudentIds
+                - purpose
+                - expectedExitTime
+              properties:
+                visitor:
+                  type: object
+                  required:
+                    - refId
+                    - refType
+                  properties:
+                    refId:
+                      type: string
+                      format: uuid
+                    refType:
+                      type: string
+                      enum: [Parent, Visitor]
+                selectedStudentIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                purpose:
+                  type: string
+                  example: Personal Visit
+                expectedExitTime:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Visitor checked in successfully.
+        '400':
+          description: Validation error or unassigned student hostel.
+        '403':
+          description: Unauthorized warden or inactive profile.
+        '409':
+          description: Visitor already checked in.
+
+  /visitors/visit-requests/{visitRequestId}/approve:
+    patch:
+      tags:
+        - Visitors
+      summary: Approve a pending visit request
+      description: Allows authorized staff (Super Admin, Admin for organization students, Mentor for assigned batch students) to approve a pending visit request.
+      operationId: approveVisitRequest
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitRequestId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Visit request approved successfully.
+        '403':
+          description: Unauthorized role or student outside authorized scope.
+        '404':
+          description: Visit request not found.
+
+  /visitors/visit-requests/{visitRequestId}/reject:
+    patch:
+      tags:
+        - Visitors
+      summary: Reject a pending visit request
+      description: Allows authorized staff (Super Admin, Admin for organization students, Mentor for assigned batch students) to reject a pending visit request with a required reason.
+      operationId: rejectVisitRequest
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitRequestId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  example: Visitor not registered in student guardian list
+      responses:
+        '200':
+          description: Visit request rejected successfully.
+        '403':
+          description: Unauthorized role or student outside authorized scope.
+
+  /visitors/super-admin/visitor-visits/hostels:
+    get:
+      tags:
+        - Visitors
+      summary: Get hostel-wise visitor visit summary for Super Admin
+      description: Returns paginated hostel visit statistics (total visits, inside, completed, warden name) for Super Admin.
+      operationId: getSuperAdminHostelVisits
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Hostel visits summary fetched successfully.
+
+  /visitors/dashboard-summary:
+    get:
+      tags:
+        - Visitors
+      summary: Get visitor dashboard summary cards
+      description: Returns role-specific dashboard summary metric cards for Super Admin, Admin, Warden, Parent, and Student.
+      operationId: getVisitorDashboardSummary
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard summary cards fetched successfully.
+
+  /visitors/visitor-visits:
+    get:
+      tags:
+        - Visitors
+      summary: List visitor visit history logs
+      description: Retrieves paginated visitor check-in/out visit records scoped by authenticated role.
+      operationId: listVisitorVisits
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Visits fetched successfully.
+
+  /visitors/visitor-visits/{visitId}:
+    get:
+      tags:
+        - Visitors
+      summary: Get visitor visit details
+      description: Returns complete visit history details, timeline, warden check-in log, and linked students.
+      operationId: getVisitDetails
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Visit details fetched successfully.
+
+  /visitors:
+    post:
+      tags:
+        - Visitors
+      summary: Create visitor profile and visit request
+      description: Allows a parent to register a new visitor profile and submit visit request(s) for authorized students.
+      operationId: createVisitor
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - studentIds
+                - name
+                - relationship
+                - phone
+                - idProofType
+                - idProofNumber
+                - purpose
+              properties:
+                studentIds:
+                  type: array
+                  items:
+                    type: string
+                  description: List of authorized student IDs
+                name:
+                  type: string
+                relationship:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                address:
+                  type: string
+                idProofType:
+                  type: string
+                idProofNumber:
+                  type: string
+                purpose:
+                  type: string
+                remarks:
+                  type: string
+      responses:
+        '201':
+          description: Visitor created successfully.
+        '400':
+          description: Validation error.
+        '403':
+          description: Forbidden - unauthorized student.
+        '409':
+          description: Conflict - existing visitor profile found.
+    get:
+      tags:
+        - Visitors
+      summary: Unified list visitors
+      description: Retrieves paginated visitor records tailored to the authenticated user's role and scoping parameters.
+      operationId: listVisitors
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Visitors fetched successfully.
+
+  /visitors/{visitorId}/visit-requests:
+    post:
+      tags:
+        - Visitors
+      summary: Confirm or reuse existing visitor profile
+      description: Allows a parent to create visit request(s) for an existing visitor profile.
+      operationId: confirmVisitorReuse
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitorId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - studentIds
+                - relationship
+                - purpose
+              properties:
+                studentIds:
+                  type: array
+                  items:
+                    type: string
+                relationship:
+                  type: string
+                purpose:
+                  type: string
+                remarks:
+                  type: string
+      responses:
+        '201':
+          description: Visit request submitted successfully.
+        '400':
+          description: Validation error.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Visitor not found.
+
+  /visitors/{visitorId}/unassign:
+    patch:
+      tags:
+        - Visitors
+      summary: Unassign visitor from student
+      description: Allows a parent to unassign an active visitor profile from a student.
+      operationId: unassignVisitor
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitorId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - studentId
+              properties:
+                studentId:
+                  type: string
+      responses:
+        '200':
+          description: Visitor unassigned successfully.
+        '400':
+          description: Validation error or active visit in progress.
+        '404':
+          description: Assignment not found.
+
+  /visitors/{visitorId}:
+    get:
+      tags:
+        - Visitors
+      summary: Get visitor details
+      description: Retrieves detailed visitor profile information with role-aware authorization and sensitive data masking.
+      operationId: getVisitorDetails
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitorId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Visitor details fetched successfully.
+        '403':
+          description: Unauthorized to view visitor.
+        '404':
+          description: Visitor not found.
+    patch:
+      tags:
+        - Visitors
+      summary: Update visitor profile (Parent)
+      description: Allows an authorized parent to update visitor profile details (name, email, address).
+      operationId: updateVisitor
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitorId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Rajesh Sharma
+                email:
+                  type: string
+                  format: email
+                  example: rajesh.sharma@example.com
+                address:
+                  type: string
+                  example: 123 Green Park, New Delhi
+      responses:
+        '200':
+          description: Visitor profile updated successfully.
+        '400':
+          description: Validation error or invalid fields.
+        '403':
+          description: Unauthorized parent or active visit request missing.
+        '404':
+          description: Visitor not found.
+
+  /visitors/{visitorId}/status:
+    patch:
+      tags:
+        - Visitors
+      summary: Update visitor status
+      description: Updates visitor status (ACTIVE, INACTIVE, BLACKLISTED) according to role permissions.
+      operationId: updateVisitorStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: visitorId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [ACTIVE, INACTIVE, BLACKLISTED]
+      responses:
+        '200':
+          description: Visitor status updated successfully.
+        '400':
+          description: Invalid status or state.
+        '403':
+          description: Role not authorized for requested status transition.

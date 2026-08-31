@@ -1,7 +1,7 @@
 import { VISITOR_STATUS_VALUES, VISIT_STATUS_VALUES, ID_PROOF_TYPE_VALUES } from "./visitor.constant.js";
+import { isUUID } from "../../utils/validators.js";
 
-// Validates PostgreSQL UUIDs
-const isValidObjectId = (id) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(id);
+// Validates PostgreSQL UUIDs using shared validator utility
 
 // Strictly enforces exactly 10 digits, optionally starting with +91 or 91.
 const isValidPhone = (phone) => /^(?:\+91|91)?\d{10}$/.test(phone.replace(/[\s-]/g, ''));
@@ -26,7 +26,7 @@ export const validateCreateVisitor = (req, res, next) => {
         return res.status(400).json({ success: false, message: "You can only select up to 5 students per visit request." });
     }
     for (const id of studentIds) {
-        if (!isValidObjectId(id)) {
+        if (!isUUID(id)) {
             return res.status(400).json({ success: false, message: `Invalid student ID in array: ${id}` });
         }
     }
@@ -91,7 +91,7 @@ export const validateConfirmVisitor = (req, res, next) => {
         return res.status(400).json({ success: false, message: "You can only select up to 5 students per visit request." });
     }
     for (const id of studentIds) {
-        if (!isValidObjectId(id)) {
+        if (!isUUID(id)) {
             return res.status(400).json({ success: false, message: `Invalid student ID in array: ${id}` });
         }
     }
@@ -117,10 +117,11 @@ export const validateConfirmVisitor = (req, res, next) => {
 };
 
 export const validateUnassignVisitor = (req, res, next) => {
-    const { studentId, visitorId } = req.params;
+    const { visitorId } = req.params;
+    const studentId = req.params.studentId || req.body?.studentId;
 
-    if (!isValidObjectId(studentId)) return res.status(400).json({ success: false, message: "Invalid studentId." });
-    if (!isValidObjectId(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitorId." });
+    if (!isUUID(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitorId." });
+    if (!isUUID(studentId)) return res.status(400).json({ success: false, message: "Invalid studentId." });
 
     next();
 };
@@ -135,8 +136,8 @@ export const validateListVisitors = (req, res, next) => {
         return res.status(400).json({ success: false, message: "Invalid status parameter." });
     }
 
-    if (hostel && !isValidObjectId(hostel)) return res.status(400).json({ success: false, message: "Invalid hostel ID format." });
-    if (organization && !isValidObjectId(organization)) return res.status(400).json({ success: false, message: "Invalid organization ID format." });
+    if (hostel && !isUUID(hostel)) return res.status(400).json({ success: false, message: "Invalid hostel ID format." });
+    if (organization && !isUUID(organization)) return res.status(400).json({ success: false, message: "Invalid organization ID format." });
 
     const allowedSortFields = ['createdAt', 'visitorName', 'status'];
     if (sortBy && !allowedSortFields.includes(sortBy)) return res.status(400).json({ success: false, message: "Invalid sortBy parameter." });
@@ -164,13 +165,13 @@ export const validateEndUserListVisitors = (req, res, next) => {
 
 export const validateGetVisitorDetails = (req, res, next) => {
     const { visitorId } = req.params;
-    if (!isValidObjectId(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
+    if (!isUUID(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
     next();
 };
 
 export const validateApproveVisitor = (req, res, next) => {
     const { visitorId } = req.params;
-    if (!isValidObjectId(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
+    if (!isUUID(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
     next();
 };
 
@@ -178,7 +179,7 @@ export const validateRejectVisitor = (req, res, next) => {
     const { visitorId } = req.params;
     const { reason } = req.body;
 
-    if (!isValidObjectId(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
+    if (!isUUID(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
     if (!reason || typeof reason !== 'string' || reason.trim().length < 3 || reason.trim().length > 500) {
         return res.status(400).json({ success: false, message: "Rejection reason is required and must be between 3 and 500 characters." });
     }
@@ -195,10 +196,10 @@ export const validateCheckInVisitor = (req, res, next) => {
     }
 
     for (const id of selectedStudentIds) {
-        if (!isValidObjectId(id)) return res.status(400).json({ success: false, message: `Invalid student ID: ${id}` });
+        if (!isUUID(id)) return res.status(400).json({ success: false, message: `Invalid student ID: ${id}` });
     }
 
-    if (!visitor || !visitor.refId || !isValidObjectId(visitor.refId)) {
+    if (!visitor || !visitor.refId || !isUUID(visitor.refId)) {
         return res.status(400).json({ success: false, message: "A valid visitor.refId is required." });
     }
 
@@ -229,14 +230,14 @@ export const validateAddStudentsToVisit = (req, res, next) => {
     const { visitId } = req.params;
     const { selectedStudentIds, expectedExitTime } = req.body;
 
-    if (!isValidObjectId(visitId)) return res.status(400).json({ success: false, message: "Invalid visit ID." });
+    if (!isUUID(visitId)) return res.status(400).json({ success: false, message: "Invalid visit ID." });
 
     if (!Array.isArray(selectedStudentIds) || selectedStudentIds.length === 0) {
         return res.status(400).json({ success: false, message: "selectedStudentIds must be a non-empty array of valid object IDs." });
     }
 
     for (const id of selectedStudentIds) {
-        if (!isValidObjectId(id)) return res.status(400).json({ success: false, message: `Invalid student ID: ${id}` });
+        if (!isUUID(id)) return res.status(400).json({ success: false, message: `Invalid student ID: ${id}` });
     }
 
     if (!expectedExitTime || typeof expectedExitTime !== 'string') return res.status(400).json({ success: false, message: "A valid expectedExitTime is required." });
@@ -263,7 +264,7 @@ export const validateListVisits = (req, res, next) => {
 
     if (status && !VISIT_STATUS_VALUES.includes(status.toUpperCase())) return res.status(400).json({ success: false, message: "Invalid status parameter." });
 
-    if (hostel && !isValidObjectId(hostel)) return res.status(400).json({ success: false, message: "Invalid hostel ID format." });
+    if (hostel && !isUUID(hostel)) return res.status(400).json({ success: false, message: "Invalid hostel ID format." });
     if (date && isNaN(Date.parse(date))) return res.status(400).json({ success: false, message: "Invalid date format." });
 
     const allowedSortFields = ['checkInTime', 'visitorName', 'status'];
@@ -275,19 +276,19 @@ export const validateListVisits = (req, res, next) => {
 
 export const validateGetVisitDetails = (req, res, next) => {
     const { visitId } = req.params;
-    if (!isValidObjectId(visitId)) return res.status(400).json({ success: false, message: "Invalid visit ID." });
+    if (!isUUID(visitId)) return res.status(400).json({ success: false, message: "Invalid visit ID." });
     next();
 };
 
 export const validateUpdateVisitor = (req, res, next) => {
     const { visitorId } = req.params;
-    if (!isValidObjectId(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
+    if (!isUUID(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
 
     const allowedFields = ['name', 'address', 'email'];
     const updateKeys = Object.keys(req.body);
 
     if (updateKeys.length === 0) return res.status(400).json({ success: false, message: "At least one field is required to update." });
-    
+
     const invalidFields = updateKeys.filter(key => !allowedFields.includes(key));
     if (invalidFields.length > 0) return res.status(400).json({ success: false, message: `Only the following fields can be updated: ${allowedFields.join(', ')}. Invalid fields provided: ${invalidFields.join(', ')}` });
 
@@ -302,7 +303,7 @@ export const validateUpdateVisitorStatus = (req, res, next) => {
     const { visitorId } = req.params;
     const { status } = req.body;
 
-    if (!isValidObjectId(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
+    if (!isUUID(visitorId)) return res.status(400).json({ success: false, message: "Invalid visitor ID." });
     if (!status || !VISITOR_STATUS_VALUES.includes(status.toUpperCase())) return res.status(400).json({ success: false, message: `Invalid or missing status. Allowed values: ${VISITOR_STATUS_VALUES.join(', ')}` });
 
     next();
@@ -310,7 +311,7 @@ export const validateUpdateVisitorStatus = (req, res, next) => {
 
 export const validateApproveVisitRequest = (req, res, next) => {
     const { visitRequestId } = req.params;
-    if (!isValidObjectId(visitRequestId)) return res.status(400).json({ success: false, message: 'Invalid visitRequestId.' });
+    if (!isUUID(visitRequestId)) return res.status(400).json({ success: false, message: 'Invalid visitRequestId.' });
     next();
 };
 
@@ -318,7 +319,7 @@ export const validateRejectVisitRequest = (req, res, next) => {
     const { visitRequestId } = req.params;
     const { reason } = req.body;
 
-    if (!isValidObjectId(visitRequestId)) return res.status(400).json({ success: false, message: 'Invalid visitRequestId.' });
+    if (!isUUID(visitRequestId)) return res.status(400).json({ success: false, message: 'Invalid visitRequestId.' });
     if (!reason || typeof reason !== 'string' || reason.trim().length === 0) return res.status(400).json({ success: false, message: 'Rejection reason is required.' });
 
     req.body.reason = reason.trim();
@@ -329,7 +330,7 @@ export const validateBlacklistVisitor = (req, res, next) => {
     const { visitorId } = req.params;
     const { reason } = req.body;
 
-    if (!isValidObjectId(visitorId)) return res.status(400).json({ success: false, message: 'Invalid visitorId.' });
+    if (!isUUID(visitorId)) return res.status(400).json({ success: false, message: 'Invalid visitorId.' });
     if (!reason || typeof reason !== 'string' || reason.trim().length < 3) return res.status(400).json({ success: false, message: 'Reason is required and must be at least 3 characters.' });
 
     req.body.reason = reason.trim();
@@ -338,8 +339,8 @@ export const validateBlacklistVisitor = (req, res, next) => {
 
 export const validateRemoveBlacklistVisitor = (req, res, next) => {
     const { visitorId } = req.params;
-    if (!isValidObjectId(visitorId)) return res.status(400).json({ success: false, message: 'Invalid visitorId.' });
-    
+    if (!isUUID(visitorId)) return res.status(400).json({ success: false, message: 'Invalid visitorId.' });
+
     if (req.body.reason && typeof req.body.reason === 'string') req.body.reason = req.body.reason.trim();
     next();
 };
