@@ -1,12 +1,6 @@
 import "dotenv/config";
-import dns from "node:dns";
 import { connectDB, disConnectDB } from "./config/prisma.js";
 import app from "./app.js";
-
-// Ensure Node defaults to IPv4 over IPv6 to avoid ENETUNREACH in cloud environments
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder("ipv4first");
-}
 
 const PORT = process.env.PORT || 5000;
 
