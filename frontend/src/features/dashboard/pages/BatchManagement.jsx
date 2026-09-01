@@ -182,10 +182,9 @@ const BatchManagement = () => {
         if (mode === 'edit' && batch) {
             setEditingId(batch.id);
 
-            // Extract suffix code
             const departmentIdValue = batch.departmentId?.id || batch.departmentId;
-            const department = departments.find(d => d.id === departmentIdValue);
-            const prefix = department ? `${department.code}-` : '';
+            const deptCode = batch.department?.code || (departments.find(d => d.id === departmentIdValue)?.code);
+            const prefix = deptCode ? `${deptCode}-` : '';
             const suffixCode = batch.code?.startsWith(prefix) ? batch.code.substring(prefix.length) : batch.code;
 
             setFormData({
