@@ -28,10 +28,29 @@ const BatchFormModal = ({
             asForm={true}
             onSubmit={(e) => {
                 e.preventDefault();
+                const newErrors = {};
+                
                 if (!formData.departmentId) {
-                    setErrors(prev => ({ ...prev, departmentId: 'department is not selected' }));
+                    newErrors.departmentId = 'Department is not selected';
+                }
+                if (!formData.name || !formData.name.trim()) {
+                    newErrors.name = 'Batch Name is required';
+                }
+                if (!formData.code || !formData.code.trim()) {
+                    newErrors.code = 'Batch Code is required';
+                }
+                if (!formData.startYear) {
+                    newErrors.startYear = 'Start Year is required';
+                }
+                if (!formData.endYear) {
+                    newErrors.endYear = 'End Year is required';
+                }
+
+                if (Object.keys(newErrors).length > 0) {
+                    setErrors(prev => ({ ...prev, ...newErrors }));
                     return;
                 }
+                
                 setErrors({});
                 handleSubmit(e);
             }}
@@ -80,7 +99,6 @@ const BatchFormModal = ({
                                     }
                                     handleInputChange({ target: { name: 'name', value: cleanVal } });
                                 }}
-                                required
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 placeholder="Enter Batch name"
                             />
@@ -98,15 +116,16 @@ const BatchFormModal = ({
                                     name="code"
                                     value={formData.code}
                                     onChange={(e) => {
+                                        setErrors(prev => ({ ...prev, code: '' }));
                                         const val = e.target.value.toUpperCase();
                                         handleInputChange({ target: { name: 'code', value: val } });
                                     }}
-                                    required
                                     disabled={isEditMode}
                                     className={`w-full px-3 py-2 outline-none text-xs uppercase ${isEditMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-transparent'}`}
                                     placeholder="BATCH1"
                                 />
                             </div>
+                            {errors.code && <p className="text-red-500 text-[10px] mt-1">{errors.code}</p>}
                         </div>
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('start_year', 'Start Year')} <span className="text-red-500">*</span></label>
@@ -115,14 +134,15 @@ const BatchFormModal = ({
                                 name="startYear"
                                 value={formData.startYear || ''}
                                 onChange={(e) => {
+                                    setErrors(prev => ({ ...prev, startYear: '' }));
                                     handleInputChange({ target: { name: 'startYear', value: parseInt(e.target.value) || '' } });
                                 }}
-                                required
                                 min="1900"
                                 max="2100"
-                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.startYear ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 placeholder="e.g. 2024"
                             />
+                            {errors.startYear && <p className="text-red-500 text-[10px] mt-1">{errors.startYear}</p>}
                         </div>
                         <div className="col-span-1">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('end_year', 'End Year')} <span className="text-red-500">*</span></label>
@@ -131,14 +151,15 @@ const BatchFormModal = ({
                                 name="endYear"
                                 value={formData.endYear || ''}
                                 onChange={(e) => {
+                                    setErrors(prev => ({ ...prev, endYear: '' }));
                                     handleInputChange({ target: { name: 'endYear', value: parseInt(e.target.value) || '' } });
                                 }}
-                                required
                                 min="1900"
                                 max="2100"
-                                className="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-[#0A437A]"
+                                className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.endYear ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 placeholder="e.g. 2028"
                             />
+                            {errors.endYear && <p className="text-red-500 text-[10px] mt-1">{errors.endYear}</p>}
                         </div>
                         <div className="col-span-1 sm:col-span-2">
                             <label className="block text-[10px] font-medium text-black mb-1">{t('department')} <span className="text-red-500">*</span></label>

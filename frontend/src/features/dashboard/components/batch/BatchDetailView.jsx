@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Calendar, UserCircleIcon, UserCircle2 } from 'lucide-react';
+import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail, Calendar, UserCircleIcon, UserCircle2, BookOpen, Layers } from 'lucide-react';
 import DetailCard from '@/components/ui/DetailCard';
 import DetailRow from '@/components/ui/DetailRow';
 import ActivityLog from '@/components/ui/ActivityLog';
@@ -81,8 +81,7 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
 
     // Extract organization ID safely
     const orgId = displayBatch?.department?.course?.organization?.id
-        || displayBatch?.departmentId?.courseId?.organizationId
-        || displayBatch?.organizationId;
+        || displayBatch?.department?.course?.organizationId;
 
     return (
         <>
@@ -102,8 +101,10 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                         <DetailCard title="Basic Info" subtitle="Basic information of the Batch">
                             <div className="space-y-1">
                                 <DetailRow label="Id" value={displayBatch.code} icon={<Fingerprint className="w-4 h-4 text-text-secondary" />} />
-                                <DetailRow label="Name" value={displayBatch.name || 'Ajmal'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
-                                <DetailRow label="Dept" value={displayBatch.departmentId?.name || displayBatch.departmentId || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Name" value={displayBatch.name || 'N/A'} icon={<Layers className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Org" value={displayBatch?.department?.course?.organization?.name || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Course" value={displayBatch?.department?.course?.name || 'N/A'} icon={<BookOpen className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Dept" value={displayBatch.department?.name || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
                                 <DetailRow label="Start Year" value={displayBatch.startYear || 'N/A'} icon={<Calendar className="w-4 h-4 text-text-secondary" />} />
                                 <DetailRow label="End Year" value={displayBatch.endYear || 'N/A'} icon={<Calendar className="w-4 h-4 text-text-secondary" />} />
                                 <DetailRow label="Status" value={
@@ -177,31 +178,17 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                             )}
                         </DetailCard>
 
-                        {displayBatch.address && (
-                            <DetailCard title="Address Information" subtitle="Address information of the Batch">
-                                <div className="space-y-1">
-                                    <DetailRow label="Address" value={<span className="break-words whitespace-pre-wrap">{displayBatch.address}</span>} icon={<MapPin className="w-4 h-4 text-text-secondary" />} />
-                                </div>
-                            </DetailCard>
-                        )}
 
-                        {(displayBatch.phone || displayBatch.email) && (
-                            <DetailCard title="Contact Information" subtitle="Contact information of the Batch">
-                                <div className="space-y-1">
-                                    {displayBatch.phone && <DetailRow label="Phone" value={displayBatch.phone} icon={<Phone className="w-4 h-4 text-text-secondary" />} />}
-                                    {displayBatch.email && <DetailRow label="Email" value={displayBatch.email} icon={<Mail className="w-4 h-4 text-text-secondary" />} />}
-                                </div>
-                            </DetailCard>
-                        )}
                     </div>
 
                     <div className="md:col-span-5 space-y-4 md:space-y-6 h-fit">
                         <DetailCard title="Batch Summary" subtitle="Key metrics and details">
                             <div className="space-y-1">
                                 <DetailRow label="Id" value={displayBatch.code} icon={<Fingerprint className="w-4 h-4 text-text-secondary" />} />
-                                <DetailRow label="Name" value={displayBatch.name} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
-                                <DetailRow label="Dept" value={displayBatch.departmentId?.name || displayBatch.departmentId || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
-                                <DetailRow label="Org" value={displayBatch?.departmentId?.courseId?.organizationId?.name || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Name" value={displayBatch.name || 'N/A'} icon={<Layers className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Org" value={displayBatch?.department?.course?.organization?.name || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Course" value={displayBatch?.department?.course?.name || 'N/A'} icon={<BookOpen className="w-4 h-4 text-text-secondary" />} />
+                                <DetailRow label="Dept" value={displayBatch.department?.name || 'N/A'} icon={<Building2 className="w-4 h-4 text-text-secondary" />} />
                                 <DetailRow label="Start Year" value={displayBatch.startYear || 'N/A'} icon={<Calendar className="w-4 h-4 text-text-secondary" />} />
                                 <DetailRow label="End Year" value={displayBatch.endYear || 'N/A'} icon={<Calendar className="w-4 h-4 text-text-secondary" />} />
                                 <DetailRow label="Status" value={
@@ -210,8 +197,6 @@ const BatchDetailView = ({ selectedBatchDetail, setView }) => {
                                         {displayBatch.isActive ? 'Active' : 'Inactive'}
                                     </span>
                                 } icon={<ToggleRight className="w-4 h-4 text-text-secondary" />} />
-                                {displayBatch.phone && <DetailRow label="Phone" value={displayBatch.phone} icon={<Phone className="w-4 h-4 text-text-secondary" />} />}
-                                {displayBatch.email && <DetailRow label="Email" value={displayBatch.email} icon={<Mail className="w-4 h-4 text-text-secondary" />} />}
                             </div>
                         </DetailCard>
 
