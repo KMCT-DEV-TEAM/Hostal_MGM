@@ -32,7 +32,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
     // If email sending fails, delete the OTP so the user can retry immediately
     await deleteOtpDb(email);
     console.error("Failed to send email:", error);
-    return sendError(res, 500, error.message || "Failed to send email");
+    return sendError(res, 500, "Failed to send email");
   }
 });
 

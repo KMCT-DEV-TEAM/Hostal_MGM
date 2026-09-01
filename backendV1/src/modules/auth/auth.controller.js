@@ -359,14 +359,11 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const text = `Your OTP for password reset is: ${otpCode}. It will expire in 5 minutes.`;
   const html = `<p>Your OTP for password reset is: <strong>${otpCode}</strong></p><p>It will expire in 5 minutes.</p>`;
 
-  try {
-    await sendMail(email, subject, text, html);
-    return sendSuccess(res, 200, "OTP sent to email");
-  } catch (err) {
+  await sendMail(email, subject, text, html).catch((err) => {
     console.error("Failed to send OTP mail:", err);
-    await deleteOtpDb(email);
-    return sendError(res, 500, err.message || "Failed to send email. Please check server email configuration.");
-  }
+  });
+
+  return sendSuccess(res, 200, "OTP sent to email");
 });
 
 export const verifyResetOtp = asyncHandler(async (req, res) => {
@@ -503,14 +500,11 @@ export const requestEmailChange = asyncHandler(async (req, res) => {
   const text = `Your OTP for changing your email address is: ${otpCode}. It will expire in 5 minutes.`;
   const html = `<p>Your OTP for changing your email address is: <strong>${otpCode}</strong></p><p>It will expire in 5 minutes.</p>`;
 
-  try {
-    await sendMail(newEmail, subject, text, html);
-    return sendSuccess(res, 200, "OTP sent to new email address");
-  } catch (err) {
+  await sendMail(newEmail, subject, text, html).catch((err) => {
     console.error("Failed to send OTP mail:", err);
-    await deleteOtpDb(newEmail);
-    return sendError(res, 500, err.message || "Failed to send email. Please check server email configuration.");
-  }
+  });
+
+  return sendSuccess(res, 200, "OTP sent to new email address");
 });
 
 export const verifyEmailChange = asyncHandler(async (req, res) => {
