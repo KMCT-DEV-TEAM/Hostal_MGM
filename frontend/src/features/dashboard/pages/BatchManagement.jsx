@@ -192,6 +192,8 @@ const BatchManagement = () => {
                 name: batch.name || '',
                 code: suffixCode || '',
                 departmentId: departmentIdValue || '',
+                startYear: batch.startYear || '',
+                endYear: batch.endYear || '',
                 status: batch.isActive ? 'Active' : 'Inactive',
                 isActive: batch.isActive,
                 originalIsActive: batch.isActive
@@ -202,6 +204,8 @@ const BatchManagement = () => {
                 name: '',
                 code: '',
                 departmentId: '',
+                startYear: '',
+                endYear: '',
                 status: 'Active',
                 isActive: true
             });
