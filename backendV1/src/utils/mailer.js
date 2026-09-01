@@ -11,8 +11,13 @@ const createTransporter = () => {
   }
 
   return nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // true for 465, false for 587 (STARTTLS)
     auth: { user, pass },
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
 };
 
@@ -21,7 +26,7 @@ export const sendMail = async (to, subject, text, html) => {
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"Hostal MGM" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,
