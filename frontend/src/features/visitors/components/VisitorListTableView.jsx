@@ -149,14 +149,18 @@ const VisitorListTableView = ({
     const cardConfig = {
         avatar: (visitor) => visitor.visitorName ? visitor.visitorName.split(' ').map(n => n[0]).join('').toUpperCase() : 'V',
         title: (visitor) => visitor.visitorName || visitor.name || 'Unknown',
-        // subtitle: (visitor) => visitor.phone || '--',
-        status: (visitor) => ({
-            text: visitor.status || 'Unknown',
-            color: ['Checked_in', 'Approved', 'Completed'].includes(visitor.status) ? "green"
-                : ['Checked_out', 'Rejected', 'Overstayed', 'Inactive'].includes(visitor.status) ? "red"
-                    : ['Extended', 'Pending'].includes(visitor.status) ? "yellow"
-                        : "gray"
-        }),
+        status: (visitor) => {
+            const currentStatus = visitor.status ? visitor.status.toUpperCase() : 'UNKNOWN';
+            let color = "gray";
+            if (['CHECKED_IN', 'APPROVED', 'COMPLETED', 'ACTIVE'].includes(currentStatus)) color = "green";
+            else if (['CHECKED_OUT', 'REJECTED', 'OVERSTAYED', 'INACTIVE', 'BLACKLISTED'].includes(currentStatus)) color = "red";
+            else if (['EXTENDED', 'PENDING'].includes(currentStatus)) color = "yellow";
+            
+            return {
+                text: visitor.status ? visitor.status.replace(/_/g, ' ') : 'Unknown',
+                color
+            };
+        },
         fields: [
             // { icon: Phone, accessor: (visitor) => visitor.phone || '--' },
             ...(userRole !== ROLES.STUDENT ? [{

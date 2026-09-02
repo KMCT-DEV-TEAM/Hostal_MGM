@@ -3,19 +3,28 @@ import Modal from '@/components/ui/Modal';
 
 export default function LeaveActionModal({ isOpen, onClose, actionType, onSubmit, isSubmitting }) {
     const [remarks, setRemarks] = useState('');
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (isOpen) {
             setRemarks('');
+            setError('');
         }
     }, [isOpen]);
 
+    const isApprove = actionType === 'approved';
+
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!isApprove && !remarks.trim()) {
+            setError('Reason is required for rejection.');
+            return;
+        }
+        setError('');
         onSubmit(remarks);
     };
 
-    const isApprove = actionType === 'approved';
+
 
     const titleColor = isApprove ? 'text-success' : 'text-danger';
     const titleText = isApprove ? 'Approve Request' : 'Reject Request';
@@ -57,10 +66,14 @@ export default function LeaveActionModal({ isOpen, onClose, actionType, onSubmit
 
                     <textarea
                         value={remarks}
-                        onChange={(e) => setRemarks(e.target.value)}
-                        placeholder="Enter the reason"
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-md text-sm focus:outline-none min-h-[100px] resize-y"
+                        onChange={(e) => {
+                            setRemarks(e.target.value);
+                            if (error) setError('');
+                        }}
+                        placeholder={isApprove ? "Enter the reason (optional)" : "Enter the reason (required)"}
+                        className={`w-full px-4 py-3 bg-white border ${error ? 'border-danger' : 'border-gray-300'} rounded-md text-sm focus:outline-none min-h-[100px] resize-y`}
                     />
+                    {error && <p className="text-danger text-xs mt-1 font-medium">{error}</p>}
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-4">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PageHeader from '@/components/ui/PageHeader';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useParentStore } from '@/store/useParentStore';
 import { useSearchParams } from 'react-router-dom';
 import { useDebounce } from '@/hooks/useDebounce';
 import VisitorStats from '../components/VisitorStats';
@@ -19,6 +20,7 @@ import { ROLES } from '@/constants/roles';
 
 const VisitorHistoryPage = () => {
     const { user } = useAuthStore();
+    const { activeStudentId } = useParentStore();
     const [searchParams, setSearchParams] = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [visitors, setVisitors] = useState([]);
@@ -58,6 +60,7 @@ const VisitorHistoryPage = () => {
             if (filters.status) params.status = filters.status;
             if (filters.fromDate) params.startDate = filters.fromDate;
             if (filters.toDate) params.endDate = filters.toDate;
+            if (isParent && activeStudentId) params.studentId = activeStudentId;
 
             if (showAggregatedView) {
                 res = await getSuperAdminHostelVisits(params);
@@ -96,7 +99,7 @@ const VisitorHistoryPage = () => {
             setLoading(false);
         }
 
-    }, [showAggregatedView, selectedHostel, debouncedSearchQuery, filters, page, isMobile]);
+    }, [showAggregatedView, selectedHostel, debouncedSearchQuery, filters, page, isMobile, isParent, activeStudentId]);
 
     useEffect(() => {
         fetchVisitors();
@@ -280,8 +283,8 @@ const VisitorHistoryPage = () => {
                         label: "Status",
                         options: [
                             { label: 'All Status', value: '' },
-                            { label: 'Checked In', value: 'Checked In' },
-                            { label: 'Completed', value: 'Completed' },
+                            { label: 'Checked In', value: 'CHECKED_IN' },
+                            { label: 'Completed', value: 'COMPLETED' },
                         ]
                     },
                     {

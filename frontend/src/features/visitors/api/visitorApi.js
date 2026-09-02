@@ -1,6 +1,6 @@
 import api from '@/services/axios';
 
-const BASE_URL = '/visitor'
+const BASE_URL = '/visitors'
 
 export const visitorApi = {
     // 1. Create Visitor Profile
@@ -13,7 +13,7 @@ export const visitorApi = {
     getParentVisitors: (params) => api.get(`${BASE_URL}/parent/visitors`, { params }),
 
     // 3. List Student Visitors
-    getStudentVisitors: (params) => api.get(`${BASE_URL}/student/visitors`, { params }),
+    getStudentVisitors: (params) => api.get(`${BASE_URL}`, { params }),
 
     // 4. List All Visitors (Management)
     getAllVisitors: (params) => api.get(BASE_URL, { params }),
@@ -46,12 +46,12 @@ export const visitorApi = {
     getDashboardSummary: () => api.get(`${BASE_URL}/dashboard-summary`),
 
     // V2 Parent Endpoints
-    createVisitorProfileV2: (studentId, payload) => api.post(`/parent/students/${studentId}/visitors`, payload),
-    updateVisitorProfileV2: (studentId, visitorId, payload) => api.patch(`/parent/students/${studentId}/visitors/${visitorId}`, payload),
-    getParentVisitorsV2: (studentId, params) => api.get(`/parent/students/${studentId}/visitors`, { params }),
-    getVisitorDetailsParentV2: (studentId, visitorId) => api.get(`/parent/students/${studentId}/visitors/${visitorId}`),
-    reuseVisitorProfileV2: (studentId, visitorId, payload) => api.post(`/parent/students/${studentId}/visitors/${visitorId}/visit-requests`, payload),
-    unassignVisitorV2: (studentId, visitorId) => api.patch(`/parent/students/${studentId}/visitors/${visitorId}/unassign`),
+    createVisitorProfileV2: (payload) => api.post(BASE_URL, payload),
+    updateVisitorProfileV2: (visitorId, payload) => api.patch(`${BASE_URL}/${visitorId}`, payload),
+    getParentVisitorsV2: (params) => api.get(BASE_URL, { params }),
+    getVisitorDetailsParentV2: (visitorId) => api.get(`${BASE_URL}/${visitorId}`),
+    reuseVisitorProfileV2: (visitorId, payload) => api.post(`${BASE_URL}/${visitorId}/visit-requests`, payload),
+    unassignVisitorV2: (visitorId, payload) => api.patch(`${BASE_URL}/${visitorId}/unassign`, payload),
 
     // VisitRequest Granular Approvals
     approveVisitRequest: (visitRequestId) => api.patch(`${BASE_URL}/visit-requests/${visitRequestId}/approve`),

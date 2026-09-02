@@ -51,7 +51,7 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
             setValue('idProofType', prefilledVisitor.idProofType || '');
             setValue('idNumber', prefilledVisitor.idProofNumber || '');
 
-            const studentsList = prefilledVisitor.linkedStudents || prefilledVisitor.students;
+            const studentsList = prefilledVisitor.visitRequests?.map(req => req.student) || prefilledVisitor.linkedStudents || prefilledVisitor.students;
             if (studentsList && studentsList.length > 0) {
                 const studentIds = studentsList.map(s => s.studentId || (typeof s === 'string' ? s : (s._id || s.id)));
                 setValue('selectedStudentIds', studentIds);
@@ -225,16 +225,19 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                         )}
                     </div>
 
-                    {(prefilledVisitor?.linkedStudents || prefilledVisitor?.students) && (prefilledVisitor.linkedStudents || prefilledVisitor.students).length > 1 && (
-                        <div className="bg-gray-50 p-4 rounded-xl space-y-3">
-                            <label className="block mb-1 text-sm text-text-primary font-medium">Visiting Students *</label>
-                            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
-                                <Controller
-                                    name="selectedStudentIds"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <>
-                                            {(prefilledVisitor.linkedStudents || prefilledVisitor.students).map((student) => {
+                    {(() => {
+                        const allStudents = prefilledVisitor?.visitRequests?.map(req => req.student) || prefilledVisitor?.linkedStudents || prefilledVisitor?.students;
+                        if (allStudents && allStudents.length > 1) {
+                            return (
+                                <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                                    <label className="block mb-1 text-sm text-text-primary font-medium">Visiting Students *</label>
+                                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2">
+                                        <Controller
+                                            name="selectedStudentIds"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <>
+                                                    {allStudents.map((student) => {
                                                 const sId = student.studentId || (typeof student === 'string' ? student : (student._id || student.id));
 
                                                 if (!sId) return null; // safety check
@@ -267,7 +270,10 @@ const CheckInModal = ({ isOpen, onClose, onSuccess, prefilledVisitor }) => {
                             </div>
                             {errors.selectedStudentIds && <span className="text-xs text-danger mt-1">{errors.selectedStudentIds.message}</span>}
                         </div>
-                    )}
+                            );
+                        }
+                        return null;
+                    })()}
 
                     <div>
                         <label className="block mb-1 text-sm text-text-primary font-medium">Visiting Purpose *</label>

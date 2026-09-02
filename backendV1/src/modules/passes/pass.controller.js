@@ -568,6 +568,7 @@ export const getManagementDashboardStats = asyncHandler(async (req, res, next) =
   }
 
   // Delegate to pass.service.js for admin/super_admin pass stats
+  scope.query = req.query;
   const stats = await getManagementDashboardStatsDb(scope);
   return sendSuccess(res, 200, "Dashboard stats fetched successfully", { data: stats });
 });

@@ -5,23 +5,23 @@ import { Clock } from 'lucide-react';
 const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
 
-const TimeInput = forwardRef(({ 
-    label, 
+const TimeInput = forwardRef(({
+    label,
     name,
     value,
     onChange,
     onBlur,
-    className = "", 
-    containerClassName = "", 
-    labelClassName = "block mb-2 text-sm text-text-primary font-medium", 
+    className = "",
+    containerClassName = "",
+    labelClassName = "block mb-2 text-sm text-text-primary font-medium",
     error,
     placeholder = "Select Time",
-    ...props 
+    ...props
 }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
     const [popoverStyle, setPopoverStyle] = useState({});
-    
+
     // Parse current value
     const currentHour = value ? value.split(':')[0] : '12';
     const currentMinute = value ? value.split(':')[1] : '00';
@@ -77,7 +77,7 @@ const TimeInput = forwardRef(({
             const spaceBelow = window.innerHeight - rect.bottom;
             const spaceAbove = rect.top;
             const dropUp = spaceBelow < 250 && spaceAbove > spaceBelow;
-            
+
             setPopoverStyle({
                 position: 'fixed',
                 top: dropUp ? 'auto' : rect.bottom + 4,
@@ -114,12 +114,12 @@ const TimeInput = forwardRef(({
         }
 
         const newValue = `${newHour}:${newMinute}`;
-        
+
         // Call react-hook-form's onChange or native onChange
         if (onChange) {
             onChange({ target: { name, value: newValue } });
         }
-        
+
         // Auto-close if minute is selected (optional, maybe better not to for tweaking)
         // if (type === 'minute') setIsOpen(false);
     };
@@ -141,24 +141,23 @@ const TimeInput = forwardRef(({
                     {label} {props.required && <span className="text-red-500">*</span>}
                 </label>
             )}
-            
+
             {/* Hidden native input for react-hook-form to register correctly if used with standard ref */}
-            <input 
-                type="hidden" 
-                ref={ref} 
-                name={name} 
-                value={value || `${selectedHour}:${selectedMinute}`} 
-                {...props} 
+            <input
+                type="hidden"
+                ref={ref}
+                name={name}
+                value={value || `${selectedHour}:${selectedMinute}`}
+                {...props}
             />
 
-            <div 
-                className={`relative w-full group flex items-center bg-white border rounded-lg cursor-pointer transition-colors ${
-                    error 
-                    ? 'border-red-500 ring-2 ring-red-500/20' 
-                    : isOpen 
-                        ? 'border-primary ring-2 ring-primary/20' 
-                        : 'border-slate-300 hover:border-gray-400'
-                }`}
+            <div
+                className={`relative w-full group flex items-center bg-white border rounded-lg cursor-pointer transition-colors ${error
+                        ? 'border-red-500 ring-2 ring-red-500/20'
+                        : isOpen
+                            ? 'border-primary ring-2 ring-primary/20'
+                            : 'border-slate-300 hover:border-gray-400'
+                    }`}
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className={`pl-4 pr-2 transition-colors pointer-events-none ${error ? 'text-red-400' : (isOpen ? 'text-primary' : 'text-gray-400')}`}>
@@ -168,13 +167,13 @@ const TimeInput = forwardRef(({
                     {value || `${selectedHour}:${selectedMinute}`}
                 </div>
             </div>
-            
+
             {error && (
                 <p className="text-red-500 text-xs mt-1.5 animate-in fade-in">{error.message || error}</p>
             )}
 
             {isOpen && portalTarget && createPortal(
-                <div 
+                <div
                     style={popoverStyle}
                     className="bg-white border border-gray-200 shadow-xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                 >
@@ -194,7 +193,7 @@ const TimeInput = forwardRef(({
                                 );
                             })}
                         </div>
-                        
+
                         {/* Minutes Column */}
                         <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth" ref={minutesRef}>
                             {MINUTES.map(m => {
