@@ -394,7 +394,11 @@ export default function HostelManagement() {
 
     const openEditHostelModal = (hostel) => {
         setEditingHostel(hostel);
-        setHostelForm({ ...hostel, hosteltype: hostel.hosteltype || hostel.hostelType?.toLowerCase() });
+        setHostelForm({ 
+            ...hostel, 
+            hosteltype: hostel.hosteltype || hostel.hostelType?.toLowerCase(),
+            status: hostel.isActive ? 'Active' : 'Inactive'
+        });
         setActiveModal('hostel');
     };
 
@@ -434,9 +438,12 @@ export default function HostelManagement() {
                                 <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Basic Info</h3>
                                 <p className="text-[11px] text-text-secondary mb-4">Basic contact information of the Hostel</p>
                                 <div className="space-y-1">
+                                    <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Code</>}>{selectedHostelDetail.code || 'N/A'}</InfoRow>
                                     <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedHostelDetail.name}</InfoRow>
                                     <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hostelType || selectedHostelDetail.hosteltype || 'N/A'}</span></InfoRow>
+                                    <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedHostelDetail.email || 'N/A'}</InfoRow>
                                     <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedHostelDetail.phone ? `+91 ${selectedHostelDetail.phone}` : 'N/A'}</InfoRow>
+                                    <InfoRow label={<><MapPin className="w-4 h-4 text-gray-400" /> Address</>}>{selectedHostelDetail.location || 'N/A'}</InfoRow>
                                     <InfoRow label={<><Users className="w-4 h-4 text-gray-400" /> Capacity</>}>{selectedHostelDetail.capacity || 'N/A'}</InfoRow>
                                     <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                         <span className="flex items-center">
@@ -452,6 +459,7 @@ export default function HostelManagement() {
                         <div className="md:col-span-5 bg-white p-5 sm:p-6 rounded-xl border border-gray-200 shadow-sm md:h-full">
                             <h3 className="text-sm font-semibold text-[#0A437A] mb-4">Hostel Summary</h3>
                             <div className="space-y-1">
+                                <InfoRow label={<><Hash className="w-4 h-4 text-gray-400" /> Code</>}>{selectedHostelDetail.code || 'N/A'}</InfoRow>
                                 <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedHostelDetail.name}</InfoRow>
                                 <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Type</>}><span className="capitalize">{selectedHostelDetail.hostelType || selectedHostelDetail.hosteltype || 'N/A'}</span></InfoRow>
                                 <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>

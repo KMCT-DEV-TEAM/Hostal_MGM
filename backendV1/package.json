@@ -6,19 +6,21 @@
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "dev": "nodemon --env-file=.env src/server.js",
-    "start": "node --env-file=.env src/server.js",
-    "server": "nodemon --env-file=.env src/server.js",
+    "start": "node src/server.js",
+    "server": "node src/server.js",
     "seedSuperAdmin": "node seeds/seedSuperAdmin.js",
     "prisma": "prisma",
     "studio": "prisma studio",
     "prisma:validate": "prisma validate",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.3",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "bcryptjs": "^3.0.3",

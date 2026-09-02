@@ -3,7 +3,7 @@ import React from 'react';
 const getStatusConfig = (status) => {
     if (!status) return { display: '-----', variant: 'neutral' };
 
-    const normalized = status.toLowerCase();
+    const normalized = status.toLowerCase().replace(/_/g, ' ');
 
     // Default mapping logic
     let variant = 'neutral';
@@ -52,7 +52,8 @@ const variantStyles = {
 
 const StatusBadge = ({ status, className = '', displayOverride = null }) => {
     const config = getStatusConfig(status);
-    const displayStatus = displayOverride || (status && status !== '-----' ? status : '-----');
+    const formattedStatus = status && status !== '-----' ? status.replace(/_/g, ' ') : '-----';
+    const displayStatus = displayOverride || formattedStatus;
     const styleClass = variantStyles[config.variant] || variantStyles.neutral;
 
     return (

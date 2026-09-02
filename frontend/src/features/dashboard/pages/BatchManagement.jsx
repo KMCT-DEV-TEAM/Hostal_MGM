@@ -182,16 +182,17 @@ const BatchManagement = () => {
         if (mode === 'edit' && batch) {
             setEditingId(batch.id);
 
-            // Extract suffix code
             const departmentIdValue = batch.departmentId?.id || batch.departmentId;
-            const department = departments.find(d => d.id === departmentIdValue);
-            const prefix = department ? `${department.code}-` : '';
+            const deptCode = batch.department?.code || (departments.find(d => d.id === departmentIdValue)?.code);
+            const prefix = deptCode ? `${deptCode}-` : '';
             const suffixCode = batch.code?.startsWith(prefix) ? batch.code.substring(prefix.length) : batch.code;
 
             setFormData({
                 name: batch.name || '',
                 code: suffixCode || '',
                 departmentId: departmentIdValue || '',
+                startYear: batch.startYear || '',
+                endYear: batch.endYear || '',
                 status: batch.isActive ? 'Active' : 'Inactive',
                 isActive: batch.isActive,
                 originalIsActive: batch.isActive
@@ -202,6 +203,8 @@ const BatchManagement = () => {
                 name: '',
                 code: '',
                 departmentId: '',
+                startYear: '',
+                endYear: '',
                 status: 'Active',
                 isActive: true
             });

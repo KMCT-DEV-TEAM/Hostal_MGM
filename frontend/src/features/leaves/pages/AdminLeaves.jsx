@@ -149,6 +149,9 @@ export default function AdminLeaves() {
             if (isSuperAdmin && selectedHostel) {
                 params.hostelId = selectedHostel;
             }
+            if (!isHomePass && categoryFilter) {
+                params.outPassCategory = categoryFilter;
+            }
 
             fetchStats(params)
                 .then(res => {

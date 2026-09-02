@@ -115,7 +115,7 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
 
             if (editData) {
                 payload.revision = editData.revision ?? editData.__v ?? 0;
-                await updateLeave(editData._id, payload);
+                await updateLeave(editData.id ?? editData._id, payload);
                 showSuccessToast('Leave updated successfully');
             } else {
                 await createLeave(payload);
@@ -147,7 +147,7 @@ export default function ApplyLeaveModal({ isOpen, onClose, onSuccess, initialPas
         setIsWithdrawConfirmOpen(false);
         try {
             setIsWithdrawing(true);
-            await cancelLeave(editData._id);
+            await cancelLeave(editData.id ?? editData._id);
             showSuccessToast('Request withdrawn successfully');
             closeAndReset();
             if (onSuccess) onSuccess();

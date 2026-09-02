@@ -38,7 +38,33 @@ export default function WardenFormModal({
                 <>
                     <button
                         type="submit"
-                        disabled={(!isEmailVerified && !editingWarden) || isSubmitting || (wardenForm.phone?.length !== 10)}
+                        disabled={(!isEmailVerified && !editingWarden) || isSubmitting}
+                        onClick={(e) => {
+                            let newErrors = { ...errors };
+                            let hasError = false;
+                            
+                            if (!wardenForm.name) { newErrors.name = 'Full Name is required'; hasError = true; }
+                            
+                            if (!wardenForm.phone) { 
+                                newErrors.phone = 'Phone number is required'; 
+                                hasError = true; 
+                            } else if (wardenForm.phone.length !== 10) { 
+                                newErrors.phone = 'Phone number must be exactly 10 digits'; 
+                                hasError = true; 
+                            }
+                            
+                            if (!wardenForm.email) { newErrors.email = 'Email address is required'; hasError = true; }
+                            
+                            if (!wardenForm.hostel || wardenForm.hostel === 'Not Assigned') { 
+                                newErrors.hostel = 'Hostel assignment is required'; 
+                                hasError = true; 
+                            }
+                            
+                            setErrors(newErrors);
+                            if (hasError) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="flex items-center justify-center min-w-[100px] px-4 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? <Loader2 size={14} className="animate-spin mx-auto" /> : (editingWarden ? t('save_changes') : t('save'))}
@@ -165,11 +191,12 @@ export default function WardenFormModal({
                                     ...AVAILABLE_HOSTELS.map(h => ({ value: h.id || h, label: h.name || h }))
                                 ]}
                                 value={wardenForm.hostel || 'Not Assigned'}
-                                onChange={(val) => setWardenForm(prev => ({ ...prev, hostel: val }))}
+                                onChange={(val) => { setWardenForm(prev => ({ ...prev, hostel: val })); setErrors(prev => ({ ...prev, hostel: '' })); }}
                                 placeholder={t('select_hostel')}
                                 minWidth="w-full"
-                                triggerClassName="w-full px-3 py-2 bg-gray-50/50 border border-gray-200 rounded-lg text-xs text-[#777777] focus:border-[#0A437A]"
+                                triggerClassName={`w-full px-3 py-2 bg-gray-50/50 border ${errors.hostel ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs text-[#777777] focus:border-[#0A437A]`}
                             />
+                            {errors.hostel && <p className="text-red-500 text-[10px] mt-1">{errors.hostel}</p>}
                         </div>
 
                         {editingWarden && (

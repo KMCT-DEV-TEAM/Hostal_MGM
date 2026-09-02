@@ -23,11 +23,11 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ROLES } from '@/constants/roles';
 import { initSocket } from '@/services/socket.service';
-import DepartmentHeader from '../components/Department/DepartmentHeader';
-import DepartmentTable from '../components/Department/DepartmentTable';
+import DepartmentHeader from '../components/department/DepartmentHeader';
+import DepartmentTable from '../components/department/DepartmentTable';
 
-import DepartmentDetailView from '../components/Department/DepartmentDetailView';
-import DepartmentFormModal from '../components/Department/DepartmentFormModal';
+import DepartmentDetailView from '../components/department/DepartmentDetailView';
+import DepartmentFormModal from '../components/department/DepartmentFormModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import Dropdown from '@/components/ui/Dropdown';
 
@@ -183,8 +183,8 @@ const DepartmentManagement = () => {
 
             // Extract suffix code
             const courseIdValue = Department.courseId?.id || Department.courseId;
-            const course = courses.find(c => c.id === courseIdValue);
-            const prefix = course ? `${course.code}-` : '';
+            const courseCode = Department.course?.code || (courses.find(c => c.id === courseIdValue)?.code);
+            const prefix = courseCode ? `${courseCode}-` : '';
             const suffixCode = Department.code?.startsWith(prefix) ? Department.code.substring(prefix.length) : Department.code;
 
             setFormData({
