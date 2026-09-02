@@ -19,6 +19,13 @@ const errorMiddleware = (err, req, res, next) => {
     message = `Duplicate value error for ${target}`;
   }
 
+  // Prisma foreign key constraint violation
+  if (err.code === "P2003") {
+    statusCode = 400;
+    const field = err.meta?.field_name || err.meta?.constraint || "foreign key constraint";
+    message = `Invalid reference: verification failed for ${field}`;
+  }
+
   // Prisma record not found
   if (err.code === "P2025") {
     statusCode = 404;

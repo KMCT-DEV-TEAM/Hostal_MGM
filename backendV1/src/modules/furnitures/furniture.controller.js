@@ -213,9 +213,9 @@ export const getFurnitureTypeDetails = asyncHandler(async (req, res) => {
   // Remap ID for frontend compatibility
   const mappedType = {
     ...type,
-    _id: type.id,
-    organizationId: type.organization ? { _id: type.organization.id, name: type.organization.name } : null,
-    hostelId: type.hostel ? { _id: type.hostel.id, name: type.hostel.name } : null,
+    id: type.id,
+    organizationId: type.organization ? { id: type.organization.id, name: type.organization.name } : null,
+    hostelId: type.hostel ? { id: type.hostel.id, name: type.hostel.name } : null,
     totalAssets: currentCount
   };
   delete mappedType.organization;
@@ -257,7 +257,7 @@ export const updateFurnitureType = asyncHandler(async (req, res) => {
 
   const mappedUpdatedType = {
     ...updatedType,
-    _id: updatedType.id
+    id: updatedType.id
   };
 
   return sendSuccess(res, 200, "Furniture Type updated successfully.", { data: mappedUpdatedType });
@@ -444,7 +444,7 @@ export const getActiveFurnitureTypesList = asyncHandler(async (req, res) => {
   const total = await prisma.furnitureType.count({ where: query });
 
   const mappedTypes = types.map(t => ({
-    _id: t.id,
+    id: t.id,
     name: t.name,
     prefix: t.prefix
   }));
@@ -501,7 +501,7 @@ export const getAvailableFurnitureAssetsList = asyncHandler(async (req, res) => 
   const total = await prisma.furnitureAsset.count({ where: assetQuery });
 
   const mappedAssets = assets.map(a => ({
-    _id: a.id,
+    id: a.id,
     furnitureId: a.furnitureId
   }));
 
