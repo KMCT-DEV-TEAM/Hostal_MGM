@@ -367,7 +367,7 @@ const OrganizationManagement = () => {
                     statusFilter={statusFilter}
                     onStatusFilterChange={(val) => { setStatusFilter(val); setPage(1); }}
                     onExport={initiateExport}
-                    onAddClick={() => openModal('add')}
+                    onAddClick={isAdmin ? undefined : () => openModal('add')}
                     onActivateSelected={() => handleBulkStatusClick(true)}
                     onDeactivateSelected={() => handleBulkStatusClick(false)}
                     selectedIds={selectedIds}

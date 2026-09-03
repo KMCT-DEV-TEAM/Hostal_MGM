@@ -5,6 +5,7 @@ import { hashPassword } from '../../utils/hash.js';
 import { sendMail } from '../../utils/mailer.js';
 import { getIo } from '../../config/socket.js';
 import { deleteOtpDb } from '../otps/otp.service.js';
+import { createLogDb } from '../logs/log.service.js';
 
 const getPaginatedUsersByRole = async (role, page, limit, status, search, additionalWhere = {}) => {
   const skip = (page - 1) * limit;
@@ -258,6 +259,16 @@ export const createAssistantWarden = asyncHandler(async (req, res) => {
       io.emit('userCreated', { role: 'assistantWarden', data: warden });
   }
 
+  await createLogDb({
+    action: "Created Assistant Warden",
+    entityType: "User",
+    entityId: warden.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Created assistant warden: ${warden.name} (${warden.email})`,
+    status: "success"
+  });
+
   return sendSuccess(res, 201, "Assistant Warden created successfully", { data: warden });
 });
 
@@ -271,6 +282,16 @@ export const updateAssistantWarden = asyncHandler(async (req, res) => {
       name: name,
       phone
     }
+  });
+
+  await createLogDb({
+    action: "Updated Assistant Warden",
+    entityType: "User",
+    entityId: updatedUser.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Updated assistant warden: ${updatedUser.name} (${updatedUser.email})`,
+    status: "success"
   });
 
   return sendSuccess(res, 200, "Assistant Warden updated successfully", { data: updatedUser });
@@ -330,6 +351,16 @@ export const toggleAssistantWardenStatus = asyncHandler(async (req, res) => {
   const updatedUser = await prisma.user.update({
     where: { id },
     data: { isActive: newIsActive }
+  });
+
+  await createLogDb({
+    action: "Toggled Assistant Warden Status",
+    entityType: "User",
+    entityId: updatedUser.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Status changed to ${updatedUser.isActive ? 'Active' : 'Inactive'} for assistant warden ${updatedUser.name}`,
+    status: "success"
   });
 
   return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
@@ -684,6 +715,16 @@ export const createWarden = asyncHandler(async (req, res) => {
       io.emit('userCreated', { role: 'warden', data: warden });
   }
 
+  await createLogDb({
+    action: "Created Warden",
+    entityType: "User",
+    entityId: warden.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Created warden: ${warden.name} (${warden.email})`,
+    status: "success"
+  });
+
   return sendSuccess(res, 201, "Warden created and assigned to hostel successfully", { data: warden });
 });
 
@@ -697,6 +738,16 @@ export const updateWarden = asyncHandler(async (req, res) => {
       name: name,
       phone
     }
+  });
+
+  await createLogDb({
+    action: "Updated Warden",
+    entityType: "User",
+    entityId: updatedUser.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Updated warden: ${updatedUser.name} (${updatedUser.email})`,
+    status: "success"
   });
 
   return sendSuccess(res, 200, "Warden updated successfully", { data: updatedUser });
@@ -773,6 +824,16 @@ export const toggleWardenStatus = asyncHandler(async (req, res) => {
   const updatedUser = await prisma.user.update({
     where: { id },
     data: { isActive: newIsActive }
+  });
+
+  await createLogDb({
+    action: "Toggled Warden Status",
+    entityType: "User",
+    entityId: updatedUser.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Status changed to ${updatedUser.isActive ? 'Active' : 'Inactive'} for warden ${updatedUser.name}`,
+    status: "success"
   });
 
   return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
