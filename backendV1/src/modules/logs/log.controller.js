@@ -1,6 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
+import { getLogsService } from './log.service.js';
 
 export const createLog = asyncHandler(async (req, res) => {
   // TODO: Implement create
@@ -8,8 +9,8 @@ export const createLog = asyncHandler(async (req, res) => {
 });
 
 export const getLogs = asyncHandler(async (req, res) => {
-  // TODO: Implement getAll
-  return sendSuccess(res, 200, 'Logs retrieved successfully', []);
+  const result = await getLogsService(req.query);
+  return sendSuccess(res, 200, 'Logs retrieved successfully', result);
 });
 
 export const getLogById = asyncHandler(async (req, res) => {

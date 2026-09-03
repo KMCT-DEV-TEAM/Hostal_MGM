@@ -8,10 +8,22 @@ import {
   toggleBatchStatusService, 
   bulkToggleBatchStatusService 
 } from './batch.service.js';
+import { createLogDb } from '../logs/log.service.js';
 
 export const createBatch = asyncHandler(async (req, res) => {
   try {
     const newBatch = await createBatchService(req.body, req.user);
+
+    await createLogDb({
+      action: "Created Batch",
+      entityType: "Batch",
+      entityId: newBatch.id,
+      user: req.user.id,
+      userRole: req.user.role,
+      details: `Created batch: ${newBatch.name} (${newBatch.code})`,
+      status: "success"
+    });
+
     return sendSuccess(res, 201, 'Batch created successfully', newBatch);
   } catch (error) {
     if (error.message === 'Batch with this code already exists' || error.message === 'Department not found') {
@@ -57,6 +69,17 @@ export const updateBatch = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
     const updatedBatch = await updateBatchService(id, req.body, req.user);
+
+    await createLogDb({
+      action: "Updated Batch",
+      entityType: "Batch",
+      entityId: updatedBatch.id,
+      user: req.user.id,
+      userRole: req.user.role,
+      details: `Updated batch: ${updatedBatch.name} (${updatedBatch.code})`,
+      status: "success"
+    });
+
     return sendSuccess(res, 200, 'Batch updated successfully', updatedBatch);
   } catch (error) {
     if (error.message === 'Batch not found' || error.message === 'Department not found' || error.message === 'Batch with this code already exists') {
@@ -79,6 +102,17 @@ export const toggleBatchStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
     const updatedBatch = await toggleBatchStatusService(id, req.user, req.body);
+
+    await createLogDb({
+      action: "Toggled Batch Status",
+      entityType: "Batch",
+      entityId: updatedBatch.id,
+      user: req.user.id,
+      userRole: req.user.role,
+      details: `Status changed to ${updatedBatch.isActive ? 'Active' : 'Inactive'} for batch ${updatedBatch.name}`,
+      status: "success"
+    });
+
     return sendSuccess(res, 200, 'Batch status updated successfully', updatedBatch);
   } catch (error) {
     if (error.message === 'Batch not found' || error.message === 'Unauthorized') {
@@ -95,5 +129,15 @@ export const bulkToggleBatchStatus = asyncHandler(async (req, res) => {
   }
   
   const result = await bulkToggleBatchStatusService(ids, isActive, req.user);
+
+  await createLogDb({
+    action: "Bulk Status Update (Batches)",
+    entityType: "Batch",
+    user: req.user.id,
+    userRole: req.user.role,
+    details: `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${result.count} batches`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, `Successfully updated ${result.count} batches`);
 });

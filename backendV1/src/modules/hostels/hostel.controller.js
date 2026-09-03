@@ -1,6 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
+import { createLogDb } from '../logs/log.service.js';
 
 export const createHostel = asyncHandler(async (req, res) => {
   const { name, code, email, phone, location, capacity, hostelType, type, hosteltype, adminId } = req.body;
@@ -31,6 +32,16 @@ export const createHostel = asyncHandler(async (req, res) => {
       hostelType: parsedHostelType.toUpperCase(),
       adminId: adminId || null,
     }
+  });
+
+  await createLogDb({
+    action: "Created Hostel",
+    entityType: "Hostel",
+    entityId: newHostel.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Created hostel: ${newHostel.name} (${newHostel.code})`,
+    status: "success"
   });
 
   return sendSuccess(res, 201, 'Hostel created successfully', newHostel);
@@ -153,6 +164,16 @@ export const updateHostel = asyncHandler(async (req, res) => {
     }
   });
 
+  await createLogDb({
+    action: "Updated Hostel",
+    entityType: "Hostel",
+    entityId: updatedHostel.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Updated hostel: ${updatedHostel.name} (${updatedHostel.code})`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, 'Hostel updated successfully', updatedHostel);
 });
 
@@ -213,6 +234,16 @@ export const toggleHostelStatus = asyncHandler(async (req, res) => {
     ? "Hostel activated successfully" 
     : "Hostel deactivated successfully";
 
+  await createLogDb({
+    action: "Toggled Hostel Status",
+    entityType: "Hostel",
+    entityId: updatedHostel.id,
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Status changed to ${updatedHostel.isActive ? 'Active' : 'Inactive'} for hostel ${updatedHostel.name}`,
+    status: "success"
+  });
+
   return sendSuccess(res, 200, message, updatedHostel);
 });
 
@@ -234,6 +265,15 @@ export const bulkToggleHostelStatus = asyncHandler(async (req, res) => {
     data: {
       isActive
     }
+  });
+
+  await createLogDb({
+    action: "Bulk Status Update (Hostels)",
+    entityType: "Hostel",
+    user: req.user?.id,
+    userRole: req.user?.role,
+    details: `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} hostels`,
+    status: "success"
   });
 
   return sendSuccess(res, 200, "Bulk hostel status updated successfully");

@@ -182,7 +182,7 @@ const DepartmentManagement = () => {
             setEditingId(Department.id);
 
             // Extract suffix code
-            const courseIdValue = Department.courseId?.id || Department.courseId;
+            const courseIdValue = Department.course?.id || Department.courseId;
             const courseCode = Department.course?.code || (courses.find(c => c.id === courseIdValue)?.code);
             const prefix = courseCode ? `${courseCode}-` : '';
             const suffixCode = Department.code?.startsWith(prefix) ? Department.code.substring(prefix.length) : Department.code;
