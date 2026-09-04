@@ -240,7 +240,10 @@ const BatchManagement = () => {
             if (isEditMode && editingId) {
                 await BatchService.updateBatch(editingId, payload);
                 if (formData.isActive !== formData.originalIsActive) {
-                    await BatchService.toggleStatus(editingId);
+                    await BatchService.toggleStatus(editingId, {
+                        status: formData.isActive ? 'Active' : 'Inactive',
+                        isActive: formData.isActive
+                    });
                 }
                 showSuccessToast('Batch Updated', 'Batch details saved successfully');
             } else {
@@ -343,11 +346,11 @@ const BatchManagement = () => {
                 const exportData = allbatches.map((batch, index) => ({
                     "S.No": index + 1,
                     "Batch Name": batch.name,
-                    "Code": batch.code,
-                    "Registration Number": batch.batchanisationNumber,
-                    "Email": batch.email,
-                    "Phone": batch.phone || 'N/A',
-                    "Address": batch.address || 'N/A',
+                    "Batch Code": batch.code,
+                    "Department": batch.department?.name || 'N/A',
+                    "Course": batch.department?.course?.name || 'N/A',
+                    "Start Year": batch.startYear || 'N/A',
+                    "End Year": batch.endYear || 'N/A',
                     "Status": batch.isActive ? "Active" : "Inactive",
                     "Created At": new Date(batch.createdAt).toLocaleDateString()
                 }));

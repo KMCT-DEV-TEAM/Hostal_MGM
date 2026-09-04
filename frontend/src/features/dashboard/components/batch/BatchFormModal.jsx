@@ -45,6 +45,10 @@ const BatchFormModal = ({
                 if (!formData.endYear) {
                     newErrors.endYear = 'End Year is required';
                 }
+                if (formData.startYear && formData.endYear && formData.startYear > formData.endYear) {
+                    newErrors.startYear = 'Start year cannot be greater than end year';
+                    newErrors.endYear = 'End year cannot be less than start year';
+                }
 
                 if (Object.keys(newErrors).length > 0) {
                     setErrors(prev => ({ ...prev, ...newErrors }));

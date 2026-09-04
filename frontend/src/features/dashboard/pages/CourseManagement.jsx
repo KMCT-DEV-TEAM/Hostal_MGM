@@ -236,7 +236,10 @@ const CourseManagement = () => {
             if (isEditMode && editingId) {
                 await CourseService.updateCourse(editingId, finalData);
                 if (formData.isActive !== formData.originalIsActive) {
-                    await CourseService.toggleStatus(editingId);
+                    await CourseService.toggleStatus(editingId, {
+                        status: formData.isActive ? 'Active' : 'Inactive',
+                        isActive: formData.isActive
+                    });
                 }
                 showSuccessToast('Course Updated', 'Course details saved successfully');
             } else {
@@ -339,6 +342,8 @@ const CourseManagement = () => {
                     "S.No": index + 1,
                     "Course Name": course.name,
                     "Course Code": course.code,
+                    "Organization": course.organization?.name || 'N/A',
+                    "Number of Departments": course.departmentsCount || 0,
                     "Number of Batches": course.batchesCount || 0,
                     "Status": course.isActive ? "Active" : "Inactive",
                     "Created At": new Date(course.createdAt).toLocaleDateString()
