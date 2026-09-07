@@ -236,7 +236,10 @@ const DepartmentManagement = () => {
             if (isEditMode && editingId) {
                 await DepartmentService.updateDepartment(editingId, finalData);
                 if (formData.isActive !== formData.originalIsActive) {
-                    await DepartmentService.toggleStatus(editingId);
+                    await DepartmentService.toggleStatus(editingId, {
+                        status: formData.isActive ? 'Active' : 'Inactive',
+                        isActive: formData.isActive
+                    });
                 }
                 showSuccessToast('Department Updated', 'Department details saved successfully');
             } else {
@@ -340,6 +343,7 @@ const DepartmentManagement = () => {
                     "S.No": index + 1,
                     "Department Name": Department.name,
                     "Department Code": Department.code,
+                    "Course Name": Department.course?.name || 'N/A',
                     "Number of Batches": Department.batchesCount || 0,
                     "Status": Department.isActive ? "Active" : "Inactive",
                     "Created At": new Date(Department.createdAt).toLocaleDateString()

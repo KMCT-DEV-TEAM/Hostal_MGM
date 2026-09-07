@@ -2,6 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
 import { createLogDb } from '../logs/log.service.js';
+import { getIo } from '../../config/socket.js';
 
 export const createHostel = asyncHandler(async (req, res) => {
   const { name, code, email, phone, location, capacity, hostelType, type, hosteltype, adminId } = req.body;
@@ -43,6 +44,8 @@ export const createHostel = asyncHandler(async (req, res) => {
     details: `Created hostel: ${newHostel.name} (${newHostel.code})`,
     status: "success"
   });
+
+  getIo()?.emit('hostelUpdated');
 
   return sendSuccess(res, 201, 'Hostel created successfully', newHostel);
 });
@@ -174,6 +177,8 @@ export const updateHostel = asyncHandler(async (req, res) => {
     status: "success"
   });
 
+  getIo()?.emit('hostelUpdated');
+
   return sendSuccess(res, 200, 'Hostel updated successfully', updatedHostel);
 });
 
@@ -194,6 +199,8 @@ export const deleteHostel = asyncHandler(async (req, res) => {
   await prisma.hostel.delete({
     where: { id }
   });
+
+  getIo()?.emit('hostelUpdated');
 
   return sendSuccess(res, 200, 'Hostel deleted successfully');
 });
@@ -244,6 +251,8 @@ export const toggleHostelStatus = asyncHandler(async (req, res) => {
     status: "success"
   });
 
+  getIo()?.emit('hostelUpdated');
+
   return sendSuccess(res, 200, message, updatedHostel);
 });
 
@@ -275,6 +284,8 @@ export const bulkToggleHostelStatus = asyncHandler(async (req, res) => {
     details: `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} hostels`,
     status: "success"
   });
+
+  getIo()?.emit('hostelUpdated');
 
   return sendSuccess(res, 200, "Bulk hostel status updated successfully");
 });

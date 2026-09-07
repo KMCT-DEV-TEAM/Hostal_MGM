@@ -161,7 +161,7 @@ export default function AssistantWardenFormModal({
                             <Dropdown
                                 options={[
                                     { value: 'Not Assigned', label: 'Not Assigned' },
-                                    ...AVAILABLE_HOSTELS.map(h => ({ value: h.id || h, label: h.name || h }))
+                                    ...AVAILABLE_HOSTELS.map(h => ({ value: h.id || h, label: h.name || h, disabled: !h.isActive }))
                                 ]}
                                 value={assistantWardenForm.hostel}
                                 onChange={(val) => setAssistantWardenForm({ ...assistantWardenForm, hostel: val })}
