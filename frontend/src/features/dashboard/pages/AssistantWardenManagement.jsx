@@ -144,23 +144,26 @@ export default function AssistantWardenManagement() {
         socket.on('userCreated', handleAssistantWardenEvent);
         socket.on('userUpdated', handleAssistantWardenEvent);
         socket.on('userDeleted', handleAssistantWardenEvent);
+        socket.on('hostelUpdated', fetchHostels);
 
         return () => {
             socket.off('userCreated', handleAssistantWardenEvent);
             socket.off('userUpdated', handleAssistantWardenEvent);
             socket.off('userDeleted', handleAssistantWardenEvent);
+            socket.off('hostelUpdated', fetchHostels);
         };
     }, [currentPage]);
 
+    const fetchHostels = async () => {
+        try {
+            const res = await hostelService.getHostels({ limit: 100 });
+            if (res && res.data) setAvailableHostels(res.data);
+        } catch (err) {
+            console.error('Failed to fetch hostels:', err);
+        }
+    };
+
     useEffect(() => {
-        const fetchHostels = async () => {
-            try {
-                const res = await hostelService.getHostels({ limit: 100 });
-                if (res && res.data) setAvailableHostels(res.data);
-            } catch (err) {
-                console.error('Failed to fetch hostels:', err);
-            }
-        };
         fetchHostels();
     }, []);
 
@@ -577,7 +580,7 @@ export default function AssistantWardenManagement() {
                 editingAssistantWarden={editingAssistantWarden}
                 handleSaveAssistantWarden={handleSaveAssistantWarden}
                 handleCancel={handleCancel}
-                AVAILABLE_HOSTELS={availableHostels.filter(h => h.isActive)}
+                AVAILABLE_HOSTELS={availableHostels}
                 isEmailVerified={isEmailVerified}
                 setIsOtpModalOpen={setIsOtpModalOpen}
                 setOtpSource={setOtpSource}
