@@ -210,10 +210,13 @@ export const createAssistantWarden = asyncHandler(async (req, res) => {
   }
 
   if (hostelId && hostelId !== 'Not Assigned') {
-    const hostelExists = await prisma.hostel.findUnique({ where: { id: hostelId } });
-    if (!hostelExists) {
-      return sendError(res, 404, "Hostel not found");
-    }
+      const hostelExists = await prisma.hostel.findUnique({ where: { id: hostelId } });
+      if (!hostelExists) {
+          return sendError(res, 404, "Hostel not found");
+      }
+      if (!hostelExists.isActive) {
+          return sendError(res, 400, "Cannot assign assistant warden to an inactive hostel");
+      }
   }
 
   const temporaryPassword = Math.random().toString(36).slice(-8);
@@ -319,6 +322,14 @@ export const updateAssistantWardenHostel = asyncHandler(async (req, res) => {
       where: { userId: id }
     });
     return sendSuccess(res, 200, "Hostel unassigned successfully");
+  }
+
+  const hostelExists = await prisma.hostel.findUnique({ where: { id: hostelId } });
+  if (!hostelExists) {
+    return sendError(res, 404, "Hostel not found");
+  }
+  if (!hostelExists.isActive) {
+    return sendError(res, 400, "Cannot assign assistant warden to an inactive hostel");
   }
 
   const existingHostelWarden = await prisma.hostelWarden.findFirst({
@@ -742,10 +753,14 @@ export const createWarden = asyncHandler(async (req, res) => {
   }
 
   if (hostelId && hostelId !== 'Not Assigned') {
-    const hostelExists = await prisma.hostel.findUnique({ where: { id: hostelId } });
-    if (!hostelExists) {
-      return sendError(res, 404, "Hostel not found");
-    }
+
+      const hostelExists = await prisma.hostel.findUnique({ where: { id: hostelId } });
+      if (!hostelExists) {
+          return sendError(res, 404, "Hostel not found");
+      }
+      if (!hostelExists.isActive) {
+          return sendError(res, 400, "Cannot assign warden to an inactive hostel");
+      }
   }
 
   const temporaryPassword = Math.random().toString(36).slice(-8);
@@ -886,6 +901,14 @@ export const updateWardenHostel = asyncHandler(async (req, res) => {
       "success"
     );
     return sendSuccess(res, 200, "Hostel unassigned successfully");
+  }
+
+  const hostelExists = await prisma.hostel.findUnique({ where: { id: hostelId } });
+  if (!hostelExists) {
+    return sendError(res, 404, "Hostel not found");
+  }
+  if (!hostelExists.isActive) {
+    return sendError(res, 400, "Cannot assign warden to an inactive hostel");
   }
 
   const existingHostelWarden = await prisma.hostelWarden.findFirst({

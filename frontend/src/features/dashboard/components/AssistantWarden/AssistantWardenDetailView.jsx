@@ -112,7 +112,7 @@ const AssistantWardenDetailView = ({ selectedAssistantWardenDetail, setView, ope
 
                 {/* Right Summary Sidebar */}
                 <div className="md:col-span-5 bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
-                    <h3 className="text-sm font-semibold text-[#0A437A] mb-3 md:mb-4">AssistantWarden Summary</h3>
+                    <h3 className="text-sm font-semibold text-[#0A437A] mb-3 md:mb-4">Assistant Warden Summary</h3>
                     <div className="space-y-1">
                         <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> Name</>}>{selectedAssistantWardenDetail?.name}</InfoRow>
                         <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Hostel</>}>{selectedAssistantWardenDetail?.hostel?.name || selectedAssistantWardenDetail?.hostel || 'N/A'}</InfoRow>
