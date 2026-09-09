@@ -11,9 +11,9 @@ import {
   exportParentsService,
   getParentStudentsService
 } from "./parent.service.js";
-import { createLogDb } from "../logs/log.service.js";
 import { checkStudentAccess, checkParentAccess } from "./parent.scope.js";
 import { prisma } from "../../config/prisma.js";
+import { createLog } from "../../utils/log.util.js";
 
 export const createParent = asyncHandler(async (req, res) => {
   const { email, parentOtp, studentId } = req.body;
@@ -78,15 +78,14 @@ export const createParent = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
-  await createLogDb({
-    action: "Created Parent",
-    entityType: "Parent",
-    entityId: result.parent._id,
-    user: req.user.id || req.user._id,
-    userRole: req.user.role,
-    details: `Created parent account for ${result.parent.parentName} (${result.parent.email})`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Created Parent",
+    "Parent",
+    result.parent._id,
+    `Created parent account for ${result.parent.parentName} (${result.parent.email})`,
+    "success"
+  );
 
   return sendSuccess(res, 201, "Parent created successfully", {
     data: {
@@ -155,15 +154,14 @@ export const resolveParentConflict = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Student not found");
   }
 
-  await createLogDb({
-    action: "Resolved Parent Conflict",
-    entityType: "Parent",
-    entityId: result.parent?._id,
-    user: req.user.id || req.user._id,
-    userRole: req.user.role,
-    details: `Parent conflict resolved via action: ${resolutionAction}`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Resolved Parent Conflict",
+    "Parent",
+    result.parent?._id,
+    `Parent conflict resolved via action: ${resolutionAction}`,
+    "success"
+  );
 
   return sendSuccess(
     res,
@@ -200,15 +198,14 @@ export const updateParent = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Parent not found");
   }
 
-  await createLogDb({
-    action: "Updated Parent",
-    entityType: "Parent",
-    entityId: id,
-    user: req.user.id || req.user._id,
-    userRole: req.user.role,
-    details: `Updated parent profile details`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Updated Parent",
+    "Parent",
+    id,
+    `Updated parent profile details`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Parent updated successfully", {
     data: {
@@ -270,15 +267,14 @@ export const changeParentEmail = asyncHandler(async (req, res) => {
 
   await deleteOtpDb(normalizedNewEmail);
 
-  await createLogDb({
-    action: "Changed Parent Email",
-    entityType: "Parent",
-    entityId: parent.id,
-    user: req.user.id || req.user._id,
-    userRole: req.user.role,
-    details: `Parent email changed from ${normalizedOldEmail} to ${normalizedNewEmail}`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Changed Parent Email",
+    "Parent",
+    parent.id,
+    `Parent email changed from ${normalizedOldEmail} to ${normalizedNewEmail}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Parent email updated successfully", {
     data: {
@@ -318,15 +314,14 @@ export const setDefaultGuardian = asyncHandler(async (req, res) => {
     ? "Parent set as default guardian successfully"
     : "Parent removed as default guardian successfully";
 
-  await createLogDb({
-    action: defaultGuardian ? "Set Default Guardian" : "Removed Default Guardian",
-    module: "Parent",
-    entityId: id,
-    user: req.user.id || req.user._id,
-    userRole: req.user.role,
-    details: `Parent ${defaultGuardian ? 'set as' : 'removed as'} default guardian`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    defaultGuardian ? "Set Default Guardian" : "Removed Default Guardian",
+    "Unknown Entity",
+    id,
+    `Parent ${defaultGuardian ? 'set as' : 'removed as'} default guardian`,
+    "success"
+  );
 
   return sendSuccess(res, 200, message, {
     data: {

@@ -1,6 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { isUUID } from '../../utils/validators.js';
+import { createLog } from '../../utils/log.util.js';
 import {
   checkExistingComplaintCategoryNameDb,
   createComplaintCategoryDb,
@@ -21,6 +22,15 @@ export const createComplaintCategory = asyncHandler(async (req, res) => {
   }
 
   const newCategory = await createComplaintCategoryDb({ name, description });
+
+  await createLog(
+    req,
+    "Created Complaint Category",
+    "ComplaintCategory",
+    newCategory.id,
+    `Created complaint category: ${newCategory.name}`,
+    "success"
+  );
 
   return sendSuccess(res, 201, 'Complaint Category created successfully', {
     category: newCategory,
@@ -100,6 +110,15 @@ export const updateComplaintCategory = asyncHandler(async (req, res) => {
 
   const updatedCategory = await updateComplaintCategoryDb(id, { name, description });
 
+  await createLog(
+    req,
+    "Updated Complaint Category",
+    "ComplaintCategory",
+    updatedCategory.id,
+    `Updated complaint category: ${updatedCategory.name}`,
+    "success"
+  );
+
   return sendSuccess(res, 200, 'Complaint Category updated successfully', {
     category: updatedCategory,
     ...updatedCategory
@@ -113,6 +132,15 @@ export const toggleComplaintCategoryStatus = asyncHandler(async (req, res) => {
   }
 
   const category = await toggleComplaintCategoryStatusDb(id, req.body);
+
+  await createLog(
+    req,
+    category.isActive ? "Activated Complaint Category" : "Deactivated Complaint Category",
+    "ComplaintCategory",
+    category.id,
+    `Complaint category ${category.name} status set to ${category.isActive ? 'Active' : 'Inactive'}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, `Complaint Category ${category.isActive ? 'activated' : 'deactivated'} successfully`, {
     category,
@@ -137,6 +165,15 @@ export const bulkUpdateComplaintCategoryStatus = asyncHandler(async (req, res) =
   }
 
   const result = await bulkUpdateComplaintCategoryStatusDb(ids, isActive);
+
+  await createLog(
+    req,
+    `Bulk ${isActive ? 'Activated' : 'Deactivated'} Complaint Categories`,
+    "ComplaintCategory",
+    null,
+    `Bulk status set to ${isActive ? 'Active' : 'Inactive'} for ${result.count} category(ies)`,
+    "success"
+  );
 
   return sendSuccess(res, 200, `Successfully ${isActive ? 'activated' : 'deactivated'} ${result.count} complaint categories`, {
     modifiedCount: result.count

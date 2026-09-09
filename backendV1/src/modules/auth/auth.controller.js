@@ -8,6 +8,7 @@ import { sendMail } from "../../utils/mailer.js";
 import { getIo } from "../../config/socket.js";
 import jwt from "jsonwebtoken";
 import { ROLES } from "../../constants/roles.js";
+import { createLog } from "../../utils/log.util.js";
 
 const refreshTokenCookieOptions = {
   httpOnly: true,
@@ -114,6 +115,7 @@ const login = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 
+
   return sendSuccess(res, 200, "Login successful", {
     accessToken,
     role: user.role,
@@ -162,40 +164,40 @@ const me = asyncHandler(async (req, res) => {
       include: {
         studentHostels: {
           where: { status: 'active' },
-          include: { 
+          include: {
             hostel: {
               select: { id: true, name: true, code: true }
-            } 
+            }
           }
         }
       }
     });
-    
+
     if (user) {
-        user.role = ROLES.STUDENT;
-        const activeAllocation = user.studentHostels?.[0];
-        
-        if (activeAllocation?.hostel) {
-            user.assignedHostels = [{
-              _id: activeAllocation.hostel.id,
-              id: activeAllocation.hostel.id,
-              name: activeAllocation.hostel.name,
-              code: activeAllocation.hostel.code
-            }];
-        }
-        
-        const qrToken = jwt.sign(
-          {
-            studentId: user.id,
-            admissionNo: user.admissionNo,
-            name: user.name,
-            roomNo: activeAllocation?.roomNumber || null,
-            type: "attendance_qr",
-          },
-          process.env.JWT_ACCESS_TOKEN
-        );
-        
-        user.qrToken = qrToken;
+      user.role = ROLES.STUDENT;
+      const activeAllocation = user.studentHostels?.[0];
+
+      if (activeAllocation?.hostel) {
+        user.assignedHostels = [{
+          _id: activeAllocation.hostel.id,
+          id: activeAllocation.hostel.id,
+          name: activeAllocation.hostel.name,
+          code: activeAllocation.hostel.code
+        }];
+      }
+
+      const qrToken = jwt.sign(
+        {
+          studentId: user.id,
+          admissionNo: user.admissionNo,
+          name: user.name,
+          roomNo: activeAllocation?.roomNumber || null,
+          type: "attendance_qr",
+        },
+        process.env.JWT_ACCESS_TOKEN
+      );
+
+      user.qrToken = qrToken;
     }
   } else if (req.user.role === ROLES.PARENT) {
     user = await prisma.parent.findUnique({
@@ -220,11 +222,11 @@ const me = asyncHandler(async (req, res) => {
       }
     });
     if (user) {
-        if (user.role === 'WARDEN' || user.role === 'ASSISTANT_WARDEN') {
-            user.assignedHostels = user.hostelWardens.map(hw => hw.hostel);
-        }
-        // Normalize role to lowercase for frontend compatibility
-        user.role = user.role.toLowerCase();
+      if (user.role === 'WARDEN' || user.role === 'ASSISTANT_WARDEN') {
+        user.assignedHostels = user.hostelWardens.map(hw => hw.hostel);
+      }
+      // Normalize role to lowercase for frontend compatibility
+      user.role = user.role.toLowerCase();
     }
   }
 
@@ -307,12 +309,21 @@ export const changePassword = asyncHandler(async (req, res) => {
     });
   }
 
+  await createLog(
+    req,
+    "Changed Password",
+    "Password",
+    userId,
+    `Password changed successfully for user: ${user.name || user.email}`,
+    "success"
+  );
+
   return sendSuccess(res, 200, "Password changed successfully");
 });
 
 export const verifyPassword = asyncHandler(async (req, res) => {
   const { password } = req.body;
-  
+
   if (!password) {
     return sendError(res, 400, "Password is required");
   }
@@ -398,6 +409,14 @@ export const resetPassword = asyncHandler(async (req, res) => {
         where: { id: user.id },
         data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
       });
+      await createLog(
+        { ...user, id: user.id, role: user.role, organizationId: user.organizationId },
+        "Reset Password",
+        "Password",
+        user.id,
+        `Password reset successfully for ${user.email}`,
+        "success"
+      );
       return sendSuccess(res, 200, "Password reset successfully");
     }
 
@@ -407,6 +426,14 @@ export const resetPassword = asyncHandler(async (req, res) => {
         where: { id: student.id },
         data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
       });
+      await createLog(
+        { id: student.id, role: 'student' },
+        "Reset Password",
+        "Password",
+        student.id,
+        `Password reset successfully for student ${student.email}`,
+        "success"
+      );
       return sendSuccess(res, 200, "Password reset successfully");
     }
 
@@ -416,6 +443,14 @@ export const resetPassword = asyncHandler(async (req, res) => {
         where: { id: parent.id },
         data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
       });
+      await createLog(
+        { id: parent.id, role: 'parent' },
+        "Reset Password",
+        "Password",
+        parent.id,
+        `Password reset successfully for parent ${parent.email}`,
+        "success"
+      );
       return sendSuccess(res, 200, "Password reset successfully");
     }
 
@@ -483,9 +518,9 @@ export const requestEmailChange = asyncHandler(async (req, res) => {
     return sendError(res, 403, "Super Admin cannot change their email");
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email: newEmail } }) ||
-    await prisma.student.findUnique({ where: { email: newEmail } }) ||
-    await prisma.parent.findUnique({ where: { email: newEmail } });
+  const existingUser = (await prisma.user.findUnique({ where: { email: newEmail } })) ||
+    (await prisma.student.findUnique({ where: { email: newEmail } })) ||
+    (await prisma.parent.findUnique({ where: { email: newEmail } }));
 
   if (existingUser) {
     return sendError(res, 400, "Email is already in use");
@@ -525,6 +560,15 @@ export const verifyEmailChange = asyncHandler(async (req, res) => {
   } else {
     await prisma.user.update({ where: { id: userId }, data: { email: newEmail } });
   }
+
+  await createLog(
+    req,
+    "Changed Email",
+    "User",
+    userId,
+    `Email address updated to ${newEmail}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Email updated successfully");
 });

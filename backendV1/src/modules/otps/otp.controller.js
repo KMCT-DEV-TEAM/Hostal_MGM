@@ -2,6 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { getOrCreateOtp, verifyOtpDb, deleteOtpDb } from './otp.service.js';
 import { sendMail } from '../../utils/mailer.js';
+import { createLog } from '../../utils/log.util.js';
 
 export const sendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -27,6 +28,14 @@ export const sendOtp = asyncHandler(async (req, res) => {
 
   try {
     await sendMail(email, subject, text, html);
+    await createLog(
+      req,
+      "Sent OTP",
+      "Auth",
+      null,
+      `Verification OTP sent to ${email}`,
+      "success"
+    );
     return sendSuccess(res, 200, "OTP sent successfully to email");
   } catch (error) {
     // If email sending fails, delete the OTP so the user can retry immediately
@@ -48,6 +57,15 @@ export const verifyOtp = asyncHandler(async (req, res) => {
   if (!isValid) {
     return sendError(res, 400, "Invalid or expired OTP");
   }
+
+  await createLog(
+    req,
+    "Verified OTP",
+    "Auth",
+    null,
+    `OTP successfully verified for ${email}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "OTP verified successfully");
 });

@@ -1,8 +1,8 @@
 import { prisma } from "../../config/prisma.js";
-import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notification/services/orchestrator.service.js";
 import { ROLES } from "../../constants/roles.js";
 import { MENTOR_ASSIGNMENT_STATUS } from "../../constants/status.js";
+import { createLog } from "../../utils/log.util.js";
 
 const createError = (message, statusCode) => {
   const err = new Error(message);
@@ -86,15 +86,15 @@ export const assignMentorDb = async (data, user) => {
     });
 
     // 7. Log to Timeline/Activity logs
-    await createLogDb({
-      action: "Mentor Assigned",
-      entityType: "User",
-      entityId: mentorId,
-      user: user.id,
-      userRole: user.role,
-      details: `Assigned mentor ${mentor.name} to batch ${batch.name}`,
-      status: "success"
-    }, tx);
+    await createLog(
+      user,
+      "Mentor Assigned",
+      "User",
+      mentorId,
+      `Assigned mentor ${mentor.name} to batch ${batch.name}`,
+      "success",
+      tx
+    );
 
     // 8. Dispatch notification (not breaking transaction if notifications fail)
     try {
@@ -239,15 +239,15 @@ export const updateAssignmentDb = async (id, updateData, user) => {
       action = "Assignment Cancelled";
     }
 
-    await createLogDb({
+    await createLog(
+      user,
       action,
-      entityType: "User",
-      entityId: updatedAssignment.mentorId,
-      user: user.id,
-      userRole: user.role,
-      details: `Updated assignment status to ${updatedAssignment.status} for mentor ${updatedAssignment.mentor.name} and batch ${updatedAssignment.batch.name}`,
-      status: "success"
-    }, tx);
+      "User",
+      updatedAssignment.mentorId,
+      `Updated assignment status to ${updatedAssignment.status} for mentor ${updatedAssignment.mentor.name} and batch ${updatedAssignment.batch.name}`,
+      "success",
+      tx
+    );
 
     if (updates.status === MENTOR_ASSIGNMENT_STATUS.COMPLETED || updates.status === MENTOR_ASSIGNMENT_STATUS.CANCELLED) {
       try {
@@ -329,15 +329,15 @@ export const transferMentorDb = async (id, newMentorId, remarks, user) => {
     });
 
     // 3. Log activity
-    await createLogDb({
-      action: "Mentor Transferred",
-      entityType: "User",
-      entityId: newMentorId,
-      user: user.id,
-      userRole: user.role,
-      details: `Transferred mentorship of batch ${oldAssignment.batch.name} from ${oldAssignment.mentor.name} to ${newMentor.name}`,
-      status: "success"
-    }, tx);
+    await createLog(
+      user,
+      "Mentor Transferred",
+      "User",
+      newMentorId,
+      `Transferred mentorship of batch ${oldAssignment.batch.name} from ${oldAssignment.mentor.name} to ${newMentor.name}`,
+      "success",
+      tx
+    );
 
     // 4. Send notifications
     try {
@@ -406,15 +406,15 @@ export const releaseAssignmentDb = async (id, reason, targetStatus = MENTOR_ASSI
       }
     });
 
-    await createLogDb({
-      action: targetStatus.toUpperCase() === MENTOR_ASSIGNMENT_STATUS.COMPLETED ? "Assignment Completed" : "Assignment Cancelled",
-      entityType: "User",
-      entityId: updatedAssignment.mentorId,
-      user: user.id,
-      userRole: user.role,
-      details: `Released mentor ${updatedAssignment.mentor.name} from batch ${updatedAssignment.batch.name}. Reason: ${reason}`,
-      status: "success"
-    }, tx);
+    await createLog(
+      user,
+      targetStatus.toUpperCase() === MENTOR_ASSIGNMENT_STATUS.COMPLETED ? "Assignment Completed" : "Assignment Cancelled",
+      "User",
+      updatedAssignment.mentorId,
+      `Released mentor ${updatedAssignment.mentor.name} from batch ${updatedAssignment.batch.name}. Reason: ${reason}`,
+      "success",
+      tx
+    );
 
     const students = await tx.student.findMany({
       where: { batchId: updatedAssignment.batchId },

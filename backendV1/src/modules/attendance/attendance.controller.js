@@ -3,9 +3,9 @@ import { sendSuccess, sendError } from "../../utils/response.js";
 import { prisma } from "../../config/prisma.js";
 import jwt from "jsonwebtoken";
 import { createAttendanceWindowDb, getAttendanceWindowsDb, getAttendanceWindowDetailsDb, getDashboardStatsDb, getAttendanceRecordsDb, scanStudentDb, closeAttendanceWindow, correctAttendanceDb, getStudentDashboardStatsDb, getStudentAttendanceHistoryDb, getStudentAttendanceCalendarDb } from "./attendance.service.js";
-import { createLogDb } from "../logs/log.service.js";
 import { ROLES } from "../../constants/roles.js";
 import { STUDENT_HOSTEL_STATUS, MENTOR_ASSIGNMENT_STATUS, PARENT_STATUS } from "../../constants/status.js";
+import { createLog } from "../../utils/log.util.js";
 
 const getScope = async (req) => {
   const scope = {
@@ -75,15 +75,14 @@ export const createAttendanceWindow = asyncHandler(async (req, res) => {
     scope.userId
   );
 
-  await createLogDb({
-    action: "Created Attendance Window",
-    entityType: "Attendance",
-    entityId: attendanceWindow._id,
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Warden opened a new attendance window for hostel`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Created Attendance Window",
+    "Attendance",
+    attendanceWindow._id,
+    `Warden opened a new attendance window for hostel`,
+    "success"
+  );
 
   return sendSuccess(
     res,
@@ -184,15 +183,14 @@ export const completeAttendanceWindow = asyncHandler(async (req, res) => {
 
   const window = await closeAttendanceWindow(id, scope.userId);
 
-  await createLogDb({
-    action: "Completed Attendance Window",
-    entityType: "Attendance",
-    entityId: id,
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Warden closed/completed attendance window`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Completed Attendance Window",
+    "Attendance",
+    id,
+    `Warden closed/completed attendance window`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Attendance window completed successfully", window);
 });
@@ -215,15 +213,14 @@ export const correctAttendance = asyncHandler(async (req, res) => {
       { status, remarks }
     );
 
-    await createLogDb({
-      action: "Manual Attendance Correction",
-      entityType: "Attendance",
-      entityId: windowId,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Warden manually corrected attendance for student ${studentId} to status: ${status}. Remarks: ${remarks || 'N/A'}`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Manual Attendance Correction",
+      "Attendance",
+      windowId,
+      `Warden manually corrected attendance for student ${studentId} to status: ${status}. Remarks: ${remarks || 'N/A'}`,
+      "success"
+    );
 
     return sendSuccess(res, 200, "Attendance corrected successfully.", result);
   } catch (error) {

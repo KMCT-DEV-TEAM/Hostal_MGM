@@ -2,21 +2,20 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
 import { createDepartmentService, getDepartmentsService, updateDepartmentService, toggleDepartmentStatusService, bulkToggleDepartmentStatusService } from './department.service.js';
-import { createLogDb } from '../logs/log.service.js';
+import { createLog } from '../../utils/log.util.js';
 
 export const createDepartment = asyncHandler(async (req, res) => {
   try {
     const newDepartment = await createDepartmentService(req.body, req.user);
 
-    await createLogDb({
-      action: "Created Department",
-      entityType: "Department",
-      entityId: newDepartment.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Created department: ${newDepartment.name} (${newDepartment.code})`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Created Department",
+      "Department",
+      newDepartment.id,
+      `Created department: ${newDepartment.name} (${newDepartment.code})`,
+      "success"
+    );
 
     return sendSuccess(res, 201, 'Department created successfully', newDepartment);
   } catch (error) {
@@ -43,15 +42,14 @@ export const updateDepartment = asyncHandler(async (req, res) => {
   try {
     const updatedDepartment = await updateDepartmentService(id, req.body, req.user);
 
-    await createLogDb({
-      action: "Updated Department",
-      entityType: "Department",
-      entityId: updatedDepartment.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Updated department: ${updatedDepartment.name} (${updatedDepartment.code})`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Updated Department",
+      "Department",
+      updatedDepartment.id,
+      `Updated department: ${updatedDepartment.name} (${updatedDepartment.code})`,
+      "success"
+    );
 
     return sendSuccess(res, 200, 'Department updated successfully', updatedDepartment);
   } catch (error) {
@@ -76,15 +74,14 @@ export const toggleDepartmentStatus = asyncHandler(async (req, res) => {
   try {
     const updatedDepartment = await toggleDepartmentStatusService(id, req.user, req.body);
 
-    await createLogDb({
-      action: "Toggled Department Status",
-      entityType: "Department",
-      entityId: updatedDepartment.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Status changed to ${updatedDepartment.isActive ? 'Active' : 'Inactive'} for department ${updatedDepartment.name}`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Toggled Department Status",
+      "Department",
+      updatedDepartment.id,
+      `Status changed to ${updatedDepartment.isActive ? 'Active' : 'Inactive'} for department ${updatedDepartment.name}`,
+      "success"
+    );
 
     return sendSuccess(res, 200, 'Department status updated successfully', updatedDepartment);
   } catch (error) {
@@ -103,14 +100,14 @@ export const bulkToggleDepartmentStatus = asyncHandler(async (req, res) => {
   
   const result = await bulkToggleDepartmentStatusService(ids, isActive, req.user);
 
-  await createLogDb({
-    action: "Bulk Status Update (Departments)",
-    entityType: "Department",
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${result.count} departments`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Bulk Status Update (Departments)",
+    "Department",
+    null,
+    `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${result.count} departments`,
+    "success"
+  );
 
   return sendSuccess(res, 200, `Successfully updated ${result.count} departments`);
 });

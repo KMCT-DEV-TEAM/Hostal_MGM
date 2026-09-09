@@ -8,6 +8,7 @@ import {
   rejectPasswordRequestDb,
 } from './passwordRequest.service.js';
 import { getIo } from '../../config/socket.js';
+import { createLog } from '../../utils/log.util.js';
 
 export const verifyEmailForReset = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -40,6 +41,15 @@ export const submitPasswordRequest = asyncHandler(async (req, res) => {
 
   getIo()?.emit('passwordRequestCreated', result);
 
+  await createLog(
+    { id: result.userId, role: result.user?.role || 'user' },
+    "Submitted Password Request",
+    "PasswordRequest",
+    result.id,
+    `Password reset request submitted for ${email}`,
+    "success"
+  );
+
   return sendSuccess(res, 201, "Password reset request submitted successfully", result);
 });
 
@@ -54,6 +64,15 @@ export const approvePasswordRequest = asyncHandler(async (req, res) => {
 
   getIo()?.emit('passwordRequestUpdated', { id });
 
+  await createLog(
+    req,
+    "Approved Password Request",
+    "PasswordRequest",
+    id,
+    `Approved password request (ID: ${id})`,
+    "success"
+  );
+
   return sendSuccess(res, 200, "Password request approved and password updated successfully", result);
 });
 
@@ -62,6 +81,15 @@ export const rejectPasswordRequest = asyncHandler(async (req, res) => {
   const result = await rejectPasswordRequestDb(id);
 
   getIo()?.emit('passwordRequestUpdated', { id });
+
+  await createLog(
+    req,
+    "Rejected Password Request",
+    "PasswordRequest",
+    id,
+    `Rejected password request (ID: ${id})`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Password request rejected successfully", result);
 });

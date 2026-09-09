@@ -559,7 +559,7 @@ export default function Administrator() {
         setIsExporting(true);
         try {
             // Construct API parameters
-            const params = { limit: 100000 };
+            const params = { limit: 100000, isExport: true };
             if (searchQuery) params.search = searchQuery;
 
             // Allow export modal filter to override table filter completely

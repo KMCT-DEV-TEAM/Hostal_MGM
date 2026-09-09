@@ -5,7 +5,8 @@ import { hashPassword } from '../../utils/hash.js';
 import { sendMail } from '../../utils/mailer.js';
 import { getIo } from '../../config/socket.js';
 import { deleteOtpDb } from '../otps/otp.service.js';
-import { createLogDb } from '../logs/log.service.js';
+import { createLog } from '../../utils/log.util.js';
+
 
 const getPaginatedUsersByRole = async (role, page, limit, status, search, additionalWhere = {}) => {
   const skip = (page - 1) * limit;
@@ -86,6 +87,20 @@ export const getAdmins = asyncHandler(async (req, res) => {
     ...user,
     name: user.name
   }));
+
+  console.log("fgbcvbcvbdfgdfvxcvxfcbvcxvvxcvbxcvxcvxcvxcvbxcvcvcvc", req.query);
+
+
+  if (req.query.isExport === 'true' || req.query.export === 'true') {
+    await createLog(
+      req,
+      "Exported Admins",
+      "User",
+      null,
+      `Exported admins list. Filter: status=${status || 'All'}, search=${search || 'None'}`,
+      "success"
+    );
+  }
 
   return sendSuccess(res, 200, "Admins fetched successfully", {
     count: mappedUsers.length,
@@ -191,7 +206,7 @@ export const createAssistantWarden = asyncHandler(async (req, res) => {
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-      return sendError(res, 400, "Email already exists");
+    return sendError(res, 400, "Email already exists");
   }
 
   if (hostelId && hostelId !== 'Not Assigned') {
@@ -208,41 +223,41 @@ export const createAssistantWarden = asyncHandler(async (req, res) => {
   const hashedPassword = await hashPassword(temporaryPassword);
 
   const warden = await prisma.$transaction(async (tx) => {
-      const newWarden = await tx.user.create({
-          data: {
-              name: name,
-              email,
-              phone,
-              password: hashedPassword,
-              tempPassword: true,
-              role: "assistant_warden",
-              createdBy: req.user?.id || req.user?._id
-          }
+    const newWarden = await tx.user.create({
+      data: {
+        name: name,
+        email,
+        phone,
+        password: hashedPassword,
+        tempPassword: true,
+        role: "assistant_warden",
+        createdBy: req.user?.id || req.user?._id
+      }
+    });
+
+    if (hostelId && hostelId !== 'Not Assigned') {
+      await tx.hostelWarden.create({
+        data: {
+          hostelId: hostelId,
+          userId: newWarden.id
+        }
       });
+    }
 
-      if (hostelId && hostelId !== 'Not Assigned') {
-          await tx.hostelWarden.create({
-              data: {
-                  hostelId: hostelId,
-                  userId: newWarden.id
-              }
-          });
-      }
+    if (req.user?.id || req.user?._id) {
+      const userId = req.user.id || req.user._id;
+      await tx.auditLog.create({
+        data: {
+          action: "Created Assistant Warden",
+          module: "User",
+          entityId: newWarden.id,
+          userId: userId,
+          newData: { name, email, phone, hostelId }
+        }
+      });
+    }
 
-      if (req.user?.id || req.user?._id) {
-          const userId = req.user.id || req.user._id;
-          await tx.auditLog.create({
-              data: {
-                  action: "Created Assistant Warden",
-                  module: "User",
-                  entityId: newWarden.id,
-                  userId: userId,
-                  newData: { name, email, phone, hostelId }
-              }
-          });
-      }
-
-      return newWarden;
+    return newWarden;
   });
 
   const subject = "Your Assistant Warden Account Details";
@@ -250,27 +265,26 @@ export const createAssistantWarden = asyncHandler(async (req, res) => {
   const html = `<p>Hello ${name},</p><p>Your assistant warden account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
 
   try {
-      await sendMail(email, subject, text, html);
+    await sendMail(email, subject, text, html);
   } catch (error) {
-      console.error("Failed to send temporary password email:", error);
+    console.error("Failed to send temporary password email:", error);
   }
 
   await deleteOtpDb(email);
 
   const io = getIo();
   if (io) {
-      io.emit('userCreated', { role: 'assistantWarden', data: warden });
+    io.emit('userCreated', { role: 'assistantWarden', data: warden });
   }
 
-  await createLogDb({
-    action: "Created Assistant Warden",
-    entityType: "User",
-    entityId: warden.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Created assistant warden: ${warden.name} (${warden.email})`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Created Assistant Warden",
+    "User",
+    warden.id,
+    `Created assistant warden: ${warden.name} (${warden.email})`,
+    "success"
+  );
 
   return sendSuccess(res, 201, "Assistant Warden created successfully", { data: warden });
 });
@@ -278,7 +292,7 @@ export const createAssistantWarden = asyncHandler(async (req, res) => {
 export const updateAssistantWarden = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, phone } = req.body;
-  
+
   const updatedUser = await prisma.user.update({
     where: { id },
     data: {
@@ -287,15 +301,14 @@ export const updateAssistantWarden = asyncHandler(async (req, res) => {
     }
   });
 
-  await createLogDb({
-    action: "Updated Assistant Warden",
-    entityType: "User",
-    entityId: updatedUser.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Updated assistant warden: ${updatedUser.name} (${updatedUser.email})`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Updated Assistant Warden",
+    "User",
+    updatedUser.id,
+    `Updated assistant warden: ${updatedUser.name} (${updatedUser.email})`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Assistant Warden updated successfully", { data: updatedUser });
 });
@@ -337,6 +350,15 @@ export const updateAssistantWardenHostel = asyncHandler(async (req, res) => {
     });
   }
 
+  await createLog(
+    req,
+    hostelId && hostelId !== 'Not Assigned' ? "Assigned Hostel to Assistant Warden" : "Unassigned Hostel from Assistant Warden",
+    "User",
+    id,
+    hostelId && hostelId !== 'Not Assigned' ? `Hostel ${hostelId} assigned to assistant warden ${id}` : `Hostel unassigned from assistant warden ${id}`,
+    "success"
+  );
+
   return sendSuccess(res, 200, "Hostel assigned successfully");
 });
 
@@ -347,7 +369,7 @@ export const toggleAssistantWardenStatus = asyncHandler(async (req, res) => {
   if (!user) {
     return sendError(res, 404, "User not found");
   }
-  
+
   let newIsActive;
   if (typeof isActive === "boolean") {
     newIsActive = isActive;
@@ -364,26 +386,34 @@ export const toggleAssistantWardenStatus = asyncHandler(async (req, res) => {
     data: { isActive: newIsActive }
   });
 
-  await createLogDb({
-    action: "Toggled Assistant Warden Status",
-    entityType: "User",
-    entityId: updatedUser.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Status changed to ${updatedUser.isActive ? 'Active' : 'Inactive'} for assistant warden ${updatedUser.name}`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Toggled Assistant Warden Status",
+    "User",
+    updatedUser.id,
+    `Status changed to ${updatedUser.isActive ? 'Active' : 'Inactive'} for assistant warden ${updatedUser.name}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
 });
 
 export const bulkToggleAssistantWardenStatus = asyncHandler(async (req, res) => {
   const { ids, isActive } = req.body;
-  
+
   await prisma.user.updateMany({
     where: { id: { in: ids } },
     data: { isActive }
   });
+
+  await createLog(
+    req,
+    `Bulk ${isActive ? 'Activated' : 'Deactivated'} Assistant Wardens`,
+    "User",
+    null,
+    `Bulk status set to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} assistant warden(s)`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });
@@ -425,6 +455,17 @@ export const createAdmin = asyncHandler(async (req, res) => {
 
   getIo()?.emit('userCreated', { role: 'admin', id: admin.id });
 
+  await createLog(
+    req,
+    "Created Admin",
+    "User",
+    admin.id,
+    `Created admin: ${admin.name} (${admin.email}) for organization ${organizationId}`,
+    "success",
+    null,
+    { organizationId }
+  );
+
   return sendSuccess(res, 201, "Admin created successfully", {
     admin: {
       id: admin.id,
@@ -455,6 +496,17 @@ export const updateAdmin = asyncHandler(async (req, res) => {
   });
 
   getIo()?.emit('userUpdated', { role: 'admin', id: admin.id });
+
+  await createLog(
+    req,
+    "Updated Admin",
+    "User",
+    admin.id,
+    `Updated admin: ${admin.name} (${admin.email})`,
+    "success",
+    null,
+    { organizationId: admin.organizationId }
+  );
 
   return sendSuccess(res, 200, "Admin updated successfully", {
     admin: {
@@ -511,6 +563,17 @@ export const updateAdminOrganization = asyncHandler(async (req, res) => {
 
   getIo()?.emit('userUpdated', { role: 'admin', id: updatedAdmin.id });
 
+  await createLog(
+    req,
+    "Updated Admin Organization",
+    "User",
+    updatedAdmin.id,
+    `Admin ${updatedAdmin.name} organization changed to ${organizationId}`,
+    "success",
+    null,
+    { organizationId }
+  );
+
   return sendSuccess(res, 200, "Admin organization updated successfully", {
     admin: {
       id: updatedAdmin.id,
@@ -556,6 +619,17 @@ export const toggleAdminStatus = asyncHandler(async (req, res) => {
 
   getIo()?.emit('userUpdated', { role: 'admin', id: updatedAdmin.id });
 
+  await createLog(
+    req,
+    updatedAdmin.isActive ? "Activated Admin" : "Deactivated Admin",
+    "User",
+    updatedAdmin.id,
+    `Admin ${updatedAdmin.name} status set to ${updatedAdmin.isActive ? 'Active' : 'Inactive'}`,
+    "success",
+    null,
+    { organizationId: updatedAdmin.organizationId }
+  );
+
   const message = updatedAdmin.isActive
     ? "Admin activated successfully"
     : "Admin deactivated successfully";
@@ -589,6 +663,15 @@ export const bulkToggleAdminStatus = asyncHandler(async (req, res) => {
   });
 
   getIo()?.emit('userUpdated', { role: 'admin', bulk: true });
+
+  await createLog(
+    req,
+    `Bulk ${isActive ? 'Activated' : 'Deactivated'} Admins`,
+    "User",
+    null,
+    `Bulk status set to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} admin(s)`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Bulk admin status updated successfully");
 });
@@ -639,6 +722,15 @@ export const updateUserEmail = asyncHandler(async (req, res) => {
 
   getIo()?.emit('userUpdated', { role: 'admin', id: updatedUser.id });
 
+  await createLog(
+    req,
+    "Updated User Email",
+    "User",
+    updatedUser.id,
+    `Email changed from ${oldEmail} to ${newEmail} for user ${updatedUser.name}`,
+    "success"
+  );
+
   return sendSuccess(res, 200, "User email updated successfully", {
     user: {
       id: updatedUser.id,
@@ -657,10 +749,11 @@ export const createWarden = asyncHandler(async (req, res) => {
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-      return sendError(res, 400, "Email already exists");
+    return sendError(res, 400, "Email already exists");
   }
 
   if (hostelId && hostelId !== 'Not Assigned') {
+
       const hostelExists = await prisma.hostel.findUnique({ where: { id: hostelId } });
       if (!hostelExists) {
           return sendError(res, 404, "Hostel not found");
@@ -674,41 +767,41 @@ export const createWarden = asyncHandler(async (req, res) => {
   const hashedPassword = await hashPassword(temporaryPassword);
 
   const warden = await prisma.$transaction(async (tx) => {
-      const newWarden = await tx.user.create({
-          data: {
-              name: name,
-              email,
-              phone,
-              password: hashedPassword,
-              tempPassword: true,
-              role: "warden",
-              createdBy: req.user?.id || req.user?._id
-          }
+    const newWarden = await tx.user.create({
+      data: {
+        name: name,
+        email,
+        phone,
+        password: hashedPassword,
+        tempPassword: true,
+        role: "warden",
+        createdBy: req.user?.id || req.user?._id
+      }
+    });
+
+    if (hostelId && hostelId !== 'Not Assigned') {
+      await tx.hostelWarden.create({
+        data: {
+          hostelId: hostelId,
+          userId: newWarden.id
+        }
       });
+    }
 
-      if (hostelId && hostelId !== 'Not Assigned') {
-          await tx.hostelWarden.create({
-              data: {
-                  hostelId: hostelId,
-                  userId: newWarden.id
-              }
-          });
-      }
+    if (req.user?.id || req.user?._id) {
+      const userId = req.user.id || req.user._id;
+      await tx.auditLog.create({
+        data: {
+          action: "Created Warden",
+          module: "User",
+          entityId: newWarden.id,
+          userId: userId,
+          newData: { name, email, phone, hostelId }
+        }
+      });
+    }
 
-      if (req.user?.id || req.user?._id) {
-          const userId = req.user.id || req.user._id;
-          await tx.auditLog.create({
-              data: {
-                  action: "Created Warden",
-                  module: "User",
-                  entityId: newWarden.id,
-                  userId: userId,
-                  newData: { name, email, phone, hostelId }
-              }
-          });
-      }
-
-      return newWarden;
+    return newWarden;
   });
 
   const subject = "Your Warden Account Details";
@@ -716,9 +809,9 @@ export const createWarden = asyncHandler(async (req, res) => {
   const html = `<p>Hello ${name},</p><p>Your warden account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
 
   try {
-      await sendMail(email, subject, text, html);
+    await sendMail(email, subject, text, html);
   } catch (error) {
-      console.error("Failed to send temporary password email:", error);
+    console.error("Failed to send temporary password email:", error);
   }
 
   // Cleanup OTP record once warden is created
@@ -726,18 +819,17 @@ export const createWarden = asyncHandler(async (req, res) => {
 
   const io = getIo();
   if (io) {
-      io.emit('userCreated', { role: 'warden', data: warden });
+    io.emit('userCreated', { role: 'warden', data: warden });
   }
 
-  await createLogDb({
-    action: "Created Warden",
-    entityType: "User",
-    entityId: warden.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Created warden: ${warden.name} (${warden.email})`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Created Warden",
+    "User",
+    warden.id,
+    `Created warden: ${warden.name} (${warden.email})`,
+    "success"
+  );
 
   return sendSuccess(res, 201, "Warden created and assigned to hostel successfully", { data: warden });
 });
@@ -745,7 +837,7 @@ export const createWarden = asyncHandler(async (req, res) => {
 export const updateWarden = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, phone } = req.body;
-  
+
   const updatedUser = await prisma.user.update({
     where: { id },
     data: {
@@ -754,15 +846,14 @@ export const updateWarden = asyncHandler(async (req, res) => {
     }
   });
 
-  await createLogDb({
-    action: "Updated Warden",
-    entityType: "User",
-    entityId: updatedUser.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Updated warden: ${updatedUser.name} (${updatedUser.email})`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Updated Warden",
+    "User",
+    updatedUser.id,
+    `Updated warden: ${updatedUser.name} (${updatedUser.email})`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Warden updated successfully", { data: updatedUser });
 });
@@ -770,7 +861,7 @@ export const updateWarden = asyncHandler(async (req, res) => {
 export const updateEmail = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { oldEmail, newEmail, password } = req.body;
-  
+
   const existingUser = await prisma.user.findUnique({ where: { email: newEmail } });
   if (existingUser) {
     return sendError(res, 400, "Email already exists");
@@ -780,6 +871,15 @@ export const updateEmail = asyncHandler(async (req, res) => {
     where: { id },
     data: { email: newEmail }
   });
+
+  await createLog(
+    req,
+    "Updated Warden Email",
+    "User",
+    updatedUser.id,
+    `Email changed from ${oldEmail} to ${newEmail} for warden ${updatedUser.name}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Email updated successfully", { data: updatedUser });
 });
@@ -792,6 +892,14 @@ export const updateWardenHostel = asyncHandler(async (req, res) => {
     await prisma.hostelWarden.deleteMany({
       where: { userId: id }
     });
+    await createLog(
+      req,
+      "Unassigned Hostel from Warden",
+      "User",
+      id,
+      `Hostel unassigned from warden ${id}`,
+      "success"
+    );
     return sendSuccess(res, 200, "Hostel unassigned successfully");
   }
 
@@ -821,6 +929,15 @@ export const updateWardenHostel = asyncHandler(async (req, res) => {
     });
   }
 
+  await createLog(
+    req,
+    "Assigned Hostel to Warden",
+    "User",
+    id,
+    `Hostel ${hostelId} assigned to warden ${id}`,
+    "success"
+  );
+
   return sendSuccess(res, 200, "Hostel assigned successfully");
 });
 
@@ -831,7 +948,7 @@ export const toggleWardenStatus = asyncHandler(async (req, res) => {
   if (!user) {
     return sendError(res, 404, "User not found");
   }
-  
+
   let newIsActive;
   if (typeof isActive === "boolean") {
     newIsActive = isActive;
@@ -848,26 +965,34 @@ export const toggleWardenStatus = asyncHandler(async (req, res) => {
     data: { isActive: newIsActive }
   });
 
-  await createLogDb({
-    action: "Toggled Warden Status",
-    entityType: "User",
-    entityId: updatedUser.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Status changed to ${updatedUser.isActive ? 'Active' : 'Inactive'} for warden ${updatedUser.name}`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Toggled Warden Status",
+    "User",
+    updatedUser.id,
+    `Status changed to ${updatedUser.isActive ? 'Active' : 'Inactive'} for warden ${updatedUser.name}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
 });
 
 export const bulkToggleWardenStatus = asyncHandler(async (req, res) => {
   const { ids, isActive } = req.body;
-  
+
   await prisma.user.updateMany({
     where: { id: { in: ids } },
     data: { isActive }
   });
+
+  await createLog(
+    req,
+    `Bulk ${isActive ? 'Activated' : 'Deactivated'} Wardens`,
+    "User",
+    null,
+    `Bulk status set to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} warden(s)`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });
@@ -885,10 +1010,10 @@ export const getMaintenanceStaff = asyncHandler(async (req, res) => {
   const mappedUsers = users.map(user => {
     let specialization = '';
     let assignedTask = '';
-    
+
     if (user.settings) {
-        specialization = user.settings.specialization || '';
-        assignedTask = user.settings.assignedTask || '';
+      specialization = user.settings.specialization || '';
+      assignedTask = user.settings.assignedTask || '';
     }
 
     let taskAssignedCount = user.complaintsAssigned ? user.complaintsAssigned.length : 0;
@@ -907,7 +1032,7 @@ export const getMaintenanceStaff = asyncHandler(async (req, res) => {
       taskResolvedCount,
       taskPendingCount,
       // exclude nested relations to prevent noise
-      complaintsAssigned: undefined, 
+      complaintsAssigned: undefined,
     };
   });
 
@@ -925,7 +1050,7 @@ export const createMaintenanceStaff = asyncHandler(async (req, res) => {
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-      return sendError(res, 400, "Email already exists");
+    return sendError(res, 400, "Email already exists");
   }
 
   const temporaryPassword = Math.random().toString(36).slice(-8);
@@ -933,34 +1058,34 @@ export const createMaintenanceStaff = asyncHandler(async (req, res) => {
   const hashedPassword = await hashPassword(temporaryPassword);
 
   const staff = await prisma.$transaction(async (tx) => {
-      const newStaff = await tx.user.create({
-          data: {
-              name: name,
-              email,
-              phone,
-              password: hashedPassword,
-              tempPassword: true,
-              role: "maintenance_staff",
-              organizationId: organizationId || null,
-              settings: { specialization, assignedTask },
-              createdBy: req.user?.id || req.user?._id
-          }
-      });
-
-      if (req.user?.id || req.user?._id) {
-          const userId = req.user.id || req.user._id;
-          await tx.auditLog.create({
-              data: {
-                  action: "Created Maintenance Staff",
-                  module: "User",
-                  entityId: newStaff.id,
-                  userId: userId,
-                  newData: { name, email, phone, specialization, assignedTask }
-              }
-          });
+    const newStaff = await tx.user.create({
+      data: {
+        name: name,
+        email,
+        phone,
+        password: hashedPassword,
+        tempPassword: true,
+        role: "maintenance_staff",
+        organizationId: organizationId || null,
+        settings: { specialization, assignedTask },
+        createdBy: req.user?.id || req.user?._id
       }
+    });
 
-      return newStaff;
+    if (req.user?.id || req.user?._id) {
+      const userId = req.user.id || req.user._id;
+      await tx.auditLog.create({
+        data: {
+          action: "Created Maintenance Staff",
+          module: "User",
+          entityId: newStaff.id,
+          userId: userId,
+          newData: { name, email, phone, specialization, assignedTask }
+        }
+      });
+    }
+
+    return newStaff;
   });
 
   const subject = "Your Maintenance Staff Account Details";
@@ -968,10 +1093,10 @@ export const createMaintenanceStaff = asyncHandler(async (req, res) => {
   const html = `<p>Hello ${name},</p><p>Your maintenance staff account has been created.</p><p>Your temporary password is: <strong>${temporaryPassword}</strong></p><p>Please log in and change your password immediately.</p>`;
 
   try {
-      const { sendMail } = await import("../../utils/mailer.js");
-      await sendMail(email, subject, text, html);
+    const { sendMail } = await import("../../utils/mailer.js");
+    await sendMail(email, subject, text, html);
   } catch (error) {
-      console.error("Failed to send temporary password email:", error);
+    console.error("Failed to send temporary password email:", error);
   }
 
   // Cleanup OTP record once created
@@ -980,8 +1105,17 @@ export const createMaintenanceStaff = asyncHandler(async (req, res) => {
 
   const io = getIo();
   if (io) {
-      io.emit('userCreated', { role: 'maintenance_staff', data: staff });
+    io.emit('userCreated', { role: 'maintenance_staff', data: staff });
   }
+
+  await createLog(
+    req,
+    "Created Maintenance Staff",
+    "User",
+    staff.id,
+    `Created maintenance staff: ${staff.name} (${staff.email})`,
+    "success"
+  );
 
   return sendSuccess(res, 201, "Maintenance Staff created successfully", { data: staff });
 });
@@ -989,7 +1123,7 @@ export const createMaintenanceStaff = asyncHandler(async (req, res) => {
 export const updateMaintenanceStaff = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, phone, specialization, assignedTask } = req.body;
-  
+
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) {
     return sendError(res, 404, "User not found");
@@ -1013,8 +1147,17 @@ export const updateMaintenanceStaff = asyncHandler(async (req, res) => {
 
   const io = getIo();
   if (io) {
-      io.emit('userUpdated', { role: 'maintenance_staff', data: updatedUser });
+    io.emit('userUpdated', { role: 'maintenance_staff', data: updatedUser });
   }
+
+  await createLog(
+    req,
+    "Updated Maintenance Staff",
+    "User",
+    updatedUser.id,
+    `Updated maintenance staff: ${updatedUser.name} (${updatedUser.email})`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Maintenance Staff updated successfully", { data: updatedUser });
 });
@@ -1023,7 +1166,7 @@ export const toggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { isActive, status } = req.body || {};
   const user = await prisma.user.findUnique({ where: { id } });
-  
+
   if (!user) {
     return sendError(res, 404, "User not found");
   }
@@ -1046,15 +1189,24 @@ export const toggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
 
   const io = getIo();
   if (io) {
-      io.emit('userUpdated', { role: 'maintenance_staff', data: updatedUser });
+    io.emit('userUpdated', { role: 'maintenance_staff', data: updatedUser });
   }
+
+  await createLog(
+    req,
+    updatedUser.isActive ? "Activated Maintenance Staff" : "Deactivated Maintenance Staff",
+    "User",
+    updatedUser.id,
+    `Maintenance staff ${updatedUser.name} status set to ${updatedUser.isActive ? 'Active' : 'Inactive'}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Status toggled successfully", { data: updatedUser });
 });
 
 export const bulkToggleMaintenanceStaffStatus = asyncHandler(async (req, res) => {
   const { ids, isActive } = req.body;
-  
+
   await prisma.user.updateMany({
     where: { id: { in: ids }, role: "maintenance_staff" },
     data: { isActive }
@@ -1062,8 +1214,17 @@ export const bulkToggleMaintenanceStaffStatus = asyncHandler(async (req, res) =>
 
   const io = getIo();
   if (io) {
-      io.emit('userUpdated', { role: 'maintenance_staff', bulk: true });
+    io.emit('userUpdated', { role: 'maintenance_staff', bulk: true });
   }
+
+  await createLog(
+    req,
+    `Bulk ${isActive ? 'Activated' : 'Deactivated'} Maintenance Staff`,
+    "User",
+    null,
+    `Bulk status set to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} maintenance staff member(s)`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Bulk status updated successfully");
 });

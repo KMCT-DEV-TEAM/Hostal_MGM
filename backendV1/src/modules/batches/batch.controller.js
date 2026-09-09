@@ -8,21 +8,20 @@ import {
   toggleBatchStatusService, 
   bulkToggleBatchStatusService 
 } from './batch.service.js';
-import { createLogDb } from '../logs/log.service.js';
+import { createLog } from '../../utils/log.util.js';
 
 export const createBatch = asyncHandler(async (req, res) => {
   try {
     const newBatch = await createBatchService(req.body, req.user);
 
-    await createLogDb({
-      action: "Created Batch",
-      entityType: "Batch",
-      entityId: newBatch.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Created batch: ${newBatch.name} (${newBatch.code})`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Created Batch",
+      "Batch",
+      newBatch.id,
+      `Created batch: ${newBatch.name} (${newBatch.code})`,
+      "success"
+    );
 
     return sendSuccess(res, 201, 'Batch created successfully', newBatch);
   } catch (error) {
@@ -70,15 +69,14 @@ export const updateBatch = asyncHandler(async (req, res) => {
   try {
     const updatedBatch = await updateBatchService(id, req.body, req.user);
 
-    await createLogDb({
-      action: "Updated Batch",
-      entityType: "Batch",
-      entityId: updatedBatch.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Updated batch: ${updatedBatch.name} (${updatedBatch.code})`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Updated Batch",
+      "Batch",
+      updatedBatch.id,
+      `Updated batch: ${updatedBatch.name} (${updatedBatch.code})`,
+      "success"
+    );
 
     return sendSuccess(res, 200, 'Batch updated successfully', updatedBatch);
   } catch (error) {
@@ -103,15 +101,14 @@ export const toggleBatchStatus = asyncHandler(async (req, res) => {
   try {
     const updatedBatch = await toggleBatchStatusService(id, req.user, req.body);
 
-    await createLogDb({
-      action: "Toggled Batch Status",
-      entityType: "Batch",
-      entityId: updatedBatch.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Status changed to ${updatedBatch.isActive ? 'Active' : 'Inactive'} for batch ${updatedBatch.name}`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Toggled Batch Status",
+      "Batch",
+      updatedBatch.id,
+      `Status changed to ${updatedBatch.isActive ? 'Active' : 'Inactive'} for batch ${updatedBatch.name}`,
+      "success"
+    );
 
     return sendSuccess(res, 200, 'Batch status updated successfully', updatedBatch);
   } catch (error) {
@@ -130,14 +127,14 @@ export const bulkToggleBatchStatus = asyncHandler(async (req, res) => {
   
   const result = await bulkToggleBatchStatusService(ids, isActive, req.user);
 
-  await createLogDb({
-    action: "Bulk Status Update (Batches)",
-    entityType: "Batch",
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${result.count} batches`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Bulk Status Update (Batches)",
+    "Batch",
+    null,
+    `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${result.count} batches`,
+    "success"
+  );
 
   return sendSuccess(res, 200, `Successfully updated ${result.count} batches`);
 });
