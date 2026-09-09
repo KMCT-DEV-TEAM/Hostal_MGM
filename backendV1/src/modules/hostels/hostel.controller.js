@@ -1,7 +1,8 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
-import { createLogDb } from '../logs/log.service.js';
+import { createLog } from '../../utils/log.util.js';
+
 
 export const createHostel = asyncHandler(async (req, res) => {
   const { name, code, email, phone, location, capacity, hostelType, type, hosteltype, adminId } = req.body;
@@ -34,15 +35,14 @@ export const createHostel = asyncHandler(async (req, res) => {
     }
   });
 
-  await createLogDb({
-    action: "Created Hostel",
-    entityType: "Hostel",
-    entityId: newHostel.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Created hostel: ${newHostel.name} (${newHostel.code})`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Created Hostel",
+    "Hostel",
+    newHostel.id,
+    `Created hostel: ${newHostel.name} (${newHostel.code})`,
+    "success"
+  );
 
   return sendSuccess(res, 201, 'Hostel created successfully', newHostel);
 });
@@ -164,15 +164,14 @@ export const updateHostel = asyncHandler(async (req, res) => {
     }
   });
 
-  await createLogDb({
-    action: "Updated Hostel",
-    entityType: "Hostel",
-    entityId: updatedHostel.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Updated hostel: ${updatedHostel.name} (${updatedHostel.code})`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Updated Hostel",
+    "Hostel",
+    updatedHostel.id,
+    `Updated hostel: ${updatedHostel.name} (${updatedHostel.code})`,
+    "success"
+  );
 
   return sendSuccess(res, 200, 'Hostel updated successfully', updatedHostel);
 });
@@ -234,15 +233,14 @@ export const toggleHostelStatus = asyncHandler(async (req, res) => {
     ? "Hostel activated successfully" 
     : "Hostel deactivated successfully";
 
-  await createLogDb({
-    action: "Toggled Hostel Status",
-    entityType: "Hostel",
-    entityId: updatedHostel.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Status changed to ${updatedHostel.isActive ? 'Active' : 'Inactive'} for hostel ${updatedHostel.name}`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Toggled Hostel Status",
+    "Hostel",
+    updatedHostel.id,
+    `Status changed to ${updatedHostel.isActive ? 'Active' : 'Inactive'} for hostel ${updatedHostel.name}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, message, updatedHostel);
 });
@@ -267,14 +265,14 @@ export const bulkToggleHostelStatus = asyncHandler(async (req, res) => {
     }
   });
 
-  await createLogDb({
-    action: "Bulk Status Update (Hostels)",
-    entityType: "Hostel",
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} hostels`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Bulk Status Update (Hostels)",
+    "Hostel",
+    null,
+    `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} hostels`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Bulk hostel status updated successfully");
 });

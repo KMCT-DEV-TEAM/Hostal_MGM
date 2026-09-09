@@ -314,16 +314,17 @@ model UserSession {
 }
 
 model AuditLog {
-  id             String        @id @default(uuid()) @db.Uuid
-  organizationId String?       @map("organization_id") @db.Uuid
-  userId         String?       @map("user_id") @db.Uuid
-  action         String        @db.VarChar(100)
-  module         String        @db.VarChar(100)
-  entityId       String?       @map("entity_id") @db.Uuid
-  oldData        Json?         @map("old_data")
-  newData        Json?         @map("new_data")
-  ipAddress      String?       @map("ip_address") @db.VarChar(50)
-  createdAt      DateTime      @default(now()) @map("created_at")
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String?     @map("organization_id") @db.Uuid
+  userId         String?     @map("user_id") @db.Uuid
+  action         String      @db.VarChar(100)
+  module         String      @db.VarChar(100)
+  entityId       String?     @map("entity_id") @db.Uuid
+  oldData        Json?       @map("old_data")
+  newData        Json?       @map("new_data")
+  ipAddress      String?     @map("ip_address") @db.VarChar(50)
+  priority       LogPriority @default(MEDIUM)
+  createdAt      DateTime    @default(now()) @map("created_at")
   organization   Organization? @relation(fields: [organizationId], references: [id])
   user           User?         @relation(fields: [userId], references: [id])
 
@@ -331,6 +332,7 @@ model AuditLog {
   @@index([userId])
   @@index([module])
   @@index([entityId])
+  @@index([priority])
   @@index([createdAt])
   @@map("audit_logs")
 }
@@ -950,12 +952,14 @@ model ActivityLog {
   userRole   String       @map("user_role") @db.VarChar(50)
   details    String
   status     ActionStatus @default(SUCCESS)
+  priority   LogPriority  @default(MEDIUM)
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([entityType, entityId])
   @@index([userId])
+  @@index([priority])
   @@map("activity_logs")
 }
 
@@ -1026,6 +1030,14 @@ enum ComplaintStatus {
 }
 
 enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// Priority level for audit and activity log entries.
+/// Distinct from the complaint `Priority` enum to allow independent evolution.
+enum LogPriority {
   LOW
   MEDIUM
   HIGH

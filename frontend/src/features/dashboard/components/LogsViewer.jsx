@@ -122,6 +122,7 @@ const LogsViewer = ({ entityType }) => {
                 "Action": log.action,
                 "User": log.user?.name || log.user?.email || 'Unknown',
                 "Role": log.userRole || 'N/A',
+                "Priority": log.priority || 'MEDIUM',
                 "Status": log.status,
                 "Details": log.details
             }));
@@ -172,6 +173,23 @@ const LogsViewer = ({ entityType }) => {
             header: "Details",
             truncate: true,
             accessor: (o) => o.details
+        },
+        {
+            key: "priority",
+            header: "Priority",
+            icon: Activity,
+            renderCell: (o) => {
+                const p = o.priority || 'MEDIUM';
+                return (
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-medium border ${
+                        p === 'HIGH' ? 'bg-red-50 text-red-700 border-red-200' :
+                        p === 'MEDIUM' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                        'bg-blue-50 text-blue-700 border-blue-200'
+                    }`}>
+                        {p}
+                    </span>
+                );
+            }
         },
         {
             key: "view",

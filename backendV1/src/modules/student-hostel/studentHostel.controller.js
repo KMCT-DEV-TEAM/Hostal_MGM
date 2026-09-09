@@ -8,9 +8,7 @@ import {
   getHostelHistoryService,
   getStudentHostelTimelineService
 } from "./studentHostel.service.js";
-
-// TODO: MIGRATION - When logs module is migrated to Prisma, ensure createLogDb works correctly.
-import { createLogDb } from "../logs/log.service.js";
+import { createLog } from "../../utils/log.util.js";
 
 /**
  * Allocates or transfers a student to a hostel.
@@ -32,18 +30,9 @@ export const updateStudentHostel = asyncHandler(async (req, res) => {
 
   // Log activity
   try {
-    await createLogDb({
-      action:
-        result.action === "allocated"
-          ? "Assigned Student to Hostel"
-          : "Transferred Student to Hostel",
-      entityType: "StudentHostel",
-      entityId: result.student.id || result.student._id,
-      user: req.user.id || req.user._id,
-      userRole: req.user.role,
-      details: actionLogDetails,
-      status: "success",
-    });
+    await createLog(req, result.action === "allocated"
+      ? "Assigned Student to Hostel"
+      : "Transferred Student to Hostel", "StudentHostel", result.student.id || result.student._id, actionLogDetails, "success");
   } catch (logErr) {
     console.error("[Activity Log Error]", logErr);
   }
@@ -68,15 +57,14 @@ export const vacateHostel = asyncHandler(async (req, res) => {
 
 
   try {
-    await createLogDb({
-      action: "Vacated Student from Hostel",
-      entityType: "StudentHostel",
-      entityId: result.student.id,
-      user: req.user.id || req.user._id,
-      userRole: req.user.role,
-      details: "Student vacated from hostel",
-      status: "success",
-    });
+    await createLog(
+      req,
+      "Vacated Student from Hostel",
+      "StudentHostel",
+      result.student.id,
+      "Student vacated from hostel",
+      "success"
+    );
   } catch (logErr) {
     console.error("[Activity Log Error]", logErr);
   }

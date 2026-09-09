@@ -42,7 +42,6 @@ import complaintRoutes from './modules/complaints/complaint.routes.js';
 import complaintCategoryRoutes from './modules/complaintCategories/complaintCategory.routes.js';
 import courseRoutes from './modules/courses/course.routes.js';
 import departmentRoutes from './modules/departments/department.routes.js';
-import logRoutes from './modules/logs/log.routes.js';
 import organizationRoutes from './modules/organizations/organization.routes.js';
 import otpRoutes from './modules/otps/otp.routes.js';
 import hostelRoutes from './modules/hostels/hostel.routes.js';
@@ -62,6 +61,7 @@ import mentorAssignmentRoutes from './modules/mentor-assignment/mentorAssignment
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import profileRoutes from './modules/profile/profile.routes.js';
 import visitorRoutes from './modules/visitor/visitor.routes.js';
+import logRoutes from './modules/logs/log.routes.js';
 
 // Generic Mounts
 app.use('/api/auth', authRoutes);
@@ -74,7 +74,6 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/complaint-categories', complaintCategoryRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/otps', otpRoutes);
-app.use('/api/logs', logRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/push', pushRoutes);
 
@@ -87,6 +86,7 @@ app.use('/api/passes', passRoutes);
 app.use('/api/mentors', mentorRoutes);
 app.use('/api/mentor-assignments', mentorAssignmentRoutes);
 app.use('/api/visitors', visitorRoutes);
+app.use('/api/logs', logRoutes);
 
 // Super Admin Mounts
 app.use('/api/super-admin', userRoutes);

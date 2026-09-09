@@ -1,24 +1,16 @@
 import express from 'express';
-import { protect } from '../auth/auth.middleware.js';
-import {
-  createLog,
-  getLogs,
-  getLogById,
-  updateLog,
-  deleteLog
-} from './log.controller.js';
+import * as logController from './log.controller.js';
+import { protect } from '../../middlewares/auth.middleware.js';
+import { restrictTo } from '../../middlewares/role.middleware.js';
 
 const router = express.Router();
 
-router.use(protect); // Apply protect middleware to all routes
+router.use(protect);
 
-router.route('/')
-  .post(createLog)
-  .get(getLogs);
-
-router.route('/:id')
-  .get(getLogById)
-  .put(updateLog)
-  .delete(deleteLog);
+router.get(
+  '/',
+  restrictTo('super_admin', 'admin'),
+  logController.getLogs
+);
 
 export default router;

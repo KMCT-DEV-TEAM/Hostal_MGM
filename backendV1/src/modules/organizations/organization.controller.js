@@ -1,6 +1,7 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
+import { createLog } from '../../utils/log.util.js';
 
 import { getIo } from '../../config/socket.js';
 
@@ -45,18 +46,16 @@ export const createOrganization = asyncHandler(async (req, res) => {
     }
   });
 
-  if (req.user?.id || req.user?._id) {
-    const userId = req.user.id || req.user._id;
-    await prisma.auditLog.create({
-      data: {
-        action: "Created Organization",
-        module: "Organization",
-        entityId: organization.id,
-        userId: userId,
-        newData: { name: organization.name },
-      }
-    });
-  }
+  await createLog(
+    req,
+    'Created Organization',
+    'Organization',
+    organization.id,
+    `Created organization: ${organization.name} (${organization.code})`,
+    'success',
+    null,
+    { newData: { name: organization.name, code: organization.code } }
+  );
 
   const io = getIo();
   if (io) {
@@ -166,18 +165,16 @@ export const updateOrganization = asyncHandler(async (req, res) => {
     data: { name, code, organisationNumber, email, phone, address }
   });
 
-  if (req.user?.id || req.user?._id) {
-    const userId = req.user.id || req.user._id;
-    await prisma.auditLog.create({
-      data: {
-        action: "Updated Organization",
-        module: "Organization",
-        entityId: organization.id,
-        userId: userId,
-        newData: { name: organization.name },
-      }
-    });
-  }
+  await createLog(
+    req,
+    'Updated Organization',
+    'Organization',
+    organization.id,
+    `Updated organization: ${organization.name}`,
+    'success',
+    null,
+    { newData: { name: organization.name } }
+  );
 
   const io = getIo();
   if (io) {
@@ -213,18 +210,16 @@ export const deleteOrganization = asyncHandler(async (req, res) => {
     data: { isActive: newIsActive }
   });
 
-  if (req.user?.id || req.user?._id) {
-    const userId = req.user.id || req.user._id;
-    await prisma.auditLog.create({
-      data: {
-        action: updated.isActive ? "Activated Organization" : "Deactivated Organization",
-        module: "Organization",
-        entityId: updated.id,
-        userId: userId,
-        newData: { isActive: updated.isActive },
-      }
-    });
-  }
+  await createLog(
+    req,
+    updated.isActive ? 'Activated Organization' : 'Deactivated Organization',
+    'Organization',
+    updated.id,
+    `Organization ${updated.name} status changed to ${updated.isActive ? 'Active' : 'Inactive'}`,
+    'success',
+    null,
+    { oldData: { isActive: !updated.isActive }, newData: { isActive: updated.isActive } }
+  );
 
   const io = getIo();
   if (io) {
@@ -251,17 +246,16 @@ export const bulkUpdateOrganizationStatus = asyncHandler(async (req, res) => {
     data: { isActive }
   });
 
-  if (req.user?.id || req.user?._id) {
-    const userId = req.user.id || req.user._id;
-    await prisma.auditLog.create({
-      data: {
-        action: "Bulk Updated Organizations",
-        module: "Organization",
-        userId: userId,
-        newData: { ids, isActive },
-      }
-    });
-  }
+  await createLog(
+    req,
+    'Bulk Updated Organizations',
+    'Organization',
+    null,
+    `Bulk updated ${ids.length} organizations to ${isActive ? 'Active' : 'Inactive'}`,
+    'success',
+    null,
+    { newData: { ids, isActive } }
+  );
 
   const io = getIo();
   if (io) {

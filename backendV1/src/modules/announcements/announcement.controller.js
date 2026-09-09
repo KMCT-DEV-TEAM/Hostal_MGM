@@ -2,6 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
 import { triggerAnnouncementNotifications } from './announcement.service.js';
+import { createLog } from '../../utils/log.util.js';
 
 // Create Announcement
 export const createAnnouncement = asyncHandler(async (req, res) => {
@@ -85,6 +86,15 @@ export const createAnnouncement = asyncHandler(async (req, res) => {
   if (status === 'ACTIVE') {
     triggerAnnouncementNotifications(announcement.id).catch(console.error);
   }
+
+  await createLog(
+    req,
+    status === 'SCHEDULED' ? "Scheduled Announcement" : "Created Announcement",
+    "Announcement",
+    announcement.id,
+    `Announcement: ${announcement.title} (Target: ${actualTargetType})`,
+    "success"
+  );
 
   return sendSuccess(res, 201, status === 'SCHEDULED' ? "Announcement scheduled successfully" : "Announcement created successfully", announcement);
 });
@@ -344,6 +354,15 @@ export const updateAnnouncement = asyncHandler(async (req, res) => {
     targetHostels: targetHostels || []
   };
 
+  await createLog(
+    req,
+    "Updated Announcement",
+    "Announcement",
+    updatedAnnouncement.id,
+    `Updated announcement: ${updatedAnnouncement.title}`,
+    "success"
+  );
+
   return sendSuccess(res, 200, "Announcement updated successfully", formattedAnnouncement);
 });
 
@@ -367,6 +386,15 @@ export const deleteAnnouncement = asyncHandler(async (req, res) => {
       isActive: false
     }
   });
+
+  await createLog(
+    req,
+    "Deleted Announcement",
+    "Announcement",
+    announcement.id,
+    `Deleted announcement: ${announcement.title}`,
+    "success"
+  );
 
   return sendSuccess(res, 200, "Announcement deleted successfully");
 });

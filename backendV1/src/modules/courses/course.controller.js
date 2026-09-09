@@ -2,7 +2,7 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
 import { createCourseService, getCoursesService, toggleCourseStatusService, bulkToggleCourseStatusService, updateCourseService } from './course.service.js';
-import { createLogDb } from '../logs/log.service.js';
+import { createLog } from '../../utils/log.util.js';
 
 export const createCourse = asyncHandler(async (req, res) => {
   try {
@@ -19,15 +19,14 @@ export const createCourse = asyncHandler(async (req, res) => {
 
     const newCourse = await createCourseService(courseData);
     
-    await createLogDb({
-      action: "Created Course",
-      entityType: "Course",
-      entityId: newCourse.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Created course: ${newCourse.name} (${newCourse.code})`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Created Course",
+      "Course",
+      newCourse.id,
+      `Created course: ${newCourse.name} (${newCourse.code})`,
+      "success"
+    );
 
     return sendSuccess(res, 201, 'Course created successfully', newCourse);
   } catch (error) {
@@ -54,15 +53,14 @@ export const updateCourse = asyncHandler(async (req, res) => {
   try {
     const updatedCourse = await updateCourseService(id, req.body, req.user);
     
-    await createLogDb({
-      action: "Updated Course",
-      entityType: "Course",
-      entityId: updatedCourse.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Updated course: ${updatedCourse.name} (${updatedCourse.code})`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Updated Course",
+      "Course",
+      updatedCourse.id,
+      `Updated course: ${updatedCourse.name} (${updatedCourse.code})`,
+      "success"
+    );
 
     return sendSuccess(res, 200, 'Course updated successfully', updatedCourse);
   } catch (error) {
@@ -87,15 +85,14 @@ export const toggleCourseStatus = asyncHandler(async (req, res) => {
   try {
     const updatedCourse = await toggleCourseStatusService(id, req.user, req.body);
 
-    await createLogDb({
-      action: "Toggled Course Status",
-      entityType: "Course",
-      entityId: updatedCourse.id,
-      user: req.user.id,
-      userRole: req.user.role,
-      details: `Status changed to ${updatedCourse.isActive ? 'Active' : 'Inactive'} for course ${updatedCourse.name}`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Toggled Course Status",
+      "Course",
+      updatedCourse.id,
+      `Status changed to ${updatedCourse.isActive ? 'Active' : 'Inactive'} for course ${updatedCourse.name}`,
+      "success"
+    );
 
     return sendSuccess(res, 200, 'Course status updated successfully', updatedCourse);
   } catch (error) {
@@ -114,14 +111,14 @@ export const bulkToggleCourseStatus = asyncHandler(async (req, res) => {
   
   const result = await bulkToggleCourseStatusService(ids, isActive, req.user);
 
-  await createLogDb({
-    action: "Bulk Status Update (Courses)",
-    entityType: "Course",
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${result.count} courses`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Bulk Status Update (Courses)",
+    "Course",
+    null,
+    `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${result.count} courses`,
+    "success"
+  );
 
   return sendSuccess(res, 200, `Successfully updated ${result.count} courses`);
 });

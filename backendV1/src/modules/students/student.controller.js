@@ -2,11 +2,12 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { createStudentWithParentDb, updateStudentDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
 import { verifyOtpDb, deleteOtpDb } from "../otps/otp.service.js";
-import { createLogDb } from "../logs/log.service.js";
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
 import { prisma } from "../../config/prisma.js";
+import { createLog } from "../../utils/log.util.js";
+
 
 export const createStudent = asyncHandler(async (req, res) => {
   try {
@@ -82,15 +83,14 @@ export const createStudent = asyncHandler(async (req, res) => {
       return creationResult;
     });
 
-    await createLogDb({
-      action: "Created Student",
-      entityType: "Student",
-      entityId: result.student?.id || result.id || undefined,
-      user: req.user?.id,
-      userRole: req.user?.role,
-      details: `Created new student`,
-      status: "success"
-    });
+    await createLog(
+      req,
+      "Created Student",
+      "Student",
+      result.student?.id || result.id || undefined,
+      `Created new student`,
+      "success"
+    );
 
     const studentId = result.student?.id || result.id;
     const studentName = result.student?.name || req.body.name || '';
@@ -147,15 +147,14 @@ export const updateStudent = asyncHandler(async (req, res) => {
     return sendError(res, 404, "Failed to update student");
   }
 
-  await createLogDb({
-    action: "Updated Student",
-    entityType: "Student",
-    entityId: id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Updated student profile information`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Updated Student",
+    "Student",
+    id,
+    `Updated student profile information`,
+    "success"
+  );
 
   const newStudent = result;
 
@@ -245,15 +244,14 @@ export const changeStudentEmail = asyncHandler(async (req, res) => {
 
   await deleteOtpDb(normalizedNewEmail);
 
-  await createLogDb({
-    action: "Changed Student Email",
-    entityType: "Student",
-    entityId: updatedStudent.id,
-    user: req.user?.id,
-    userRole: req.user?.role,
-    details: `Student email changed from ${normalizedOldEmail} to ${normalizedNewEmail}`,
-    status: "success"
-  });
+  await createLog(
+    req,
+    "Changed Student Email",
+    "Student",
+    updatedStudent.id,
+    `Student email changed from ${normalizedOldEmail} to ${normalizedNewEmail}`,
+    "success"
+  );
 
   orchestratorService.triggerNotification({
     sender: buildSender(req.user),

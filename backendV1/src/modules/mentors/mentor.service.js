@@ -1,11 +1,11 @@
 import { prisma } from "../../config/prisma.js";
 import { hashPassword } from "../../utils/hash.js";
 import { sendMail } from "../../utils/mailer.js";
-import { createLogDb } from "../logs/log.service.js";
 import { getOrCreateOtp, saveOtpDb } from "../otp/otp.service.js";
 import { ROLES } from "../../constants/roles.js";
 import { MENTOR_ASSIGNMENT_STATUS } from "../../constants/status.js";
 import crypto from "crypto";
+import { createLog } from "../../utils/log.util.js";
 
 const generateRandomPassword = () => {
   return crypto.randomBytes(4).toString("hex");
@@ -61,16 +61,13 @@ export const createMentorDb = async (mentorData, creatorUser) => {
 
     // 5. Create Activity / Audit Log within transaction
     if (creatorUser) {
-      await createLogDb(
-        {
-          action: "Created Mentor",
-          entityType: "User",
-          entityId: newMentor.id,
-          user: creatorUser.id,
-          userRole: creatorUser.role,
-          details: `Created new mentor account for ${newMentor.name} (${newMentor.email})`,
-          status: "success",
-        },
+      await createLog(
+        creatorUser,
+        "Created Mentor",
+        "User",
+        newMentor.id,
+        `Created new mentor account for ${newMentor.name} (${newMentor.email})`,
+        "success",
         tx
       );
     }
@@ -295,18 +292,9 @@ export const updateMentorDb = async (mentorId, updateData, requesterUser) => {
     });
 
     if (requesterUser) {
-      await createLogDb(
-        {
-          action: "Updated Mentor",
-          entityType: "User",
-          entityId: updated.id,
-          user: requesterUser.id,
-          userRole: requesterUser.role,
-          details: `Updated mentor details for ${updated.name}`,
-          status: "success",
-        },
-        tx
-      );
+      await createLog({
+        id: requesterUser.id
+      }, "Updated Mentor", "User", updated.id, `Updated mentor details for ${updated.name}`, "success", tx);
     }
 
     return updated;
@@ -396,18 +384,9 @@ export const updateMentorStatusDb = async (mentorId, isActive, requesterUser) =>
     });
 
     if (requesterUser) {
-      await createLogDb(
-        {
-          action: isActive ? "Activated Mentor" : "Deactivated Mentor",
-          entityType: "User",
-          entityId: mentor.id,
-          user: requesterUser.id,
-          userRole: requesterUser.role,
-          details: `${isActive ? "Activated" : "Deactivated"} mentor ${mentor.name}`,
-          status: "success",
-        },
-        tx
-      );
+      await createLog({
+        id: requesterUser.id
+      }, isActive ? "Activated Mentor" : "Deactivated Mentor", "User", mentor.id, `${isActive ? "Activated" : "Deactivated"} mentor ${mentor.name}`, "success", tx);
     }
 
     return updated;
@@ -471,18 +450,9 @@ export const deleteMentorDb = async (mentorId, requesterUser) => {
     });
 
     if (requesterUser) {
-      await createLogDb(
-        {
-          action: "Soft Deleted Mentor",
-          entityType: "User",
-          entityId: mentor.id,
-          user: requesterUser.id,
-          userRole: requesterUser.role,
-          details: `Soft deleted mentor ${mentor.name}`,
-          status: "success",
-        },
-        tx
-      );
+      await createLog({
+        id: requesterUser.id
+      }, "Soft Deleted Mentor", "User", mentor.id, `Soft deleted mentor ${mentor.name}`, "success", tx);
     }
   });
 
