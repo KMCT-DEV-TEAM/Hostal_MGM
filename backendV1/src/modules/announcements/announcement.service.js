@@ -1,5 +1,5 @@
 import { prisma } from '../../config/prisma.js';
-import { orchestratorService } from '../notifications/services/orchestrator.service.js';
+import { orchestratorService } from '../notification/services/orchestrator.service.js';
 
 export const triggerAnnouncementNotifications = async (announcementId) => {
     try {

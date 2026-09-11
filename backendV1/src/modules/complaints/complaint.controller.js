@@ -3,7 +3,7 @@ import { sendSuccess, sendError } from '../../utils/response.js';
 import * as complaintService from './complaint.service.js';
 import { getIo } from '../../config/socket.js';
 import { orchestratorService } from '../notification/services/orchestrator.service.js';
-import { buildSender } from '../notifications/utils/sender.util.js';
+import { buildSender } from '../notification/utils/sender.util.js';
 import { prisma } from '../../config/prisma.js';
 import { createLog } from '../../utils/log.util.js';
 

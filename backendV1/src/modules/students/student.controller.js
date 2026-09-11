@@ -2,9 +2,10 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { createStudentWithParentDb, updateStudentDb, getStudentsService, getStudentFilterOptionsService } from "./student.service.js";
 import { verifyOtpDb, deleteOtpDb } from "../otps/otp.service.js";
+
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { getAggregateOrganizationDataDb } from "../organizations/organization.service.js";
-import { buildSender } from "../notifications/utils/sender.util.js";
+import { buildSender } from "../notification/utils/sender.util.js";
 import { prisma } from "../../config/prisma.js";
 import { createLog } from "../../utils/log.util.js";
 
@@ -62,8 +63,8 @@ export const createStudent = asyncHandler(async (req, res) => {
 
       const { studentOtp, parentOtp } = req.body;
 
-      const isStudentOtpValid = await verifyOtpDb(email, studentOtp);
-      const isParentOtpValid = await verifyOtpDb(parentEmail, parentOtp);
+      const isStudentOtpValid = await verifyOtpDb(email, studentOtp, 'STUDENT_CREATION');
+      const isParentOtpValid = await verifyOtpDb(parentEmail, parentOtp, 'PARENT_VERIFICATION');
 
       if (!isStudentOtpValid) {
         throw { statusCode: 400, message: "Invalid or expired OTP for student" };

@@ -514,7 +514,8 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     setSendingOtpFor(type);
     setOtpErrors((prev) => ({ ...prev, [type]: "" }));
     try {
-      await otpService.sendOtp(email);
+      const purpose = type === "student" ? "STUDENT_CREATION" : "PARENT_VERIFICATION";
+      await otpService.sendOtp(email, purpose);
       if (type === "student") setStudentOtpSent(true);
       else setParentOtpSent(true);
       showSuccessToast(`OTP sent to ${email}`);
@@ -541,7 +542,8 @@ export default function StudentFormModal({ editingStudent, onClose, onSave }) {
     try {
       setVerifyingOtp(true);
       const email = verifyTarget === "student" ? studentEmail : parentEmail;
-      await otpService.verifyOtp(email, otpValue);
+      const purpose = verifyTarget === "student" ? "STUDENT_CREATION" : "PARENT_VERIFICATION";
+      await otpService.verifyOtp(email, otpValue, purpose);
       if (verifyTarget === "student") {
         setStudentOtp(otpValue);
         setEmailVerified((prev) => ({ ...prev, student: true }));

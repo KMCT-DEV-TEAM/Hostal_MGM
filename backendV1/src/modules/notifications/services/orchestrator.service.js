@@ -1,5 +1,1 @@
-export const orchestratorService = {
-    triggerNotification: async (payload) => {
-        console.log("Stub: triggerNotification called with payload:", payload);
-    }
-};
+export { orchestratorService } from '../../notification/services/orchestrator.service.js';

@@ -1,12 +1,14 @@
 import otpApi from '@/features/dashboard/api/otpApi';
 
-export async function sendOtp(email) {
-  const response = await otpApi.sendOtp({ email });
+export async function sendOtp(email, purpose = 'DEFAULT') {
+  const response = await otpApi.sendOtp({ email, purpose });
   return response.data;
 }
 
-export async function verifyOtp(email, otp) {
-  const response = await otpApi.verifyOtp({ email, otp });
+export async function verifyOtp(email, otp, purpose = null) {
+  const payload = { email, otp };
+  if (purpose) payload.purpose = purpose;
+  const response = await otpApi.verifyOtp(payload);
   return response.data;
 }
 

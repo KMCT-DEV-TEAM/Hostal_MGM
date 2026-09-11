@@ -20,7 +20,6 @@ class AudienceResolverService {
 
     async resolveStudents(filter = {}) {
         const where = {};
-        if (filter.hostelId) where.hostelId = filter.hostelId;
         if (filter.courseId) where.courseId = filter.courseId;
         if (filter.departmentId) where.departmentId = filter.departmentId;
         if (filter.batchId) where.batchId = filter.batchId;
@@ -28,16 +27,19 @@ class AudienceResolverService {
         if (filter.isActive !== undefined) where.isActive = filter.isActive;
         if (filter.studentId) where.id = filter.studentId;
         if (filter.studentIds && filter.studentIds.length > 0) where.id = { in: filter.studentIds };
+        if (filter.hostelId) {
+            where.studentHostels = { some: { hostelId: filter.hostelId, status: 'ACTIVE' } };
+        }
 
         const students = await prisma.student.findMany({
             where,
-            select: { id: true, firstName: true, lastName: true, email: true, phone: true }
+            select: { id: true, name: true, email: true, phone: true }
         });
 
         return students.map(s => ({
             id: s.id,
             recipientType: RecipientModel.STUDENT,
-            name: `${s.firstName} ${s.lastName || ''}`.trim(),
+            name: s.name,
             email: s.email,
             phone: s.phone
         }));
@@ -46,28 +48,32 @@ class AudienceResolverService {
     async resolveParents(filter = {}) {
         const where = {};
         if (filter.parentId) where.id = filter.parentId;
-        if (filter.organizationId) where.organizationId = filter.organizationId;
 
-        if (filter.studentId || (filter.studentIds && filter.studentIds.length > 0)) {
-            where.studentParents = {
-                some: {
-                    studentId: filter.studentId ? filter.studentId : { in: filter.studentIds }
-                }
-            };
-            if (filter.relationship) {
-                where.studentParents.some.relationship = filter.relationship;
+        if (filter.studentId || (filter.studentIds && filter.studentIds.length > 0) || filter.organizationId || filter.relationship) {
+            const studentParentsSome = {};
+            if (filter.studentId) {
+                studentParentsSome.studentId = filter.studentId;
+            } else if (filter.studentIds && filter.studentIds.length > 0) {
+                studentParentsSome.studentId = { in: filter.studentIds };
             }
+            if (filter.organizationId) {
+                studentParentsSome.student = { organizationId: filter.organizationId };
+            }
+            if (filter.relationship) {
+                studentParentsSome.relationship = filter.relationship;
+            }
+            where.studentParents = { some: studentParentsSome };
         }
 
         const parents = await prisma.parent.findMany({
             where,
-            select: { id: true, name: true, email: true, phone: true }
+            select: { id: true, parentName: true, email: true, phone: true }
         });
 
         return parents.map(p => ({
             id: p.id,
             recipientType: RecipientModel.PARENT,
-            name: p.name,
+            name: p.parentName,
             email: p.email,
             phone: p.phone
         }));

@@ -2,6 +2,7 @@ import { ROLES } from "../../constants/roles.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin, getManagementHostelsDb, getManagementHostelPassesDb, getManagementDashboardStatsDb, rejectParentPassDb, rejectMentorPassDb, rejectManagementPassDb, markStudentLeftHostelDb, markStudentReturnedDb } from "./pass.service.js";
+
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
 import { prisma } from "../../config/prisma.js";
@@ -279,23 +280,37 @@ export const cancelPass = asyncHandler(async (req, res) => {
     data: req.body
   });
 
-  const reason = req.body?.remarks || req.body?.reason || "Cancelled by admin.";
+  const isStudent = (req.user.role || '').toLowerCase() === 'student';
+  const isParent = (req.user.role || '').toLowerCase() === 'parent';
+
+  const defaultReason = isStudent
+    ? "Withdrawn by student."
+    : isParent
+      ? "Cancelled by parent."
+      : "Cancelled by admin.";
+
+  const reason = req.body?.remarks || req.body?.reason || defaultReason;
+  const eventName = isStudent ? 'PASS_STUDENT_CANCELLED' : (isParent ? 'PASS_PARENT_CANCELLED' : 'PASS_ADMIN_CANCELLED');
+
+  const passTypeLabel = updatedPass.passType === 'home_pass' ? 'Home Pass' : (updatedPass.passType === 'out_pass' ? 'Out Pass' : 'Emergency Pass');
+  const studentName = updatedPass.student?.name || updatedPass.studentName || "Student";
 
   orchestratorService.triggerNotification({
     sender: buildSender(req.user),
-    eventName: 'PASS_ADMIN_CANCELLED',
+    eventName: eventName,
     target: { type: 'STUDENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
-    data: { reason }
+    data: { reason, passTypeLabel, studentName }
   }).catch(err => console.error("Notification Error:", err));
 
-  if (updatedPass.parentId) {
+  if (updatedPass.parentId || updatedPass.studentId) {
     orchestratorService.triggerNotification({
       sender: buildSender(req.user),
-      eventName: 'PASS_ADMIN_CANCELLED',
+      eventName: eventName,
       target: { type: 'PARENT', filter: { studentId: updatedPass.studentId?.id || updatedPass.studentId } },
-      data: { reason }
+      data: { reason, passTypeLabel, studentName }
     }).catch(err => console.error("Notification Error:", err));
   }
+
 
   await createLog(
     req,
@@ -715,7 +730,7 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
   const updatedPass = await markStudentReturnedDb(id, wardenId, wardenLink.hostelId);
 
   const returnStatus = updatedPass._returnStatus;
-  
+
   await orchestratorService.triggerNotification({
     sender: buildSender(req.user),
     eventName: 'WARDEN_MARKED_RETURNED',
@@ -737,7 +752,7 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
 
 export const getWardenPasses = asyncHandler(async (req, res) => {
   const wardenId = req.user.id;
-  
+
   const wardenLink = await prisma.hostelWarden.findFirst({
     where: { userId: wardenId },
     select: { hostelId: true }

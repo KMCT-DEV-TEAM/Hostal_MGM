@@ -6,6 +6,26 @@ import { chunkArray } from '../utils/chunk.util.js';
 import { logger } from '../../../utils/logger.js';
 import { NotificationStatus } from '../constants/notification.enums.js';
 
+function renderTemplate(rawTemplate, data = {}) {
+    if (!rawTemplate) return null;
+    let title = '';
+    let message = '';
+
+    if (typeof rawTemplate === 'function') {
+        const res = rawTemplate(data);
+        title = res.title || res.subject || '';
+        message = res.message || res.body || res.html || '';
+    } else if (typeof rawTemplate === 'object') {
+        title = rawTemplate.title || rawTemplate.subject || '';
+        message = rawTemplate.message || rawTemplate.body || rawTemplate.html || '';
+
+        title = title.replace(/\{\{(\w+)\}\}/g, (_, key) => (data[key] !== undefined && data[key] !== null) ? data[key] : '');
+        message = message.replace(/\{\{(\w+)\}\}/g, (_, key) => (data[key] !== undefined && data[key] !== null) ? data[key] : '');
+    }
+
+    return { title, message };
+}
+
 class OrchestratorService {
     async triggerNotification({ eventName, target, data = {}, channels = ['in-app', 'push'], sender = null }) {
         if (!eventName || !target) {
@@ -74,14 +94,14 @@ class OrchestratorService {
             const deliveryPush = {};
             const deliveryEmail = {};
 
-            // Build content from template (stubbed basic generator if no explicit template engine)
-            const template = templateService.getTemplate(eventName, user.recipientType, 'in-app') || {
-                title: `${eventName} Notification`,
-                message: `You have a new notification regarding ${eventName}`
-            };
+            // Build content from template (functions or {{placeholder}} template objects)
+            const rawTemplate = templateService.getTemplate(eventName, user.recipientType, 'in-app') ||
+                                templateService.getTemplate(eventName, user.recipientType, 'push');
 
-            baseTitle = template.title;
-            baseMessage = template.message;
+            const rendered = renderTemplate(rawTemplate, data);
+
+            baseTitle = (rendered && rendered.title) ? rendered.title : `${eventName} Notification`;
+            baseMessage = (rendered && rendered.message) ? rendered.message : `You have a new notification regarding ${eventName}`;
 
             if (channels.includes('in-app')) {
                 deliveryInApp.status = NotificationStatus.PENDING;
@@ -152,19 +172,6 @@ class OrchestratorService {
     }
 
     async _executeChunk(chunkJobs) {
-        // Mark as PROCESSING
-        const updateOps = chunkJobs.map(job => {
-            const prefix = job.channel === 'in-app' ? 'deliveryInApp' : 'deliveryPush';
-            return {
-                docId: job.docId,
-                updateData: {
-                    [`${prefix}Status`]: NotificationStatus.PROCESSING,
-                    [`${prefix}Attempts`]: 1
-                }
-            };
-        });
-        await notificationRepository.bulkUpdateDeliveryStatus(updateOps);
-
         // Map jobs to execution promises
         const execPromises = chunkJobs.map(job => {
             return dispatcherService.dispatch(job.channel, job.channelPayload, job.user)
@@ -177,12 +184,13 @@ class OrchestratorService {
         // Update DB with DELIVERED/FAILED
         const finalOps = results.map(({ docId, channel, result, error }) => {
             const prefix = channel === 'in-app' ? 'deliveryInApp' : 'deliveryPush';
-            const status = error ? NotificationStatus.FAILED : (result.status || NotificationStatus.DELIVERED);
+            const status = (error || (result && result.status === 'failed')) ? NotificationStatus.FAILED : NotificationStatus.DELIVERED;
 
             return {
                 docId,
                 updateData: {
                     [`${prefix}Status`]: status,
+                    [`${prefix}Attempts`]: 1,
                     [`${prefix}SentAt`]: error ? undefined : new Date()
                 }
             };

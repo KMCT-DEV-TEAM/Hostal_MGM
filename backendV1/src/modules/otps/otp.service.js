@@ -1,79 +1,170 @@
 import { prisma } from '../../config/prisma.js';
 
+export const OTP_EXPIRATION = {
+  DEFAULT: 5,
+  AUTH: 5,
+  STUDENT_CREATION: 15,
+  PARENT_VERIFICATION: 15,
+  PASSWORD_RESET: 5,
+};
+
+export const getExpiryMinutesForPurpose = (purpose = 'DEFAULT') => {
+  const key = purpose?.toString().toUpperCase() || 'DEFAULT';
+  return OTP_EXPIRATION[key] ?? OTP_EXPIRATION.DEFAULT;
+};
+
 const generateOtp = () => {
-  // Generate a 6-digit random OTP
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 const cleanupExpiredOtps = async () => {
   try {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     await prisma.otp.deleteMany({
       where: {
-        createdAt: { lt: fiveMinutesAgo }
-      }
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
     });
   } catch (error) {
-    console.error("Failed to clean up expired OTPs:", error);
+    console.error('Failed to clean up expired OTPs:', error);
   }
 };
 
-const getOrCreateOtp = async (email) => {
-  await cleanupExpiredOtps();
+const saveOtpDb = async (email, otpCode, purpose = 'DEFAULT') => {
+  const normalizedPurpose = purpose?.toString().toUpperCase() || 'DEFAULT';
 
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const existingOtp = await prisma.otp.findFirst({
+  // Delete existing OTP for this email + purpose
+  await prisma.otp.deleteMany({
     where: {
       email,
-      createdAt: { gte: fiveMinutesAgo }
-    }
+      purpose: normalizedPurpose,
+    },
   });
 
-  if (existingOtp) {
-    const elapsedSeconds = Math.floor((Date.now() - new Date(existingOtp.createdAt).getTime()) / 1000);
-    const remainingSeconds = Math.max(0, 300 - elapsedSeconds);
-    return { otpCode: existingOtp.otp, isExisting: true, remainingSeconds, createdAt: existingOtp.createdAt };
-  }
+  const expiresInMinutes = getExpiryMinutesForPurpose(normalizedPurpose);
 
-  const otpCode = generateOtp();
-  await saveOtpDb(email, otpCode);
-
-  return { otpCode, isExisting: false, remainingSeconds: 300 };
-};
-
-const saveOtpDb = async (email, otpCode) => {
-  // Delete any existing OTP for this email to prevent multiple valid OTPs
-  await prisma.otp.deleteMany({ where: { email } });
+  const expiresAt = new Date(
+    Date.now() + expiresInMinutes * 60 * 1000
+  );
 
   return await prisma.otp.create({
     data: {
       email,
       otp: otpCode,
-    }
+      purpose: normalizedPurpose,
+      expiresAt,
+    },
   });
 };
 
-const verifyOtpDb = async (email, otpCode) => {
+const getOrCreateOtp = async (email, purpose = 'DEFAULT') => {
   await cleanupExpiredOtps();
 
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const otpRecord = await prisma.otp.findFirst({
+  const normalizedPurpose = purpose?.toString().toUpperCase() || 'DEFAULT';
+  const now = new Date();
+
+  const existingOtp = await prisma.otp.findFirst({
     where: {
       email,
-      otp: otpCode,
-      createdAt: { gte: fiveMinutesAgo }
-    }
+      purpose: normalizedPurpose,
+      expiresAt: {
+        gte: now,
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
   });
 
-  if (!otpRecord) return false;
-  if (otpRecord.otp !== otpCode) return false;
+  if (existingOtp) {
+    const remainingSeconds = Math.max(
+      0,
+      Math.floor(
+        (new Date(existingOtp.expiresAt).getTime() - Date.now()) / 1000
+      )
+    );
 
-  return true;
+    return {
+      otpCode: existingOtp.otp,
+      isExisting: true,
+      remainingSeconds,
+      createdAt: existingOtp.createdAt,
+      expiresInMinutes: getExpiryMinutesForPurpose(normalizedPurpose),
+      purpose: normalizedPurpose,
+    };
+  }
+
+  const otpCode = generateOtp();
+
+  await saveOtpDb(
+    email,
+    otpCode,
+    normalizedPurpose
+  );
+
+  const expiresInMinutes =
+    getExpiryMinutesForPurpose(normalizedPurpose);
+
+  return {
+    otpCode,
+    isExisting: false,
+    remainingSeconds: expiresInMinutes * 60,
+    expiresInMinutes,
+    purpose: normalizedPurpose,
+  };
 };
 
-const deleteOtpDb = async (email) => {
-  return await prisma.otp.deleteMany({ where: { email } });
+const verifyOtpDb = async (
+  email,
+  otpCode,
+  purpose = null
+) => {
+  const normalizedPurpose = purpose
+    ? purpose.toString().toUpperCase()
+    : null;
+
+  const whereClause = {
+    email,
+    otp: otpCode,
+    expiresAt: {
+      gte: new Date(),
+    },
+  };
+
+  if (normalizedPurpose) {
+    whereClause.purpose = normalizedPurpose;
+  }
+
+  const otpRecord = await prisma.otp.findFirst({
+    where: whereClause,
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return !!otpRecord;
 };
 
+const deleteOtpDb = async (email, purpose = null) => {
+  const whereClause = {
+    email,
+  };
 
-export { generateOtp, getOrCreateOtp, saveOtpDb, verifyOtpDb, deleteOtpDb, cleanupExpiredOtps };
+  if (purpose) {
+    whereClause.purpose = purpose.toString().toUpperCase();
+  }
+
+  return await prisma.otp.deleteMany({
+    where: whereClause,
+  });
+};
+
+export {
+  generateOtp,
+  getOrCreateOtp,
+  saveOtpDb,
+  verifyOtpDb,
+  deleteOtpDb,
+  cleanupExpiredOtps,
+};

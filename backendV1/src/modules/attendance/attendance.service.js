@@ -823,6 +823,7 @@ export const getStudentAttendanceHistoryDb = async (studentId, query) => {
     if (query.toDate) where.scannedAt.lte = new Date(new Date(query.toDate).setUTCHours(23, 59, 59, 999));
   }
 
+
   const [totalRecords, records] = await Promise.all([
     prisma.attendanceRecord.count({ where }),
     prisma.attendanceRecord.findMany({

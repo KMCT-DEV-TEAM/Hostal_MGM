@@ -1,6 +1,6 @@
 import { prisma } from '../../config/prisma.js';
 import * as visitorRepository from './visitor.repository.js';
-import { orchestratorService } from '../notifications/services/orchestrator.service.js';
+import { orchestratorService } from '../notification/services/orchestrator.service.js';
 import { ROLES } from '../../constants/roles.js';
 import {
     VISITOR_STATUS,
