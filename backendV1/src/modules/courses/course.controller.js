@@ -40,6 +40,19 @@ export const createCourse = asyncHandler(async (req, res) => {
 export const getCourses = asyncHandler(async (req, res) => {
   console.log(req.query, "sfdsdf")
   const result = await getCoursesService(req.query, req.user);
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Courses",
+      "Course",
+      null,
+      `Super admin exported courses list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Courses:", err));
+  }
+
   return sendSuccess(res, 200, 'Courses retrieved successfully', result);
 });
 

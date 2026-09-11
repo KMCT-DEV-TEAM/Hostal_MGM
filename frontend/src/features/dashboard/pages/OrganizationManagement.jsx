@@ -310,7 +310,7 @@ const OrganizationManagement = () => {
             }
 
             // Fetch organizations
-            const res = await organizationService.getOrganizations(params);
+            const res = await organizationService.getOrganizations({ ...params, isExport: true });
 
             const responseData = res?.data || res;
             const allOrgs = responseData?.data || responseData || [];

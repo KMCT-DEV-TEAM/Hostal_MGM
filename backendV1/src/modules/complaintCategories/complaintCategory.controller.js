@@ -43,6 +43,18 @@ export const getComplaintCategories = asyncHandler(async (req, res) => {
 
   const where = {};
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Complaint Categories",
+      "ComplaintCategory",
+      null,
+      `Super admin exported complaint categories list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Complaint Categories:", err));
+  }
+
   if (search) {
     where.name = { contains: search, mode: 'insensitive' };
   }

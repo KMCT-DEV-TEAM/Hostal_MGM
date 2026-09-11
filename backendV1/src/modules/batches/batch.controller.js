@@ -37,6 +37,19 @@ export const createBatch = asyncHandler(async (req, res) => {
 
 export const getBatchs = asyncHandler(async (req, res) => {
   const result = await getBatchesService(req.query, req.user);
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Batches",
+      "Batch",
+      null,
+      `Super admin exported batches list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Batches:", err));
+  }
+
   return sendSuccess(res, 200, 'Batches retrieved successfully', result);
 });
 

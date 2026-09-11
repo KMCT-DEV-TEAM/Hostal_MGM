@@ -153,13 +153,33 @@ export const createPass = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  return sendSuccess(res, 201, "Pass created successfully", newPass);
+  await createLog(
+    req,
+    "Requested Pass",
+    "Pass",
+    newPass?.id,
+    `Student ${student.name} requested a ${passType === 'home_pass' ? 'Home Pass' : 'Out Pass'}`,
+    "success"
+  );
 
+  return sendSuccess(res, 201, "Pass created successfully", newPass);
 });
 
 export const getMyPassesUnified = asyncHandler(async (req, res) => {
   const studentId = req.student?.id || req.user.id;
   const result = await getStudentPassesUnifiedDb(studentId, req.query);
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Passes",
+      "Pass",
+      null,
+      `Student exported their passes list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Passes:", err));
+  }
 
   return sendSuccess(res, 200, "Passes loaded successfully.", {
     mode: result.mode,
@@ -171,6 +191,18 @@ export const getMyPassesUnified = asyncHandler(async (req, res) => {
 
 export const getPasses = asyncHandler(async (req, res) => {
   const { passes, pagination } = await getPassesDb(req.student?.id, req.query);
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Passes",
+      "Pass",
+      null,
+      `Student exported their passes list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Passes:", err));
+  }
 
   return sendSuccess(res, 200, "Passes loaded successfully.", {
     data: passes,
@@ -508,6 +540,19 @@ export const getAllManagementPasses = asyncHandler(async (req, res) => {
   }
 
   const { passes, pagination } = await getManagementHostelPassesDb(req.query, scope, null);
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Passes",
+      "Pass",
+      null,
+      `${req.user.role || 'Admin'} exported passes list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Passes:", err));
+  }
+
   return sendSuccess(res, 200, "All passes loaded successfully.", { data: passes, pagination });
 });
 
@@ -558,6 +603,19 @@ export const getManagementHostelPasses = asyncHandler(async (req, res) => {
   }
 
   const { passes, pagination } = await getManagementHostelPassesDb(req.query, scope, hostelId);
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Passes",
+      "Pass",
+      null,
+      `${req.user.role || 'Admin'} exported passes list for hostel ${hostel.name}`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Passes:", err));
+  }
+
   return sendSuccess(res, 200, "Passes loaded successfully.", { data: passes, pagination });
 });
 

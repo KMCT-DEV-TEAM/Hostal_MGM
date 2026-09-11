@@ -337,7 +337,7 @@ const BatchManagement = () => {
             }
 
             // Fetch all Batches
-            const res = await BatchService.getBatches(params);
+            const res = await BatchService.getBatches({ ...params, isExport: true });
 
             const responseData = res?.data || res;
             const allbatches = responseData?.data || responseData || [];

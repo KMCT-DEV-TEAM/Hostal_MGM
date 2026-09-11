@@ -476,7 +476,7 @@ export default function MaintenanceStaffManagement() {
                 delete params.status;
             }
 
-            const res = await maintenanceStaffService.getMaintenanceStaff(params);
+            const res = await maintenanceStaffService.getMaintenanceStaff({ ...params, isExport: true });
 
             const responseData = res?.data || res;
             const allStaff = responseData?.data || responseData || [];

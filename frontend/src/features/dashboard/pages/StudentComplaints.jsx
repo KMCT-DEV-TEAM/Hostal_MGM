@@ -252,6 +252,7 @@ export default function StudentComplaints() {
     const confirmExport = async (exportFilters) => {
         setIsExporting(true);
         try {
+            await ComplaintService.getMyComplaints({ isExport: true });
             let dataToExport = complaints;
 
             if (exportFilters.status) {

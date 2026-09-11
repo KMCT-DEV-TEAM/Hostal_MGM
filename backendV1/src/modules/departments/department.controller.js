@@ -28,6 +28,19 @@ export const createDepartment = asyncHandler(async (req, res) => {
 
 export const getDepartments = asyncHandler(async (req, res) => {
   const result = await getDepartmentsService(req.query, req.user);
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Departments",
+      "Department",
+      null,
+      `Super admin exported departments list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Departments:", err));
+  }
+
   return sendSuccess(res, 200, 'Departments retrieved successfully', result);
 });
 

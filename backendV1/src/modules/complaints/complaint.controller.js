@@ -110,6 +110,17 @@ export const getMyComplaints = asyncHandler(async (req, res) => {
 
   const result = await complaintService.getStudentComplaintsDb(req.user.id, req.query.type, pagination);
 
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Complaints",
+      "Complaint",
+      null,
+      `${req.user.role || 'Student'} exported their complaints list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Complaints:", err));
+  }
+
   return sendSuccess(res, 200, 'Student complaints fetched successfully', {
     ...result,
     data: result.complaints
@@ -160,6 +171,17 @@ export const getAllComplaints = asyncHandler(async (req, res) => {
   }
 
   const result = await complaintService.getAllComplaintsDb(query, pagination);
+
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Complaints",
+      "Complaint",
+      null,
+      `${req.user.role || 'User'} exported complaints list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Complaints:", err));
+  }
 
   if (pagination) {
     return sendSuccess(res, 200, 'Complaints retrieved successfully', {

@@ -5,8 +5,9 @@ const createComplaint = async (data) => {
     return response.data;
 };
 
-const getMyComplaints = async (type) => {
-    const params = type ? { type } : {};
+const getMyComplaints = async (paramsOrType) => {
+    let params = typeof paramsOrType === 'string' ? { type: paramsOrType } : paramsOrType;
+    if (!params) params = {};
     const response = await apiClient.get('/complaints/my-complaints', { params });
     return response.data;
 };

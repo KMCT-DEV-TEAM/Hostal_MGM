@@ -186,7 +186,7 @@ export default function Parents() {
             );
 
             // Fetch all matching parents for export using the dedicated export endpoint
-            const response = await exportParents(role, params);
+            const response = await exportParents(role, { ...params, isExport: true });
 
             const dataToExport = response?.parents || response?.data?.parents || [];
 

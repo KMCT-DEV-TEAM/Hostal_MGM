@@ -333,7 +333,7 @@ const DepartmentManagement = () => {
             }
 
             // Fetch all Departments
-            const res = await DepartmentService.getDepartments(params);
+            const res = await DepartmentService.getDepartments({ ...params, isExport: true });
 
             const responseData = res?.data || res;
             const allDepartments = responseData?.data || responseData || [];
