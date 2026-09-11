@@ -1133,6 +1133,18 @@ export const getMaintenanceStaff = asyncHandler(async (req, res) => {
     };
   });
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Maintenance Staff",
+      "MaintenanceStaff",
+      null,
+      `Super admin exported maintenance staff list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Maintenance Staff:", err));
+  }
+
   return sendSuccess(res, 200, "Maintenance Staff fetched successfully", {
     count: mappedUsers.length,
     totalCount,

@@ -333,7 +333,7 @@ const CourseManagement = () => {
             }
 
             // Fetch all Courses
-            const res = await CourseService.getCourses(params);
+            const res = await CourseService.getCourses({ ...params, isExport: true });
 
             const allcourses = res?.data || [];
 

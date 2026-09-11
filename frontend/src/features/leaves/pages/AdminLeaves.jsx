@@ -247,7 +247,7 @@ export default function AdminLeaves() {
                 Object.entries(params).filter(([, value]) => value !== '' && value !== undefined && value !== null)
             );
 
-            const response = await getLeaves(role, cleanParams);
+            const response = await getLeaves(role, { ...cleanParams, isExport: true });
             const dataToExport = response?.data || response?.passes || [];
 
             if (dataToExport.length === 0) {

@@ -127,6 +127,18 @@ export const getOrganizations = asyncHandler(async (req, res) => {
     };
   });
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Organizations",
+      "Organization",
+      null,
+      `Super admin exported organizations list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Organizations:", err));
+  }
+
   return sendSuccess(res, 200, "Organizations fetched successfully", {
     count: mappedOrganizations.length,
     totalCount,

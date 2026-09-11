@@ -432,6 +432,18 @@ export const exportParentsByAdmin = asyncHandler(async (req, res) => {
     query: req.query,
   });
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Parents",
+      "Parent",
+      null,
+      `Admin exported parents list for organization ${admin.organizationId}`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Parents (Admin):", err));
+  }
+
   return sendSuccess(res, 200, "Parents exported successfully", result);
 });
 
@@ -442,6 +454,18 @@ export const exportParentsBySuperAdmin = asyncHandler(async (req, res) => {
     organizationId,
     query: req.query,
   });
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Parents",
+      "Parent",
+      null,
+      `Super admin exported parents list${organizationId ? ` for organization ${organizationId}` : ' (all organizations)'}`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Parents (SuperAdmin):", err));
+  }
 
   return sendSuccess(res, 200, "Parents exported successfully", result);
 });

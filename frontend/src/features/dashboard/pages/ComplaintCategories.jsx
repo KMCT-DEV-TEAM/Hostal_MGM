@@ -253,7 +253,7 @@ const ComplaintCategories = () => {
                 delete params.status;
             }
 
-            const res = await ComplaintCategoryService.getComplaintCategories(params);
+            const res = await ComplaintCategoryService.getComplaintCategories({ ...params, isExport: true });
 
             const responseData = res?.data || res;
             const allCategories = responseData?.data || responseData || [];

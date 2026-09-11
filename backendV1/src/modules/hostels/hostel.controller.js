@@ -79,6 +79,18 @@ export const getHostels = asyncHandler(async (req, res) => {
     prisma.hostel.count({ where: whereClause })
   ]);
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Hostels",
+      "Hostel",
+      null,
+      `Super admin exported hostels list`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Hostels:", err));
+  }
+
   return sendSuccess(res, 200, 'Hostels retrieved successfully', {
     count: hostels.length,
     totalCount,

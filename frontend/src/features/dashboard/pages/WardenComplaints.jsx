@@ -172,6 +172,7 @@ export default function WardenComplaints({ hostel, onBack, headerActions }) {
     const confirmExport = async (exportFilters) => {
         setIsExporting(true);
         try {
+            await ComplaintService.getAllComplaints({ isExport: true });
             let dataToExport = complaints;
 
             if (exportFilters.status) {

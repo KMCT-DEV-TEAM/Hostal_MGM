@@ -332,7 +332,7 @@ export default function HostelManagement() {
                 delete params.status;
             }
 
-            const res = await hostelService.getHostels(params);
+            const res = await hostelService.getHostels({ ...params, isExport: true });
             const responseData = res?.data || res;
             const dataToExport = responseData?.data || responseData || [];
 
