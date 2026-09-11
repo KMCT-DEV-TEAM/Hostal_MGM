@@ -1,12 +1,11 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
-import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
 import { useParents } from '@/features/dashboard/hooks/parent/useParents';
 import { useDebounce } from '@/hooks/useDebounce';
-import { createParent, toggleParentStatus, updateParent, updateParentByRole, bulkUpdateParentStatus, exportParents } from '@/services/parent.service';
+import { createParent, toggleParentStatus, updateParent, updateParentByRole, exportParents } from '@/services/parent.service';
 import { getOrganizations } from '@/services/organization.service';
 import { ROLES } from '@/constants/roles';
 import ParentsHeader from '../components/parents/ParentsHeader';
@@ -25,7 +24,6 @@ export default function Parents() {
     const { canEdit, canDelete, canCreate } = getParentPermissions(role);
 
     const [activeModal, setActiveModal] = useState(null);
-    const [selectedIds, setSelectedIds] = useState([]);
     const [editingParent, setEditingParent] = useState(null);
     const [pendingStatusChange, setPendingStatusChange] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
@@ -64,7 +62,7 @@ export default function Parents() {
         limit
     });
 
-    const getParentId = (parent) => parent.id ?? parent.id;
+    const getParentId = (parent) => parent.id ?? parent._id;
 
     const handleAddClick = () => {
         setEditingParent(null);
@@ -82,14 +80,6 @@ export default function Parents() {
                 ? { ...parent, isActive: nextIsActive, status: nextIsActive ? 'Active' : 'Inactive' }
                 : parent
         )));
-    };
-
-    const handleSelectAll = () => {
-        setSelectedIds(selectedIds.length === parents.length ? [] : parents.map(getParentId));
-    };
-
-    const handleSelect = (id) => {
-        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
     const handleStatusChangeRequest = (parent, newStatus) => {
@@ -174,64 +164,6 @@ export default function Parents() {
             setActiveModal(null);
             setEditingParent(null);
         }
-    };
-
-    const handleBulkStatusChange = async (targetActive, idsToToggle) => {
-        if (!idsToToggle.length) return;
-
-        setStatusLoadingIds((prev) => [...new Set([...prev, ...idsToToggle])]);
-        setIsConfirming(true);
-
-        try {
-            await bulkUpdateParentStatus(role, { ids: idsToToggle, isActive: targetActive });
-            setParents((prev) => prev.map((parent) => (
-                idsToToggle.includes(getParentId(parent))
-                    ? { ...parent, isActive: targetActive, status: targetActive ? 'Active' : 'Inactive' }
-                    : parent
-            )));
-            setSelectedIds([]);
-            showSuccessToast(`Successfully ${targetActive ? 'activated' : 'deactivated'} ${idsToToggle.length} parent(s)`);
-            setActiveModal(null);
-            setPendingStatusChange(null);
-        } catch (err) {
-            console.error("Failed to update bulk status", err);
-            showErrorToast('Bulk Status Error', err.response?.data?.message || err.message);
-        } finally {
-            setStatusLoadingIds((prev) => prev.filter((id) => !idsToToggle.includes(id)));
-            setIsConfirming(false);
-        }
-    };
-
-    const prepareBulkStatusChange = (targetActive) => {
-        if (!selectedIds.length) return;
-
-        const idsToToggle = selectedIds.filter((id) => {
-            const parent = parents.find((parent) => getParentId(parent) === id);
-            return parent ? parent.isActive !== targetActive : false;
-        });
-
-        if (!idsToToggle.length) {
-            setSelectedIds([]);
-            return;
-        }
-
-        setPendingStatusChange({
-            title: targetActive ? 'Confirm Activation' : 'Confirm Deactivation',
-            message: `Are you sure you want to ${targetActive ? 'activate' : 'deactivate'} ${idsToToggle.length} selected parent(s)?`,
-            confirmText: targetActive ? 'Activate' : 'Deactivate',
-            confirmAction: () => handleBulkStatusChange(targetActive, idsToToggle),
-        });
-        setActiveModal('confirm-status');
-    };
-
-    const handleActivateSelected = () => {
-        if (!canEdit) return;
-        prepareBulkStatusChange(true);
-    };
-
-    const handleDeactivateSelected = () => {
-        if (!canDelete) return;
-        prepareBulkStatusChange(false);
     };
 
     const handleSearch = useCallback((query) => {
@@ -332,9 +264,6 @@ export default function Parents() {
                         parents={parents}
                         loading={loading}
                         error={error ? error.message || error : null}
-                        selectedIds={selectedIds}
-                        onSelectAll={handleSelectAll}
-                        onSelect={handleSelect}
                         onStatusChangeRequest={handleStatusChangeRequest}
                         onEdit={handleEdit}
                         onView={handleView}
@@ -348,69 +277,67 @@ export default function Parents() {
                         setLimit={setLimit}
                         totalItems={pagination.totalRecords || 0}
                         totalPages={pagination.totalPages || 0}
-                        onActivateSelected={handleActivateSelected}
-                        onDeactivateSelected={handleDeactivateSelected}
                     />
                 </div>
 
-            {/* Modals */}
-            {activeModal === 'view' && (
-                <ParentDetailsModal
-                    parent={editingParent}
-                    onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                {/* Modals */}
+                {activeModal === 'view' && (
+                    <ParentDetailsModal
+                        parent={editingParent}
+                        onClose={() => { setActiveModal(null); setEditingParent(null); }}
+                    />
+                )}
+
+                {activeModal === 'edit' && (
+                    <ParentFormModal
+                        editingParent={editingParent}
+                        onClose={handleCloseModal}
+                        onSave={handleSaveParent}
+                    />
+                )}
+
+                <ConfirmationModal
+                    isOpen={activeModal === 'confirm-status'}
+                    onClose={() => { setActiveModal(null); setPendingStatusChange(null); }}
+                    onConfirm={pendingStatusChange?.confirmAction || (() => confirmStatusChange(pendingStatusChange?.parent))}
+                    title={pendingStatusChange?.title || "Confirm Status Change"}
+                    message={pendingStatusChange?.message || `Are you sure you want to change the status of ${pendingStatusChange?.parent?.parentName || 'this parent'} to ${pendingStatusChange?.newStatus}?`}
+                    isSubmitting={isConfirming}
                 />
-            )}
 
-            {activeModal === 'edit' && (
-                <ParentFormModal
-                    editingParent={editingParent}
-                    onClose={handleCloseModal}
-                    onSave={handleSaveParent}
+                <ConfirmationModal
+                    isOpen={isEditConfirmOpen}
+                    onClose={() => setIsEditConfirmOpen(false)}
+                    onConfirm={() => executeSave()}
+                    title="Confirm Edit"
+                    message="Are you sure you want to save these changes?"
+                    confirmText="Save Changes"
+                    isSubmitting={isSubmitting}
                 />
-            )}
 
-            <ConfirmationModal
-                isOpen={activeModal === 'confirm-status'}
-                onClose={() => { setActiveModal(null); setPendingStatusChange(null); }}
-                onConfirm={pendingStatusChange?.confirmAction || (() => confirmStatusChange(pendingStatusChange?.parent))}
-                title={pendingStatusChange?.title || "Confirm Status Change"}
-                message={pendingStatusChange?.message || `Are you sure you want to change the status of ${pendingStatusChange?.parent?.parentName || 'this parent'} to ${pendingStatusChange?.newStatus}?`}
-                isSubmitting={isConfirming}
-            />
+                <ConfirmationModal
+                    isOpen={isDiscardConfirmOpen}
+                    onClose={() => setIsDiscardConfirmOpen(false)}
+                    onConfirm={() => {
+                        setIsDiscardConfirmOpen(false);
+                        setActiveModal(null);
+                        setEditingParent(null);
+                    }}
+                    title="Discard Changes"
+                    message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
+                    confirmText="Discard"
+                    cancelText="Continue Editing"
+                    confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
+                />
 
-            <ConfirmationModal
-                isOpen={isEditConfirmOpen}
-                onClose={() => setIsEditConfirmOpen(false)}
-                onConfirm={() => executeSave()}
-                title="Confirm Edit"
-                message="Are you sure you want to save these changes?"
-                confirmText="Save Changes"
-                isSubmitting={isSubmitting}
-            />
-
-            <ConfirmationModal
-                isOpen={isDiscardConfirmOpen}
-                onClose={() => setIsDiscardConfirmOpen(false)}
-                onConfirm={() => {
-                    setIsDiscardConfirmOpen(false);
-                    setActiveModal(null);
-                    setEditingParent(null);
-                }}
-                title="Discard Changes"
-                message="Are you sure you want to discard your changes? Any unsaved edits will be lost."
-                confirmText="Discard"
-                cancelText="Continue Editing"
-                confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
-            />
-
-            <ExportFilterModal
-                isOpen={isExportConfirmOpen}
-                onClose={() => setIsExportConfirmOpen(false)}
-                onExport={confirmExport}
-                isExporting={isExporting}
-                title="Export Parents Data"
-                fields={exportFields}
-            />
+                <ExportFilterModal
+                    isOpen={isExportConfirmOpen}
+                    onClose={() => setIsExportConfirmOpen(false)}
+                    onExport={confirmExport}
+                    isExporting={isExporting}
+                    title="Export Parents Data"
+                    fields={exportFields}
+                />
             </div>
         </div>
     );

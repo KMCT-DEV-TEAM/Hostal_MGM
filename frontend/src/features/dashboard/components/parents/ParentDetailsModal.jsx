@@ -1,16 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { Pencil } from 'lucide-react';
 import ChangeEmailModal from '../students/ChangeEmailModal';
 import { useAuthStore } from '@/store/useAuthStore';
-import { changeParentEmail } from '@/services/parent.service';
+import { changeParentEmail, getParentById } from '@/services/parent.service';
 import InfoRow from '@/components/ui/InfoRow';
 import DetailCard from '@/components/ui/DetailCard';
 import DetailRow from '@/components/ui/DetailRow';
 
-export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
+export default function ParentDetailsModal({ parent: initialParent, onClose, onUpdate }) {
     const role = useAuthStore((s) => s.user?.role);
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [parent, setParent] = useState(initialParent);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchParentDetails = async () => {
+            const parentId = initialParent?.id || initialParent?._id;
+            if (parentId) {
+                setLoading(true);
+                try {
+                    const data = await getParentById(parentId);
+                    if (data?.parent) {
+                        setParent(data.parent);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch parent details:", error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchParentDetails();
+    }, [initialParent]);
 
     const handleEmailChange = async ({ oldEmail, newEmail, otp }) => {
         if (!role) throw new Error("Role not found");
@@ -29,7 +51,7 @@ export default function ParentDetailsModal({ parent, onClose, onUpdate }) {
         onUpdate?.({ ...parent, email: newEmail });
     };
 
-    if (!parent) return null;
+    if (!parent || loading) return null;
     console.log("parent object:", parent.status);
 
     return (

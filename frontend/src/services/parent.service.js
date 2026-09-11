@@ -9,6 +9,11 @@ export async function getParentStudents(params) {
   return response.data;
 }
 
+export async function getParentById(id) {
+  const response = await parentApi.getParentById(id);
+  return response.data;
+}
+
 export async function updateParent(id, payload) {
   const response = await parentApi.updateParent(id, payload);
   return response.data;
@@ -209,6 +214,7 @@ export async function getParentDashboardStats(studentId, params) {
 const parentService = {
   getParentDashboardStats,
   getParentStudents,
+  getParentById,
   createParent,
   resolveParentConflict,
   updateParent,
