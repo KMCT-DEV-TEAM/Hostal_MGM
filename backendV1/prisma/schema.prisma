@@ -921,12 +921,16 @@ model PushSubscription {
 }
 
 model Otp {
-  id        String   @id @default(uuid()) @db.Uuid
-  email     String   @db.VarChar(255)
-  otp       String   @db.VarChar(10)
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String    @db.VarChar(255)
+  otp       String    @db.VarChar(10)
+  purpose   String    @default("AUTH") @db.VarChar(50)
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
+  @@index([email, purpose])
   @@index([email])
+  @@index([expiresAt])
   @@map("otps")
 }
 

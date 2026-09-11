@@ -75,7 +75,7 @@ export default function ParentFormModal({
     try {
       setSendingOtp(true);
       setOtpError("");
-      await otpApi.sendOtp({ email: watchEmail });
+      await otpApi.sendOtp({ email: watchEmail, purpose: "PARENT_VERIFICATION" });
       setVerifyModalOpen(true);
       setVerifyOtpValue("");
     } catch (error) {

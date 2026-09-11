@@ -49,11 +49,15 @@ export const createBatchService = async (batchData, user) => {
 };
 
 export const getBatchesService = async (queryParams, user) => {
-  const { page = 1, limit = 10, search = '', status } = queryParams;
+  const { page = 1, limit = 10, search = '', status, departmentId } = queryParams;
   const skip = (page - 1) * limit;
   const limitNum = parseInt(limit);
 
   const where = {};
+
+  if (departmentId) {
+    where.departmentId = departmentId;
+  }
 
   if (user?.role !== 'super_admin' && user?.organizationId) {
     where.department = {
@@ -108,7 +112,7 @@ export const toggleBatchStatusService = async (id, user, statusData = {}) => {
     where: { id },
     include: { department: { include: { course: true } } }
   });
-  
+
   if (!batch) {
     throw new Error('Batch not found');
   }
@@ -137,7 +141,7 @@ export const toggleBatchStatusService = async (id, user, statusData = {}) => {
 
 export const bulkToggleBatchStatusService = async (ids, isActive, user) => {
   const where = { id: { in: ids } };
-  
+
   if (user?.role !== 'super_admin' && user?.organizationId) {
     where.department = {
       course: {
@@ -150,7 +154,7 @@ export const bulkToggleBatchStatusService = async (ids, isActive, user) => {
     where,
     data: { isActive }
   });
-  
+
   return result;
 };
 
@@ -161,7 +165,7 @@ export const updateBatchService = async (id, batchData, user) => {
     where: { id },
     include: { department: { include: { course: true } } }
   });
-  
+
   if (!existingBatch) {
     throw new Error('Batch not found');
   }
@@ -178,7 +182,7 @@ export const updateBatchService = async (id, batchData, user) => {
   }
 
   if (departmentId && departmentId !== existingBatch.departmentId) {
-    const newDepartment = await prisma.department.findUnique({ 
+    const newDepartment = await prisma.department.findUnique({
       where: { id: departmentId },
       include: { course: true }
     });
@@ -197,7 +201,7 @@ export const updateBatchService = async (id, batchData, user) => {
   if (startYear !== undefined) updateData.startYear = parseInt(startYear);
   if (endYear !== undefined) updateData.endYear = parseInt(endYear);
   if (isActive !== undefined) updateData.isActive = isActive;
-  
+
   const updatedBatch = await prisma.batch.update({
     where: { id },
     data: updateData

@@ -24,13 +24,20 @@ export const createCourseService = async (courseData) => {
 };
 
 export const getCoursesService = async (query, user) => {
-  const { page = 1, limit = 10, search = '', status } = query;
-  
+  const { page = 1, limit = 10, search = '', status, organizationId } = query;
+
   const pageNum = parseInt(page, 10);
   const limitNum = parseInt(limit, 10);
   const skip = (pageNum - 1) * limitNum;
 
   const where = {};
+
+  if (organizationId) {
+    where.organizationId = organizationId;
+  }
+
+  console.log(organizationId, where)
+
 
   if (user?.role !== 'super_admin' && user?.organizationId) {
     where.organizationId = user.organizationId;
@@ -78,7 +85,7 @@ export const getCoursesService = async (query, user) => {
 
 export const toggleCourseStatusService = async (id, user, statusData = {}) => {
   const course = await prisma.course.findUnique({ where: { id } });
-  
+
   if (!course) {
     throw new Error('Course not found');
   }
@@ -108,7 +115,7 @@ export const toggleCourseStatusService = async (id, user, statusData = {}) => {
 
 export const bulkToggleCourseStatusService = async (ids, isActive, user) => {
   const where = { id: { in: ids } };
-  
+
   if (user?.role !== 'super_admin' && user?.organizationId) {
     where.organizationId = user.organizationId;
   }
@@ -117,7 +124,7 @@ export const bulkToggleCourseStatusService = async (ids, isActive, user) => {
     where,
     data: { isActive }
   });
-  
+
   return result;
 };
 
@@ -125,7 +132,7 @@ export const updateCourseService = async (id, courseData, user) => {
   const { name, code, organizationId, isActive } = courseData;
 
   const existingCourse = await prisma.course.findUnique({ where: { id } });
-  
+
   if (!existingCourse) {
     throw new Error('Course not found');
   }
@@ -147,7 +154,7 @@ export const updateCourseService = async (id, courseData, user) => {
   if (name !== undefined) updateData.name = name;
   if (code !== undefined) updateData.code = code;
   if (isActive !== undefined) updateData.isActive = isActive;
-  
+
   // Organization can only be updated by super_admin
   if (organizationId !== undefined && user?.role === 'super_admin') {
     updateData.organizationId = organizationId;

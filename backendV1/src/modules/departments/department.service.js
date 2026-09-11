@@ -29,7 +29,7 @@ export const createDepartmentService = async (departmentData, user) => {
       isActive: isActive !== undefined ? isActive : true,
     }
   });
-  
+
   // Increment departments count in course
   await prisma.course.update({
     where: { id: courseId },
@@ -40,8 +40,8 @@ export const createDepartmentService = async (departmentData, user) => {
 };
 
 export const getDepartmentsService = async (query, user) => {
-  const { page = 1, limit = 10, search = '', status } = query;
-  
+  const { page = 1, limit = 10, search = '', status, courseId } = query;
+
   const pageNum = parseInt(page, 10);
   const limitNum = parseInt(limit, 10);
   const skip = (pageNum - 1) * limitNum;
@@ -52,6 +52,10 @@ export const getDepartmentsService = async (query, user) => {
     where.course = {
       organizationId: user.organizationId
     };
+  }
+
+  if (courseId) {
+    where.courseId = courseId;
   }
 
   if (search) {
@@ -99,7 +103,7 @@ export const toggleDepartmentStatusService = async (id, user, statusData = {}) =
     where: { id },
     include: { course: true }
   });
-  
+
   if (!department) {
     throw new Error('Department not found');
   }
@@ -128,7 +132,7 @@ export const toggleDepartmentStatusService = async (id, user, statusData = {}) =
 
 export const bulkToggleDepartmentStatusService = async (ids, isActive, user) => {
   const where = { id: { in: ids } };
-  
+
   if (user?.role !== 'super_admin' && user?.organizationId) {
     where.course = {
       organizationId: user.organizationId
@@ -139,7 +143,7 @@ export const bulkToggleDepartmentStatusService = async (ids, isActive, user) => 
     where,
     data: { isActive }
   });
-  
+
   return result;
 };
 
@@ -150,7 +154,7 @@ export const updateDepartmentService = async (id, departmentData, user) => {
     where: { id },
     include: { course: true }
   });
-  
+
   if (!existingDepartment) {
     throw new Error('Department not found');
   }
@@ -181,7 +185,7 @@ export const updateDepartmentService = async (id, departmentData, user) => {
   if (code !== undefined) updateData.code = code;
   if (courseId !== undefined) updateData.courseId = courseId;
   if (isActive !== undefined) updateData.isActive = isActive;
-  
+
   const updatedDepartment = await prisma.department.update({
     where: { id },
     data: updateData

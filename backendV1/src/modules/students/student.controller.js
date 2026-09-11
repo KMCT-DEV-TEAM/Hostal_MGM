@@ -63,8 +63,8 @@ export const createStudent = asyncHandler(async (req, res) => {
 
       const { studentOtp, parentOtp } = req.body;
 
-      const isStudentOtpValid = await verifyOtpDb(email, studentOtp);
-      const isParentOtpValid = await verifyOtpDb(parentEmail, parentOtp);
+      const isStudentOtpValid = await verifyOtpDb(email, studentOtp, 'STUDENT_CREATION');
+      const isParentOtpValid = await verifyOtpDb(parentEmail, parentOtp, 'PARENT_VERIFICATION');
 
       if (!isStudentOtpValid) {
         throw { statusCode: 400, message: "Invalid or expired OTP for student" };

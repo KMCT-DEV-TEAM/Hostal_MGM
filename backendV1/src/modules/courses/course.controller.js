@@ -7,7 +7,7 @@ import { createLog } from '../../utils/log.util.js';
 export const createCourse = asyncHandler(async (req, res) => {
   try {
     const organizationId = req.user?.role === "super_admin" ? req.body.organizationId : req.user?.organizationId;
-    
+
     if (!organizationId) {
       return sendError(res, 400, 'Organization ID is missing');
     }
@@ -18,7 +18,7 @@ export const createCourse = asyncHandler(async (req, res) => {
     };
 
     const newCourse = await createCourseService(courseData);
-    
+
     await createLog(
       req,
       "Created Course",
@@ -38,6 +38,7 @@ export const createCourse = asyncHandler(async (req, res) => {
 });
 
 export const getCourses = asyncHandler(async (req, res) => {
+  console.log(req.query, "sfdsdf")
   const result = await getCoursesService(req.query, req.user);
   return sendSuccess(res, 200, 'Courses retrieved successfully', result);
 });
@@ -52,7 +53,7 @@ export const updateCourse = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
     const updatedCourse = await updateCourseService(id, req.body, req.user);
-    
+
     await createLog(
       req,
       "Updated Course",
@@ -108,7 +109,7 @@ export const bulkToggleCourseStatus = asyncHandler(async (req, res) => {
   if (!Array.isArray(ids) || typeof isActive !== 'boolean') {
     return sendError(res, 400, 'Invalid request body');
   }
-  
+
   const result = await bulkToggleCourseStatusService(ids, isActive, req.user);
 
   await createLog(
