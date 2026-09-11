@@ -131,9 +131,9 @@ export const getOrganizationsWithMentors = asyncHandler(async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
-    const { search } = req.query;
+    const { search, status, isActive, organizationId } = req.query;
 
-    const result = await getOrganizationsWithMentorsDb({ page, limit, search });
+    const result = await getOrganizationsWithMentorsDb({ page, limit, search, status, isActive, organizationId });
 
     return sendSuccess(res, 200, "Organizations with mentors fetched successfully", {
       count: result.data.length,

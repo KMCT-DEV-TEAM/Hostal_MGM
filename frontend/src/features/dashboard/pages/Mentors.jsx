@@ -5,12 +5,15 @@ import BackButton from '@/components/ui/BackButton';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useMentors } from '@/features/dashboard/hooks/mentor/useMentors';
 import { useDebounce } from '@/hooks/useDebounce';
-import { createMentor, updateMentorStatus, updateMentor } from '@/services/mentor.service';
+import { createMentor, updateMentorStatus, updateMentor, getMentors } from '@/services/mentor.service';
+import { getOrganizations } from '@/services/organization.service';
 import { ROLES } from '@/constants/roles';
 import MentorTable from '../components/mentor/MentorTable';
 import MentorFormModal from '../components/mentor/MentorFormModal';
 import MentorDetailsModal from '../components/mentor/MentorDetailsModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import ExportFilterModal from '@/components/ui/ExportFilterModal';
+import { exportToExcel } from '@/utils/exportUtils';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 
 export default function Mentors() {
@@ -30,6 +33,11 @@ export default function Mentors() {
     const [editingMentor, setEditingMentor] = useState(null);
     const [confirmConfig, setConfirmConfig] = useState(null);
     const [statusLoadingIds, setStatusLoadingIds] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
+
+    // Export State
+    const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Pagination & Filters for Mentors
     const [page, setPage] = useState(1);
@@ -44,6 +52,27 @@ export default function Mentors() {
         // Ensure filters has the correct organizationId from params
         setFilters(prev => ({ ...prev, organizationId: orgId || '' }));
     }, [orgId]);
+
+    const isSuperAdmin = role === ROLES.SUPER_ADMIN || role === 'SUPER_ADMIN';
+
+    useEffect(() => {
+        if (isSuperAdmin && !orgId) {
+            getOrganizations({ page: 1, limit: 100, status: 'Active' })
+                .then((res) => {
+                    const list = Array.isArray(res?.data)
+                        ? res.data
+                        : Array.isArray(res?.organizations)
+                        ? res.organizations
+                        : Array.isArray(res?.data?.data)
+                        ? res.data.data
+                        : Array.isArray(res)
+                        ? res
+                        : [];
+                    setOrganizations(list);
+                })
+                .catch((err) => console.error('Failed to load organizations for mentor filters:', err));
+        }
+    }, [role, isSuperAdmin, orgId]);
 
     useEffect(() => {
         if (location.state?.openAddModal) {
@@ -66,13 +95,12 @@ export default function Mentors() {
         limit
     });
 
-    const getMentorId = (mentor) => mentor.id ?? mentor.id;
+    const getMentorId = (mentor) => mentor.id ?? mentor._id ?? mentor.id;
 
     const handleAddClick = () => {
         setEditingMentor(null);
         setActiveModal('edit');
     };
-
 
     const handleStatusChangeRequest = (mentor, newStatus) => {
         if (!canEdit) return;
@@ -143,7 +171,59 @@ export default function Mentors() {
         });
     };
 
+    const confirmExport = async (exportFilters) => {
+        setIsExporting(true);
+        try {
+            const params = {
+                ...filters,
+                search: debouncedSearch,
+                page: 1,
+                limit: 99990,
+                isExport: true,
+            };
 
+            if (exportFilters?.isActive && exportFilters.isActive !== 'all' && exportFilters.isActive !== '') {
+                params.isActive = exportFilters.isActive;
+            }
+            if (exportFilters?.organizationId) {
+                params.organizationId = exportFilters.organizationId;
+            }
+
+            const response = await getMentors(role, params);
+            const dataToExport = response?.data || response?.mentors || [];
+
+            if (!dataToExport.length) {
+                showErrorToast("Export failed", "No mentors match the selected filters");
+                setIsExportConfirmOpen(false);
+                return;
+            }
+
+            const exportData = dataToExport.map((mentor, index) => ({
+                "S.No": index + 1,
+                "Name": mentor?.name ?? "N/A",
+                "Email": mentor?.email ?? "N/A",
+                "Phone": mentor?.phone ?? "N/A",
+                "Specialization": mentor?.specialization ?? "N/A",
+                "Organization": mentor?.organization?.name ?? mentor?.organization ?? "N/A",
+                "Status": mentor?.isActive ? "Active" : "Inactive",
+                "Created At": mentor?.createdAt ? new Date(mentor.createdAt).toLocaleDateString() : "N/A",
+            }));
+
+            const isSuccess = exportToExcel(exportData, "Mentors_Export", "Mentors");
+
+            if (isSuccess) {
+                showSuccessToast("Exported successfully");
+            } else {
+                showErrorToast("Export failed", "Could not generate Excel file");
+            }
+            setIsExportConfirmOpen(false);
+        } catch (err) {
+            console.error("Failed to export mentors:", err);
+            showErrorToast("Export failed", err?.message || "Failed to export mentors");
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const handleSearchChange = useCallback((v) => {
         handleFilterChange('search', v);
@@ -188,6 +268,10 @@ export default function Mentors() {
                         onFilterChange={handleFilterChange}
                         onStatusChangeRequest={handleStatusChangeRequest}
                         statusLoadingIds={statusLoadingIds}
+                        onExport={() => setIsExportConfirmOpen(true)}
+                        organizations={organizations}
+                        selectedOrgId={filters.organizationId}
+                        isDrilledDown={!!orgId}
                     />
                 </div>
             </div>
@@ -214,6 +298,35 @@ export default function Mentors() {
                     onEdit={handleEditClick}
                 />
             )}
+
+            <ExportFilterModal
+                isOpen={isExportConfirmOpen}
+                onClose={() => setIsExportConfirmOpen(false)}
+                onExport={confirmExport}
+                isExporting={isExporting}
+                title="Export Mentors Data"
+                fields={[
+                    {
+                        name: "isActive",
+                        label: "Account Status",
+                        options: [
+                            { label: 'All Status', value: '' },
+                            { label: 'Active Only', value: 'true' },
+                            { label: 'Inactive Only', value: 'false' },
+                        ],
+                        defaultValue: filters.isActive || ''
+                    },
+                    ...(isSuperAdmin && !orgId ? [{
+                        name: "organizationId",
+                        label: "Organization",
+                        options: [
+                            { label: 'All Organizations', value: '' },
+                            ...(organizations || []).map(o => ({ label: o.name || o.label, value: o.id || o.value }))
+                        ],
+                        defaultValue: filters.organizationId || ''
+                    }] : [])
+                ]}
+            />
 
             <ConfirmationModal
                 isOpen={!!confirmConfig}

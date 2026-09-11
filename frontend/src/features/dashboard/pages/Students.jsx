@@ -284,13 +284,19 @@ export default function Students() {
 
       const exportData = dataToExport.map((student, index) => ({
         "S.No": index + 1,
-        "Admission No": student.studentId,
-        "Name": student.name,
-        "Email": student.email,
-        "Phone": student.phone,
-        "Course": student.course?.name ?? student.course ?? "N/A",
-        "Department": student.department?.name ?? student.department ?? "N/A",
-        "Status": student.isActive ? "Active" : "Inactive",
+        "Admission No": student?.admissionNo ?? student?.studentId ?? "N/A",
+        "Name": student?.name ?? "N/A",
+        "Email": student?.email ?? "N/A",
+        "Phone": student?.phone ?? "N/A",
+        "Gender": student?.gender ? (student.gender.charAt(0).toUpperCase() + student.gender.slice(1)) : "N/A",
+        "DOB": student?.dob ? new Date(student.dob).toLocaleDateString() : "N/A",
+        "Organization": student?.organization?.name ?? student?.organization ?? "N/A",
+        "Course": student?.course?.name ?? student?.course ?? "N/A",
+        "Department": student?.department?.name ?? student?.department ?? "N/A",
+        "Batch": student?.batch?.name ?? student?.batch ?? "N/A",
+        "Hostel": student?.hostel?.name ?? student?.hostel ?? "N/A",
+        "Address": student?.address ?? "N/A",
+        "Status": student?.isActive ? "Active" : "Inactive",
       }));
 
       const isSuccess = exportToExcel(exportData, "Students_Export", "Students");

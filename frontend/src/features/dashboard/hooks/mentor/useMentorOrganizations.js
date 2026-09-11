@@ -12,7 +12,7 @@ export function useMentorOrganizations(filters) {
   const filterString = JSON.stringify(filters || {});
 
   const fetchOrganizations = useCallback(() => {
-    if (!role || role !== 'super_admin') {
+    if (!role || role.toLowerCase() !== 'super_admin') {
       setOrganizations([]);
       setLoading(false);
       return;
