@@ -2,14 +2,9 @@ import { ROLES } from "../../constants/roles.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { createPassDb, getStudentPassesUnifiedDb, getPassesDb, getPassDetails as getPassDetailsDb, updatePass as updatePassDb, cancelPass as cancelPassDb, approvePassAsParent, approvePassAsMentor, approvePassAsAdmin, getManagementHostelsDb, getManagementHostelPassesDb, getManagementDashboardStatsDb, rejectParentPassDb, rejectMentorPassDb, rejectManagementPassDb, markStudentLeftHostelDb, markStudentReturnedDb } from "./pass.service.js";
-<<<<<<< HEAD
-import { createLogDb } from "../logs/log.service.js";
-import { orchestratorService } from "../notification/services/orchestrator.service.js";
-import { buildSender } from "../notification/utils/sender.util.js";
-=======
+
 import { orchestratorService } from "../notifications/services/orchestrator.service.js";
 import { buildSender } from "../notifications/utils/sender.util.js";
->>>>>>> 70f577054a51f0b81b048e379d8de3922569d94e
 import { prisma } from "../../config/prisma.js";
 import { parseISTDateStart, parseISTDateEnd, parseISTDateTime } from "../../utils/date.util.js";
 import { getMentorDashboardStats } from "../dashboard/dashboard.controller.js";
