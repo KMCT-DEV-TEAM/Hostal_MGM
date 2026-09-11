@@ -5,6 +5,8 @@ const parentApi = {
 
   getParentStudents: (params) => api.get("/parents/students", { params }),
 
+  getParentById: (id) => api.get(`/parents/${id}`),
+
   createParentByAdmin: (payload) =>
     api.post("/parents", payload),
 
@@ -49,7 +51,7 @@ const parentApi = {
     api.get("/parents/super-admin", { params }),
 
   exportParentsBySuperAdmin: (params) =>
-    api.get("/admin/parents/export/super-admin", { params }),
+    api.get("/parents/export/super-admin", { params }),
 
   toggleStatusBySuperAdmin: (id) =>
     api.patch(`/parents/${id}/toggle-status`), // Assuming it's mounted under /admin/parents in app.js

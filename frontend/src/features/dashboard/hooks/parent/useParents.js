@@ -25,6 +25,7 @@ export function useParents(filters) {
     const params = Object.fromEntries(
       Object.entries(parsedFilters).filter(([, value]) => value !== '')
     );
+    params._t = Date.now();
 
     Promise.resolve()
       .then(() => getParents(role, params))

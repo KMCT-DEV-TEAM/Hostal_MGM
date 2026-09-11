@@ -21,7 +21,8 @@ import {
   getParentsBySuperAdmin,
   exportParentsByAdmin,
   exportParentsBySuperAdmin,
-  getParentStudents
+  getParentStudents,
+  getParentById
 } from "./parent.controller.js";
 import { toggleParentStatusDb } from "./parent.service.js";
 
@@ -99,6 +100,14 @@ router.patch(
   validateParentIdParam,
   validateUpdateParent,
   updateParent
+);
+
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR, ROLES.WARDEN),
+  validateParentIdParam,
+  getParentById
 );
 
 router.patch(

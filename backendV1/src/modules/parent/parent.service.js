@@ -426,7 +426,6 @@ export const getParentsService = async ({ organizationId, hostelIds, batchIds, q
       { parent: { parentName: { contains: search, mode: "insensitive" } } },
       { parent: { email: { contains: search, mode: "insensitive" } } },
       { parent: { phone: { contains: search, mode: "insensitive" } } },
-      { relationship: { contains: search, mode: "insensitive" } },
       { student: { name: { contains: search, mode: "insensitive" } } },
       { student: { email: { contains: search, mode: "insensitive" } } },
       { student: { admissionNo: { contains: search, mode: "insensitive" } } },
@@ -525,7 +524,6 @@ export const exportParentsService = async ({ organizationId, query }) => {
       { parent: { parentName: { contains: search, mode: "insensitive" } } },
       { parent: { email: { contains: search, mode: "insensitive" } } },
       { parent: { phone: { contains: search, mode: "insensitive" } } },
-      { relationship: { contains: search, mode: "insensitive" } },
       { student: { name: { contains: search, mode: "insensitive" } } },
       { student: { email: { contains: search, mode: "insensitive" } } },
       { student: { admissionNo: { contains: search, mode: "insensitive" } } },
@@ -669,4 +667,49 @@ export const getParentStudentsService = async (parentId, filters = {}) => {
       batchName: link.student.batch?.name || null
     };
   });
+};
+
+export const getParentByIdService = async (parentId) => {
+  const parent = await prisma.parent.findUnique({
+    where: { id: parentId },
+    include: {
+      studentParents: {
+        include: {
+          student: {
+            include: {
+              organization: true,
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!parent) return null;
+
+  const firstLink = parent.studentParents[0];
+  
+  return {
+    _id: parent.id,
+    id: parent.id,
+    parentName: parent.parentName,
+    phone: parent.phone,
+    email: parent.email,
+    isActive: parent.isActive,
+    createdAt: parent.createdAt,
+    relationship: firstLink ? firstLink.relationship : null,
+    defaultGuardian: firstLink ? firstLink.defaultGuardian : false,
+    student: firstLink ? {
+      _id: firstLink.student.id,
+      id: firstLink.student.id,
+      admissionNo: firstLink.student.admissionNo,
+      name: firstLink.student.name,
+      email: firstLink.student.email,
+      organizationId: firstLink.student.organizationId,
+    } : null,
+    organization: firstLink && firstLink.student.organization ? {
+      _id: firstLink.student.organization.id,
+      name: firstLink.student.organization.name,
+    } : null,
+  };
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, Mail, Phone, Plus, Download, icons, Users, Building, MoreVertical, Filter } from 'lucide-react';
+import { Pencil, Mail, Phone, Plus, Download, icons, Users, Building, Filter } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import DataView from '@/components/ui/data-view/DataView';
 import Dropdown from '@/components/ui/Dropdown';
@@ -16,11 +16,6 @@ export default function ParentsTable({
     parents,
     loading,
     error,
-    selectedIds = [],
-    onSelectAll,
-    onSelect,
-    onActivateSelected,
-    onDeactivateSelected,
     onStatusChangeRequest,
     onEdit,
     onView,
@@ -41,7 +36,6 @@ export default function ParentsTable({
     const debouncedSearchTerm = useDebounce(searchTerm, 400);
     const [statusFilter, setStatusFilter] = useState('');
     const [organizationFilter, setOrganizationFilter] = useState('');
-    const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
 
     useEffect(() => {
         onSearch?.(debouncedSearchTerm);
@@ -202,39 +196,6 @@ export default function ParentsTable({
                     <span className="hidden lg:inline">Export</span>
                 </button>
             )}
-
-            {(canEdit || canDelete) && (
-                <div className="relative">
-                    <button
-                        onClick={() => setIsBulkMenuOpen(!isBulkMenuOpen)}
-                        className="flex items-center justify-center p-2 bg-white border border-gray-100 lg:border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer h-full"
-                    >
-                        <MoreVertical className="w-8 h-4 text-gray-500" />
-                    </button>
-                    {isBulkMenuOpen && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-lg shadow-lg z-[100] py-1 overflow-hidden">
-                            {canEdit && (
-                                <button
-                                    onClick={() => { setIsBulkMenuOpen(false); onActivateSelected?.(); }}
-                                    disabled={selectedIds.length === 0}
-                                    className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    Active {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
-                                </button>
-                            )}
-                            {canDelete && (
-                                <button
-                                    onClick={() => { setIsBulkMenuOpen(false); onDeactivateSelected?.(); }}
-                                    disabled={selectedIds.length === 0}
-                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    Inactive {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-            )}
         </>
     );
 
@@ -250,10 +211,6 @@ export default function ParentsTable({
             searchPlaceholder="Search Parents..."
             toolbarEndSlot={toolbarEndSlot}
             onRowClick={onView}
-            selectedIds={selectedIds}
-            onSelectAll={onSelectAll}
-            onSelectRow={onSelect}
-            canSelect={canEdit || canDelete}
             loading={loading}
             error={error}
             emptyText="No parents match the selected filter."

@@ -9,7 +9,8 @@ import {
   setDefaultGuardianDb,
   getParentsService,
   exportParentsService,
-  getParentStudentsService
+  getParentStudentsService,
+  getParentByIdService
 } from "./parent.service.js";
 import { checkStudentAccess, checkParentAccess } from "./parent.scope.js";
 import { prisma } from "../../config/prisma.js";
@@ -460,4 +461,22 @@ export const getParentStudents = asyncHandler(async (req, res) => {
     "Students retrieved successfully.",
     students
   );
+});
+
+export const getParentById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await checkParentAccess(req.user, id);
+  } catch (error) {
+    return sendError(res, error.statusCode || 403, error.message);
+  }
+
+  const result = await getParentByIdService(id);
+
+  if (!result) {
+    return sendError(res, 404, "Parent not found");
+  }
+
+  return sendSuccess(res, 200, "Parent retrieved successfully", { parent: result });
 });
