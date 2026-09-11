@@ -90,13 +90,29 @@ export default function AdminsTable({
           <Dropdown
             minWidth=""
             options={(() => {
-              const opts = organizations.map(org => ({ value: org.id, label: org.name }));
-              if (a.organization && typeof a.organization === 'object') {
-                if (!opts.find(opt => opt.value === a.organization.id)) {
-                  opts.push({ value: a.organization.id, label: a.organization.name });
+              const aOrgId = typeof a.organization === 'object' ? a.organization?.id : a.organization;
+
+              // Only show unassigned organizations + current admin's own org
+              const unassignedOrgs = (organizations || []).filter(org => {
+                // Always include the current admin's own assigned org
+                if (org.id === aOrgId || org.adminId === a.id || org.admin?.id === a.id) {
+                  return true;
                 }
-              }
-              return opts;
+                // Exclude orgs that already have an admin assigned
+                if (org.hasAdmin || org.adminId || org.admin) {
+                  return false;
+                }
+                // Exclude orgs claimed by another admin in local state
+                if (Array.isArray(admins) && admins.some(other => {
+                  const otherOrgId = typeof other.organization === 'object' ? other.organization?.id : other.organization;
+                  return otherOrgId === org.id && other.id !== a.id;
+                })) {
+                  return false;
+                }
+                return true;
+              });
+
+              return unassignedOrgs.map(org => ({ value: org.id, label: org.name }));
             })()}
             value={a.organization?.id || a.organization || ""}
             onChange={(val) => onOrganizationChange?.(a.id, val)}

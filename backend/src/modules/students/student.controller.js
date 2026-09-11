@@ -591,6 +591,18 @@ const getStudentsByAdmin = asyncHandler(async (req, res) => {
     query: req.query,
   });
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLogDb({
+      action: "Exported Students",
+      entityType: "Student",
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Admin exported students list for organization ${admin.organization}`,
+      status: "success"
+    }).catch(err => console.error("[Log Error] Export Students (Admin):", err));
+  }
+
   return sendSuccess(
     res,
     200,
@@ -617,6 +629,18 @@ const getStudentsByWarden = asyncHandler(async (req, res) => {
     query: req.query,
   });
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLogDb({
+      action: "Exported Students",
+      entityType: "Student",
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Warden exported students list for hostel(s) [${hostelIds.join(', ')}]`,
+      status: "success"
+    }).catch(err => console.error("[Log Error] Export Students (Warden):", err));
+  }
+
   return sendSuccess(
     res,
     200,
@@ -627,12 +651,24 @@ const getStudentsByWarden = asyncHandler(async (req, res) => {
 
 const getStudentsBySuperAdmin = asyncHandler(
   async (req, res) => {
-    const { organizationId } = req.query;
+    const { organizationId, isExport } = req.query;
 
     const result = await getStudentsService({
       organizationId,
       query: req.query,
     });
+
+    // Log export action when isExport=true is passed from frontend
+    if (isExport === 'true') {
+      createLogDb({
+        action: "Exported Students",
+        entityType: "Student",
+        user: req.user.id || req.user._id,
+        userRole: req.user.role,
+        details: `Super admin exported students list${organizationId ? ` for organization ${organizationId}` : ' (all organizations)'}`,
+        status: "success"
+      }).catch(err => console.error("[Log Error] Export Students (SuperAdmin):", err));
+    }
 
     return sendSuccess(
       res,
@@ -813,6 +849,18 @@ const getStudentsByMentor = asyncHandler(async (req, res) => {
     batchIds,
     query: req.query,
   });
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLogDb({
+      action: "Exported Students",
+      entityType: "Student",
+      user: req.user.id || req.user._id,
+      userRole: req.user.role,
+      details: `Mentor exported students list for batch(es) [${batchIds.join(', ')}]`,
+      status: "success"
+    }).catch(err => console.error("[Log Error] Export Students (Mentor):", err));
+  }
 
   return sendSuccess(
     res,

@@ -272,7 +272,7 @@ export default function Students() {
         Object.entries(mergedFilters).filter(([, value]) => value !== ""),
       );
 
-      const response = await getStudents(role, { ...params, page: 1, limit: 99990 });
+      const response = await getStudents(role, { ...params, page: 1, limit: 99990, isExport: true });
 
       const dataToExport = response?.students || response?.data || [];
 

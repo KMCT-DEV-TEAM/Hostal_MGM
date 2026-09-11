@@ -38,6 +38,9 @@ const createAdmin = asyncHandler(async (req, res) => {
     if (!organizationExists) {
         return sendError(res, 404, "Organization not found");
     }
+    if (organizationExists.adminId) {
+        return sendError(res, 400, "This organization already has an assigned administrator. Each organization can have only one admin.");
+    }
 
     const temporaryPassword = Math.random().toString(36).slice(-8);
     const hashedPassword = await hashPassword(temporaryPassword);
@@ -223,6 +226,9 @@ const updateAdminOrganization = asyncHandler(async (req, res) => {
     const organizationExists = await getOrganizationByIdDb(organizationId);
     if (!organizationExists) {
         return sendError(res, 404, "Organization not found");
+    }
+    if (organizationExists.adminId && organizationExists.adminId.toString() !== id.toString()) {
+        return sendError(res, 400, "This organization already has an assigned administrator. Each organization can have only one admin.");
     }
 
     const oldOrganizationId = admin.organization;
@@ -747,6 +753,18 @@ const getAssistantWardens = asyncHandler(async (req, res) => {
         }
         return userObj;
     });
+
+    const isExport = String(req.query.isExport || req.query.export || '').toLowerCase() === 'true';
+    if (isExport && req.user) {
+        await createLogDb({
+            action: "Exported Assistant Wardens",
+            entityType: "User",
+            user: req.user.id || req.user._id,
+            userRole: req.user.role,
+            details: `Exported assistant wardens list. Filter: status=${status || 'All'}, search=${search || 'None'}`,
+            status: "success"
+        });
+    }
 
     return sendSuccess(res, 200, "Assistant Wardens fetched successfully", { 
       count: users.length, 

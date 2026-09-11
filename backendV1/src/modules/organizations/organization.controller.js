@@ -100,6 +100,15 @@ export const getOrganizations = asyncHandler(async (req, res) => {
   const [organizations, totalCount] = await Promise.all([
     prisma.organization.findMany({
       where: whereClause,
+      include: {
+        admin: {
+          select: { id: true, name: true, email: true }
+        },
+        users: {
+          where: { role: 'admin' },
+          select: { id: true, name: true, email: true }
+        }
+      },
       skip: limit > 0 ? skip : undefined,
       take: limit > 0 ? limit : undefined,
       orderBy: { createdAt: 'desc' }
@@ -107,12 +116,23 @@ export const getOrganizations = asyncHandler(async (req, res) => {
     prisma.organization.count({ where: whereClause })
   ]);
 
+  const mappedOrganizations = organizations.map(org => {
+    const adminUser = org.admin || (org.users && org.users.length > 0 ? org.users[0] : null);
+    const assignedAdminId = org.adminId || adminUser?.id || null;
+    return {
+      ...org,
+      adminId: assignedAdminId,
+      admin: adminUser,
+      hasAdmin: Boolean(assignedAdminId)
+    };
+  });
+
   return sendSuccess(res, 200, "Organizations fetched successfully", {
-    count: organizations.length,
+    count: mappedOrganizations.length,
     totalCount,
     currentPage: page,
     totalPages: limit > 0 ? Math.ceil(totalCount / limit) : 1,
-    data: organizations
+    data: mappedOrganizations
   });
 });
 
@@ -120,7 +140,16 @@ export const getOrganizationById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const organization = await prisma.organization.findUnique({
-    where: { id }
+    where: { id },
+    include: {
+      admin: {
+        select: { id: true, name: true, email: true }
+      },
+      users: {
+        where: { role: 'admin' },
+        select: { id: true, name: true, email: true }
+      }
+    }
   });
 
   if (!organization) {
@@ -132,7 +161,17 @@ export const getOrganizationById = asyncHandler(async (req, res) => {
     return sendError(res, 403, "Access denied: You can only view your own organization");
   }
 
-  return sendSuccess(res, 200, "Organization fetched successfully", { data: organization });
+  const adminUser = organization.admin || (organization.users && organization.users.length > 0 ? organization.users[0] : null);
+  const assignedAdminId = organization.adminId || adminUser?.id || null;
+
+  return sendSuccess(res, 200, "Organization fetched successfully", {
+    data: {
+      ...organization,
+      adminId: assignedAdminId,
+      admin: adminUser,
+      hasAdmin: Boolean(assignedAdminId)
+    }
+  });
 });
 
 export const updateOrganization = asyncHandler(async (req, res) => {

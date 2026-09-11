@@ -5,7 +5,7 @@ const wardenApi = {
     api.post("/super-admin/wardens", payload),
 
   getWardens: (params) =>
-    api.get("/super-admin/wardens/", { params }),
+    api.get("/super-admin/wardens", { params }),
 
   getWardenById: (id) =>
     api.get(`/super-admin/wardens/${id}`),

@@ -14,6 +14,7 @@ const AdminFormModal = ({
     handleSaveAdmin,
     handleCancel,
     organizations = [],
+    admins = [],
     isEmailVerified,
     handleVerifyClick,
     isSubmitting,
@@ -21,6 +22,35 @@ const AdminFormModal = ({
 }) => {
     const { t } = useTranslation();
     const [errors, setErrors] = useState({});
+
+    const availableOrganizations = React.useMemo(() => {
+        const currentAdminId = editingAdmin?.id;
+        const currentAdminOrgId = editingAdmin?.organization?.id || editingAdmin?.organization;
+
+        return organizations.filter(org => {
+            // When editing: always include the current admin's own assigned organization
+            if (currentAdminId && (org.id === currentAdminOrgId || org.adminId === currentAdminId || org.admin?.id === currentAdminId)) {
+                return true;
+            }
+            // Exclude any org that already has an admin assigned (strictly unassigned only)
+            if (org.hasAdmin || org.adminId || org.admin) {
+                return false;
+            }
+            // Also exclude orgs claimed by another admin in local state
+            if (Array.isArray(admins)) {
+                const hasOtherAdmin = admins.some(a => {
+                    const aOrgId = a.organization?.id || a.organization;
+                    return aOrgId === org.id && (!currentAdminId || a.id !== currentAdminId);
+                });
+                if (hasOtherAdmin) return false;
+            }
+            return true;
+        });
+    }, [organizations, editingAdmin, admins]);
+
+    const organizationOptions = React.useMemo(() => {
+        return availableOrganizations.map(org => ({ value: org.id, label: org.name }));
+    }, [availableOrganizations]);
 
     React.useEffect(() => {
         if (activeModal === 'admin') {
@@ -154,13 +184,19 @@ const AdminFormModal = ({
                         <div>
                             <label className="block text-[10px] font-medium text-black mb-1">{t('organization')} <span className="text-red-500">*</span></label>
                             <Dropdown
-                                options={organizations.map(org => ({ value: org.id, label: org.name }))}
+                                options={organizationOptions}
                                 value={adminForm.organization}
                                 onChange={(val) => { setAdminForm({ ...adminForm, organization: val }); setErrors(prev => ({ ...prev, organization: '' })); }}
-                                placeholder={t('select_organization')}
+                                placeholder={organizationOptions.length === 0 ? t('no_unassigned_orgs', 'No unassigned organizations available') : t('select_organization')}
                                 triggerClassName={`w-full px-3 py-2 bg-gray-50/50 border ${errors.organization ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A] cursor-pointer text-left`}
+                                disabled={organizationOptions.length === 0}
                             />
                             {errors.organization && <p className="text-red-500 text-[10px] mt-1">{errors.organization}</p>}
+                            {organizationOptions.length === 0 && !editingAdmin && (
+                                <p className="text-amber-600 text-[10px] mt-1 font-medium">
+                                    All organizations currently have an assigned administrator. Each organization can have only one admin.
+                                </p>
+                            )}
                         </div>
 
                         {editingAdmin && (

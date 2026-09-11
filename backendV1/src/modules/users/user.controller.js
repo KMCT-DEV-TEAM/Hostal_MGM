@@ -88,10 +88,8 @@ export const getAdmins = asyncHandler(async (req, res) => {
     name: user.name
   }));
 
-  console.log("fgbcvbcvbdfgdfvxcvxfcbvcxvvxcvbxcvxcvxcvxcvbxcvcvcvc", req.query);
-
-
-  if (req.query.isExport === 'true' || req.query.export === 'true') {
+  const isExport = String(req.query.isExport || req.query.export || '').toLowerCase() === 'true';
+  if (isExport) {
     await createLog(
       req,
       "Exported Admins",
@@ -137,6 +135,18 @@ export const getWardens = asyncHandler(async (req, res) => {
     };
   });
 
+  const isExport = String(req.query.isExport || req.query.export || '').toLowerCase() === 'true';
+  if (isExport) {
+    await createLog(
+      req,
+      "Exported Wardens",
+      "User",
+      null,
+      `Exported wardens list. Filter: status=${status || 'All'}, search=${search || 'None'}`,
+      "success"
+    );
+  }
+
   return sendSuccess(res, 200, "Wardens fetched successfully", {
     count: mappedUsers.length,
     totalCount,
@@ -171,6 +181,18 @@ export const getAssistantWardens = asyncHandler(async (req, res) => {
       hostel
     };
   });
+
+  const isExport = String(req.query.isExport || req.query.export || '').toLowerCase() === 'true';
+  if (isExport) {
+    await createLog(
+      req,
+      "Exported Assistant Wardens",
+      "User",
+      null,
+      `Exported assistant wardens list. Filter: status=${status || 'All'}, search=${search || 'None'}`,
+      "success"
+    );
+  }
 
   return sendSuccess(res, 200, "Assistant Wardens fetched successfully", {
     count: mappedUsers.length,
@@ -421,6 +443,24 @@ export const bulkToggleAssistantWardenStatus = asyncHandler(async (req, res) => 
 export const createAdmin = asyncHandler(async (req, res) => {
   const { name, email, phone, organizationId } = req.body;
   if (!organizationId) return sendError(res, 400, "Organization is required");
+
+  // Check if organization exists and whether it already has an assigned admin
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    include: {
+      admin: true,
+      users: { where: { role: 'admin' } }
+    }
+  });
+  if (!org) return sendError(res, 404, "Organization not found");
+
+  const hasExistingAdmin = Boolean(
+    org.adminId || org.admin || (org.users && org.users.length > 0)
+  );
+  if (hasExistingAdmin) {
+    return sendError(res, 400, "This organization already has an assigned administrator. Each organization can have only one admin.");
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return sendError(res, 400, "Email already exists");
   const tempPass = Math.random().toString(36).slice(-8);
@@ -481,7 +521,12 @@ export const createAdmin = asyncHandler(async (req, res) => {
 
 export const updateAdmin = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, phone, status, isActive } = req.body;
+  const { name, phone, status, isActive, organizationId } = req.body;
+
+  const admin = await prisma.user.findUnique({ where: { id } });
+  if (!admin) {
+    return sendError(res, 404, "Admin not found");
+  }
 
   const updateData = {};
   if (name !== undefined) updateData.name = name;
@@ -489,34 +534,71 @@ export const updateAdmin = asyncHandler(async (req, res) => {
   if (isActive !== undefined) updateData.isActive = isActive;
   else if (status !== undefined) updateData.isActive = status === 'Active';
 
-  const admin = await prisma.user.update({
+  if (organizationId && organizationId !== admin.organizationId) {
+    const targetOrg = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: {
+        admin: true,
+        users: { where: { role: 'admin', id: { not: id } } }
+      }
+    });
+
+    if (!targetOrg) {
+      return sendError(res, 404, "Organization not found");
+    }
+
+    const isDifferentAdminAssigned =
+      (targetOrg.adminId && targetOrg.adminId !== id) ||
+      (targetOrg.admin && targetOrg.admin.id !== id) ||
+      (targetOrg.users && targetOrg.users.length > 0);
+
+    if (isDifferentAdminAssigned) {
+      return sendError(res, 400, "This organization already has an assigned administrator. Each organization can have only one admin.");
+    }
+
+    if (admin.organizationId) {
+      await prisma.organization.updateMany({
+        where: { id: admin.organizationId, adminId: id },
+        data: { adminId: null },
+      });
+    }
+
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: { adminId: id },
+    });
+
+    updateData.organizationId = organizationId;
+  }
+
+  const updatedAdmin = await prisma.user.update({
     where: { id },
     data: updateData,
     include: { organization: true },
   });
 
-  getIo()?.emit('userUpdated', { role: 'admin', id: admin.id });
+  getIo()?.emit('userUpdated', { role: 'admin', id: updatedAdmin.id });
 
   await createLog(
     req,
     "Updated Admin",
     "User",
-    admin.id,
-    `Updated admin: ${admin.name} (${admin.email})`,
+    updatedAdmin.id,
+    `Updated admin: ${updatedAdmin.name} (${updatedAdmin.email})`,
     "success",
     null,
-    { organizationId: admin.organizationId }
+    { organizationId: updatedAdmin.organizationId }
   );
 
   return sendSuccess(res, 200, "Admin updated successfully", {
     admin: {
-      id: admin.id,
-      name: admin.name,
-      email: admin.email,
-      phone: admin.phone,
-      role: admin.role,
-      isActive: admin.isActive,
-      organization: admin.organization,
+      id: updatedAdmin.id,
+      name: updatedAdmin.name,
+      email: updatedAdmin.email,
+      phone: updatedAdmin.phone,
+      role: updatedAdmin.role,
+      isActive: updatedAdmin.isActive,
+      organization: updatedAdmin.organization,
     },
   });
 });
@@ -535,10 +617,25 @@ export const updateAdminOrganization = asyncHandler(async (req, res) => {
 
   const organizationExists = await prisma.organization.findUnique({
     where: { id: organizationId },
+    include: {
+      admin: true,
+      users: {
+        where: { role: 'admin', id: { not: id } }
+      }
+    }
   });
 
   if (!organizationExists) {
     return sendError(res, 404, "Organization not found");
+  }
+
+  const isDifferentAdminAssigned =
+    (organizationExists.adminId && organizationExists.adminId !== id) ||
+    (organizationExists.admin && organizationExists.admin.id !== id) ||
+    (organizationExists.users && organizationExists.users.length > 0);
+
+  if (isDifferentAdminAssigned) {
+    return sendError(res, 400, "This organization already has an assigned administrator. Each organization can have only one admin.");
   }
 
   // If previous organization was linked to this admin as primary adminId, remove it
