@@ -4,7 +4,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import ListToolbar from '@/components/ui/ListToolbar';
 import BulkActionMenu from '@/components/ui/BulkActionMenu';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Clock, ClipboardList, LayoutGrid, List, Loader2, MoreVertical } from 'lucide-react';
+import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight, Download, X, User, Users, Wrench, Calendar, ToggleRight, Phone, ArrowLeft, Mail, Pencil, CheckCircle, Check, Clock, ClipboardList, LayoutGrid, List, Loader2, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MaintenanceStaffHeader from '../components/maintenanceStaff/MaintenanceStaffHeader';
 import MaintenanceStaffTable from '../components/maintenanceStaff/MaintenanceStaffTable';
@@ -66,6 +66,8 @@ export default function MaintenanceStaffManagement() {
     const [emailChangeStaffId, setEmailChangeStaffId] = useState(null);
     const [emailChangeForm, setEmailChangeForm] = useState('');
     const [newEmailForm, setNewEmailForm] = useState('');
+    const [passwordConfirm, setPasswordConfirm] = useState('');
+    const [isChangingEmail, setIsChangingEmail] = useState(false);
 
     const [staff, setStaff] = useState([]);
     const [totalStaff, setTotalStaff] = useState(0);
@@ -348,6 +350,7 @@ export default function MaintenanceStaffManagement() {
         setEmailChangeStaffId(staff.id);
         setEmailChangeForm(staff.email);
         setNewEmailForm('');
+        setPasswordConfirm('');
         setIsEmailVerified(false);
         setIsEmailChangeModalOpen(true);
     };
@@ -355,16 +358,23 @@ export default function MaintenanceStaffManagement() {
     const confirmEmailChange = async (e) => {
         e.preventDefault();
         if (!isEmailVerified) return;
+        if (!passwordConfirm) {
+            showErrorToast('Validation Error', 'Please enter your password to confirm');
+            return;
+        }
 
         try {
+            setIsChangingEmail(true);
             const res = await maintenanceStaffService.updateEmail(emailChangeStaffId, {
                 oldEmail: emailChangeForm,
-                newEmail: newEmailForm
+                newEmail: newEmailForm,
+                password: passwordConfirm
             });
             if (res && res.success) {
                 setStaff(staff.map(s => s.id === emailChangeStaffId ? { ...s, email: newEmailForm } : s));
                 setIsEmailChangeModalOpen(false);
                 setIsEmailChangeSuccessModalOpen(true);
+                showSuccessToast('Email Updated', res?.message || 'Staff email updated successfully');
 
                 if (selectedStaffDetail && selectedStaffDetail.id === emailChangeStaffId) {
                     setSelectedStaffDetail({ ...selectedStaffDetail, email: newEmailForm });
@@ -372,10 +382,15 @@ export default function MaintenanceStaffManagement() {
 
                 setTimeout(() => {
                     setIsEmailChangeSuccessModalOpen(false);
+                    setEmailChangeStaffId(null);
+                    setNewEmailForm('');
+                    setPasswordConfirm('');
                 }, 3000);
             }
         } catch (error) {
             showErrorToast('Update Failed', error?.message || 'Failed to update email');
+        } finally {
+            setIsChangingEmail(false);
         }
     };
 
@@ -994,12 +1009,26 @@ export default function MaintenanceStaffManagement() {
                             </div>
                         </div>
 
+                        {isEmailVerified && (
+                            <div className="mb-8">
+                                <label className="block text-sm font-medium text-[#222222] mb-2">Your Password <span className="text-red-500">*</span></label>
+                                <input
+                                    type="password"
+                                    value={passwordConfirm}
+                                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                                    required
+                                    placeholder="Enter your password to confirm"
+                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0A437A]"
+                                />
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={!isEmailVerified}
-                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer ${isEmailVerified ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
+                            disabled={!isEmailVerified || !passwordConfirm || isChangingEmail}
+                            className={`w-full py-3 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer ${isEmailVerified && passwordConfirm && !isChangingEmail ? 'bg-[#0A437A] hover:bg-secondary' : 'bg-[#94A3B8] cursor-not-allowed'}`}
                         >
-                            Change Email
+                            {isChangingEmail ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Change Email'}
                         </button>
                     </form>
                 </div>

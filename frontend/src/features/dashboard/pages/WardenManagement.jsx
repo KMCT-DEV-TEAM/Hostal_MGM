@@ -490,7 +490,7 @@ export default function WardenManagement() {
     const confirmExport = async (exportFilters) => {
         setIsExporting(true);
         try {
-            const params = { limit: 100000 };
+            const params = { limit: 100000, isExport: true };
             if (searchQuery) params.search = searchQuery;
 
             // Allow export modal filter to override table filter completely

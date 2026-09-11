@@ -313,6 +313,18 @@ export const getStudentsByAdmin = asyncHandler(async (req, res) => {
     query: req.query,
   });
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Students",
+      "Student",
+      null,
+      `Admin exported students list for organization ${organizationId}`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Students (Admin):", err));
+  }
+
   return sendSuccess(res, 200, "Students fetched successfully", result);
 });
 
@@ -337,16 +349,40 @@ export const getStudentsByWarden = asyncHandler(async (req, res) => {
     query: req.query,
   });
 
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Students",
+      "Student",
+      null,
+      `Warden exported students list for hostel(s) [${hostelIds.join(', ')}]`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Students (Warden):", err));
+  }
+
   return sendSuccess(res, 200, "Students fetched successfully", result);
 });
 
 export const getStudentsBySuperAdmin = asyncHandler(async (req, res) => {
-  const { organizationId } = req.query;
+  const { organizationId, isExport } = req.query;
 
   const result = await getStudentsService({
     organizationId,
     query: req.query,
   });
+
+  // Log export action when isExport=true is passed from frontend
+  if (isExport === 'true') {
+    createLog(
+      req,
+      "Exported Students",
+      "Student",
+      null,
+      `Super admin exported students list${organizationId ? ` for organization ${organizationId}` : ' (all organizations)'}`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Students (SuperAdmin):", err));
+  }
 
   return sendSuccess(res, 200, "Students fetched successfully", result);
 });
@@ -384,6 +420,18 @@ export const getStudentsByMentor = asyncHandler(async (req, res) => {
     batchIds,
     query: req.query,
   });
+
+  // Log export action when isExport=true is passed from frontend
+  if (req.query.isExport === 'true') {
+    createLog(
+      req,
+      "Exported Students",
+      "Student",
+      null,
+      `Mentor exported students list for batch(es) [${batchIds.join(', ')}]`,
+      "success"
+    ).catch(err => console.error("[Log Error] Export Students (Mentor):", err));
+  }
 
   return sendSuccess(res, 200, "Students fetched successfully", result);
 });

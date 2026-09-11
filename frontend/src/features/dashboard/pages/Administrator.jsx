@@ -159,18 +159,19 @@ export default function Administrator() {
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    useEffect(() => {
-        const fetchOrganizations = async () => {
-            try {
-                const res = await organizationService.getOrganizations({ limit: 100, status: 'All' });
-                if (res && res.data) {
-                    const orgList = res.data.data || res.data || [];
-                    setOrganizations(Array.isArray(orgList) ? orgList : []);
-                }
-            } catch (err) {
-                console.error("Failed to fetch organizations:", err);
+    const fetchOrganizations = async () => {
+        try {
+            const res = await organizationService.getOrganizations({ limit: 100, status: 'All' });
+            if (res && res.data) {
+                const orgList = res.data.data || res.data || [];
+                setOrganizations(Array.isArray(orgList) ? orgList : []);
             }
-        };
+        } catch (err) {
+            console.error("Failed to fetch organizations:", err);
+        }
+    };
+
+    useEffect(() => {
         fetchOrganizations();
     }, []);
 
@@ -378,6 +379,7 @@ export default function Administrator() {
                     admin.id === id ? { ...admin, organization: newOrg ? newOrg : { id: organizationId } } : admin
                 ));
                 fetchAdmins();
+                fetchOrganizations();
                 showSuccessToast('Organization Assigned', res?.message || 'Administrator organization updated successfully');
             }
         } catch (err) {
@@ -395,7 +397,19 @@ export default function Administrator() {
     // ==========================================
     const openAddAdminModal = () => {
         setEditingAdmin(null);
-        setAdminForm({ name: '', email: '', phone: '', organization: organizations[0]?.id || '', status: 'Active' });
+        const available = organizations.filter(org => {
+            if (!org.isActive) return false;
+            if (org.hasAdmin || org.adminId || org.admin) return false;
+            if (admins.some(a => (a.organization?.id || a.organization) === org.id)) return false;
+            return true;
+        });
+        setAdminForm({
+            name: '',
+            email: '',
+            phone: '',
+            organization: available[0]?.id || '',
+            status: 'Active'
+        });
         setIsEmailVerified(false);
         setActiveModal('admin');
     };
@@ -498,6 +512,7 @@ export default function Administrator() {
                 if (res && (res.data || res.success)) {
                     setAdmins(admins.map(w => w.id === editingAdmin.id ? { ...w, ...updatedAdmin } : w));
                     fetchAdmins();
+                    fetchOrganizations();
                     showSuccessToast('Administrator Updated', res?.message || 'Administrator details saved successfully');
                 }
             } catch (error) {
@@ -526,6 +541,7 @@ export default function Administrator() {
                     }
                     setCurrentPage(1);
                     fetchAdmins(); // re-fetch to ensure pagination is consistent and fields are populated
+                    fetchOrganizations();
                     showSuccessToast('Administrator Added', res?.message || 'New administrator registered successfully');
                 }
             } catch (error) {
@@ -661,6 +677,7 @@ export default function Administrator() {
                     handleSaveAdmin={handleSaveAdmin}
                     handleCancel={handleCancel}
                     organizations={organizations.filter(org => org.isActive)}
+                    admins={admins}
                     isEmailVerified={isEmailVerified}
                     handleVerifyClick={handleVerifyClick}
                     isSubmitting={isSubmitting}
