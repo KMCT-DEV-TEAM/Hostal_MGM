@@ -291,8 +291,8 @@ export const cancelPass = asyncHandler(async (req, res) => {
   const defaultReason = isStudent
     ? "Withdrawn by student."
     : isParent
-    ? "Cancelled by parent."
-    : "Cancelled by admin.";
+      ? "Cancelled by parent."
+      : "Cancelled by admin.";
 
   const reason = req.body?.remarks || req.body?.reason || defaultReason;
   const eventName = isStudent ? 'PASS_STUDENT_CANCELLED' : (isParent ? 'PASS_PARENT_CANCELLED' : 'PASS_ADMIN_CANCELLED');
@@ -316,17 +316,7 @@ export const cancelPass = asyncHandler(async (req, res) => {
     }).catch(err => console.error("Notification Error:", err));
   }
 
-<<<<<<< HEAD
-  await createLogDb({
-    action: isStudent ? "Withdrew Pass" : (isParent ? "Cancelled Pass" : "Admin Cancelled Pass"),
-    entityType: "Pass",
-    entityId: req.params.id,
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `${req.user.role} cancelled pass. Reason: ${reason}`,
-    status: "success"
-  });
-=======
+
   await createLog(
     req,
     req.user.role === ROLES.STUDENT || req.user.role === ROLES.PARENT ? "Cancelled Pass" : "Admin Cancelled Pass",
@@ -335,7 +325,6 @@ export const cancelPass = asyncHandler(async (req, res) => {
     `${req.user.role} cancelled pass. Reason: ${reason}`,
     "success"
   );
->>>>>>> 70f577054a51f0b81b048e379d8de3922569d94e
 
   return sendSuccess(res, 200, "The pass has been successfully cancelled.", updatedPass);
 });
@@ -746,7 +735,7 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
   const updatedPass = await markStudentReturnedDb(id, wardenId, wardenLink.hostelId);
 
   const returnStatus = updatedPass._returnStatus;
-  
+
   await orchestratorService.triggerNotification({
     sender: buildSender(req.user),
     eventName: 'WARDEN_MARKED_RETURNED',
@@ -768,7 +757,7 @@ export const markStudentReturned = asyncHandler(async (req, res) => {
 
 export const getWardenPasses = asyncHandler(async (req, res) => {
   const wardenId = req.user.id;
-  
+
   const wardenLink = await prisma.hostelWarden.findFirst({
     where: { userId: wardenId },
     select: { hostelId: true }
