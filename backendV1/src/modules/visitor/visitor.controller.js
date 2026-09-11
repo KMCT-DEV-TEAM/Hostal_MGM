@@ -1,5 +1,5 @@
 import * as visitorService from './visitor.service.js';
-import { createLogDb } from '../logs/log.service.js';
+import { createLog } from '../../utils/log.util.js';
 
 /**
  * Parent Creates a Visitor Profile + Visit Requests for multiple students
@@ -31,15 +31,14 @@ export const createVisitor = async (req, res) => {
             ? "Your visitor has been registered and the visit request was submitted successfully."
             : "Your visit request was submitted successfully for the existing visitor.";
 
-        await createLogDb({
-            action: result.isNewProfile ? "Created Visitor" : "Created Visit Request",
-            entityType: "Visitor",
-            entityId: result.visitor?.id || "Unknown", // Changed _id to id for PostgreSQL
-            user: req.user.id, // Removed fallback to _id
-            userRole: req.user.role,
-            details: `Parent submitted a visit request`,
-            status: "success"
-        });
+        await createLog(
+            req,
+            result.isNewProfile ? "Created Visitor" : "Created Visit Request",
+            "Visitor",
+            result.visitor?.id || "Unknown",
+            `Parent submitted a visit request`,
+            "success"
+        );
 
         return res.status(201).json({
             success: true,
@@ -100,15 +99,14 @@ export const confirmVisitorReuse = async (req, res) => {
         req.body.confirmedVisitorId = req.params.visitorId;
         const result = await visitorService.createVisitorProfile(req.body, req.user);
 
-        await createLogDb({
-            action: "Created Visit Request",
-            entityType: "Visitor",
-            entityId: result.visitor?.id || req.params.visitorId,
-            user: req.user.id,
-            userRole: req.user.role,
-            details: `Parent submitted a visit request for reused profile`,
-            status: "success"
-        });
+        await createLog(
+            req,
+            "Created Visit Request",
+            "Visitor",
+            result.visitor?.id || req.params.visitorId,
+            `Parent submitted a visit request for reused profile`,
+            "success"
+        );
 
         return res.status(201).json({
             success: true,
@@ -177,15 +175,14 @@ export const updateVisitorStatus = async (req, res) => {
         const { studentId } = req.query;
         const visitor = await visitorService.updateVisitorStatus(req.params.visitorId, req.body.status, req.user, studentId);
         
-        await createLogDb({
-            action: "Update Visitor Status",
-            entityType: "Visitor",
-            entityId: visitor.id,
-            user: req.user.id,
-            userRole: req.user.role,
-            details: `Status updated to ${req.body.status}`,
-            status: "success"
-        });
+        await createLog(
+            req,
+            "Update Visitor Status",
+            "Visitor",
+            visitor.id,
+            `Status updated to ${req.body.status}`,
+            "success"
+        );
 
         return res.status(200).json({
             success: true,

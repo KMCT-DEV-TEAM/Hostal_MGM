@@ -40,6 +40,11 @@ export const createBatchService = async (batchData, user) => {
     data: { batchesCount: { increment: 1 } }
   });
 
+  await prisma.course.update({
+    where: { id: department.courseId },
+    data: { batchesCount: { increment: 1 } }
+  });
+
   return newBatch;
 };
 
@@ -209,6 +214,18 @@ export const updateBatchService = async (id, batchData, user) => {
       where: { id: departmentId },
       data: { batchesCount: { increment: 1 } }
     });
+
+    const newDepartment = await prisma.department.findUnique({ where: { id: departmentId } });
+    if (existingBatch.department.courseId !== newDepartment.courseId) {
+      await prisma.course.update({
+        where: { id: existingBatch.department.courseId },
+        data: { batchesCount: { decrement: 1 } }
+      });
+      await prisma.course.update({
+        where: { id: newDepartment.courseId },
+        data: { batchesCount: { increment: 1 } }
+      });
+    }
   }
 
   return updatedBatch;

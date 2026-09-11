@@ -24,18 +24,18 @@ const getSuperAdminStats = asyncHandler(async (req, res) => {
     pendingPasswordRequests,
     inactiveOrganizations,
   ] = await Promise.all([
-    prisma.user.count({ where: { role: "ADMIN" } }),
-    prisma.user.count({ where: { role: "WARDEN" } }),
+    prisma.user.count({ where: { role: "admin" } }),
+    prisma.user.count({ where: { role: "warden" } }),
     prisma.student.count(),
     prisma.organization.count(),
     prisma.hostel.count(),
 
     prisma.user.count({
-      where: { role: "ADMIN", createdAt: { gte: lastMonth } },
+      where: { role: "admin", createdAt: { gte: lastMonth } },
     }),
 
     prisma.user.count({
-      where: { role: "WARDEN", createdAt: { gte: lastMonth } },
+      where: { role: "warden", createdAt: { gte: lastMonth } },
     }),
 
     prisma.student.count({
@@ -172,7 +172,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
     approvedLeaveRequestsCount
   ] = await Promise.all([
     prisma.user.count({
-      where: { role: "WARDEN", organizationId },
+      where: { role: "warden", organizationId },
     }),
     prisma.student.count({
       where: { organizationId },
@@ -183,7 +183,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
       }
     }),
     prisma.user.count({
-      where: { role: "WARDEN", organizationId, createdAt: { gte: lastMonth } },
+      where: { role: "warden", organizationId, createdAt: { gte: lastMonth } },
     }),
     prisma.student.count({
       where: { organizationId, createdAt: { gte: lastMonth } },
@@ -201,7 +201,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
       where: { status: "pending_admin", student: { organizationId } },
     }),
     prisma.user.count({
-      where: { role: "WARDEN", organizationId, isActive: false }
+      where: { role: "warden", organizationId, isActive: false }
     }),
     prisma.complaint.count({
       where: { organizationId }

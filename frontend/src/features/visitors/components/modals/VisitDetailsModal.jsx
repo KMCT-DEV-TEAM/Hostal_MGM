@@ -99,12 +99,12 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVi
         let checkoutStatus = 'pending';
         let checkinStatus = 'pending';
 
-        if (visit.quickSummary?.currentStatus === 'Completed') {
+        if (visit.quickSummary?.currentStatus === 'COMPLETED') {
             checkoutStatus = 'approved';
             checkinStatus = 'approved';
-        } else if (visit.quickSummary?.currentStatus === 'Checked In') {
+        } else if (visit.quickSummary?.currentStatus === 'CHECKED_IN') {
             checkinStatus = 'approved';
-        } else if (visit.quickSummary?.currentStatus === 'Pending') {
+        } else if (visit.quickSummary?.currentStatus === 'PENDING') {
             checkinStatus = 'submitted';
         }
 
@@ -236,7 +236,7 @@ export default function VisitDetailsModal({ isOpen, onClose, visitId, onUpdateVi
                         title="Visit Information" 
                         subtitle="Basic Details about the Visit"
                         headerAction={
-                            visit.quickSummary?.currentStatus === 'Checked In' && user?.role === ROLES.WARDEN && (
+                            visit.quickSummary?.currentStatus === 'CHECKED_IN' && user?.role === ROLES.WARDEN && (
                                 <Button 
                                     size="sm" 
                                     variant="outline" 

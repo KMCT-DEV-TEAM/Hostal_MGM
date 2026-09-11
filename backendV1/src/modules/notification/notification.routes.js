@@ -1,7 +1,7 @@
 import express from 'express';
 import * as notificationController from './notification.controller.js';
 import { protect } from '../auth/auth.middleware.js';
-import roleMiddleware from '../../../../backend/src/middlewares/role.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
 
 const router = express.Router();
 

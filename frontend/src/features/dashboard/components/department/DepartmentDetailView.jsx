@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Fingerprint, ToggleRight, MapPin, Phone, Mail } from 'lucide-react';
+import { Building2, Fingerprint, ToggleRight, Layers, BookOpen } from 'lucide-react';
 import InfoRow from '@/components/ui/InfoRow';
 import Modal from '@/components/ui/Modal';
 
@@ -26,6 +26,9 @@ const DepartmentDetailView = ({ selectedDepartmentDetail, setView }) => {
                         <div className="space-y-1">
                             <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedDepartmentDetail.code}</InfoRow>
                             <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedDepartmentDetail.name}</InfoRow>
+                            <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Organization</>}>{selectedDepartmentDetail?.course?.organization?.name || 'N/A'}</InfoRow>
+                            <InfoRow label={<><BookOpen className="w-4 h-4 text-gray-400" /> Course</>}>{selectedDepartmentDetail?.course?.name || 'N/A'}</InfoRow>
+                            <InfoRow label={<><Layers className="w-4 h-4 text-gray-400" /> Batches</>}>{selectedDepartmentDetail.batchesCount || 0}</InfoRow>
                             <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                                 <span className="flex items-center">
                                     <span className={`w-2 h-2 rounded-full ${selectedDepartmentDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
@@ -35,26 +38,6 @@ const DepartmentDetailView = ({ selectedDepartmentDetail, setView }) => {
                         </div>
                     </div>
 
-                    {selectedDepartmentDetail.address && (
-                        <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Address Information</h3>
-                            <p className="text-[11px] text-text-secondary mb-4">Address information of the Department</p>
-                            <div className="space-y-1">
-                                <InfoRow label={<><MapPin className="w-4 h-4 text-gray-400" /> Address</>}><span className="break-words whitespace-pre-wrap">{selectedDepartmentDetail.address}</span></InfoRow>
-                            </div>
-                        </div>
-                    )}
-
-                    {(selectedDepartmentDetail.phone || selectedDepartmentDetail.email) && (
-                        <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 className="text-sm font-semibold text-[#0A437A] mb-1">Contact Information</h3>
-                            <p className="text-[11px] text-text-secondary mb-4">Contact information of the Department</p>
-                            <div className="space-y-1">
-                                {selectedDepartmentDetail.phone && <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedDepartmentDetail.phone}</InfoRow>}
-                                {selectedDepartmentDetail.email && <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedDepartmentDetail.email}</InfoRow>}
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 <div className="md:col-span-5 bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
@@ -62,15 +45,15 @@ const DepartmentDetailView = ({ selectedDepartmentDetail, setView }) => {
                     <div className="space-y-1">
                         <InfoRow label={<><Fingerprint className="w-4 h-4 text-gray-400" /> Id</>}>{selectedDepartmentDetail.code}</InfoRow>
                         <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Name</>}>{selectedDepartmentDetail.name}</InfoRow>
-                        <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedDepartmentDetail?.courseId?.organizationId?.name || 'N/A'}</InfoRow>
+                        <InfoRow label={<><Building2 className="w-4 h-4 text-gray-400" /> Org</>}>{selectedDepartmentDetail?.course?.organization?.name || 'N/A'}</InfoRow>
+                        <InfoRow label={<><BookOpen className="w-4 h-4 text-gray-400" /> Course</>}>{selectedDepartmentDetail?.course?.name || 'N/A'}</InfoRow>
+                        <InfoRow label={<><Layers className="w-4 h-4 text-gray-400" /> Batches</>}>{selectedDepartmentDetail.batchesCount || 0}</InfoRow>
                         <InfoRow label={<><ToggleRight className="w-4 h-4 text-gray-400" /> Status</>}>
                             <span className="flex items-center">
                                 <span className={`w-2 h-2 rounded-full ${selectedDepartmentDetail.isActive ? 'bg-green-500' : 'bg-danger'} mr-2`}></span>
                                 {selectedDepartmentDetail.isActive ? 'Active' : 'Inactive'}
                             </span>
                         </InfoRow>
-                        {selectedDepartmentDetail.phone && <InfoRow label={<><Phone className="w-4 h-4 text-gray-400" /> Phone</>}>{selectedDepartmentDetail.phone}</InfoRow>}
-                        {selectedDepartmentDetail.email && <InfoRow label={<><Mail className="w-4 h-4 text-gray-400" /> Email</>}>{selectedDepartmentDetail.email}</InfoRow>}
                     </div>
                 </div>
             </div>

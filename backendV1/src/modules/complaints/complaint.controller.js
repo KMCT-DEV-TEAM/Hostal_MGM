@@ -1,11 +1,11 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import * as complaintService from './complaint.service.js';
-import { createLogDb } from '../logs/log.service.js';
 import { getIo } from '../../config/socket.js';
 import { orchestratorService } from '../notification/services/orchestrator.service.js';
 import { buildSender } from '../notification/utils/sender.util.js';
 import { prisma } from '../../config/prisma.js';
+import { createLog } from '../../utils/log.util.js';
 
 // @desc    Create a new complaint
 // @route   POST /api/complaints
@@ -221,15 +221,14 @@ export const updateComplaintStatus = asyncHandler(async (req, res) => {
     data: { title: updatedComplaint.subject, status: updatedComplaint.status }
   }).catch(err => console.error('[Notification Error]:', err));
 
-  await createLogDb({
-    action: 'Updated Complaint Status',
-    entityType: 'System',
-    entityId: null,
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Updated complaint status to ${status} for complaint ID: ${req.params.id}`,
-    status: 'success'
-  });
+  await createLog(
+    req,
+    'Updated Complaint Status',
+    'System',
+    null,
+    `Updated complaint status to ${status} for complaint ID: ${req.params.id}`,
+    'success'
+  );
 
   getIo()?.emit('complaintUpdated', { id: req.params.id });
 
@@ -262,15 +261,14 @@ export const assignMaintenanceStaff = asyncHandler(async (req, res) => {
     data: { title: updatedComplaint.subject }
   }).catch(err => console.error('[Notification Error]:', err));
 
-  await createLogDb({
-    action: 'Assigned Maintenance Staff',
-    entityType: 'System',
-    entityId: null,
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Assigned maintenance staff (ID: ${staffId}) to complaint ID: ${req.params.id}`,
-    status: 'success'
-  });
+  await createLog(
+    req,
+    'Assigned Maintenance Staff',
+    'System',
+    null,
+    `Assigned maintenance staff (ID: ${staffId}) to complaint ID: ${req.params.id}`,
+    'success'
+  );
 
   getIo()?.emit('complaintUpdated', { id: req.params.id });
 
@@ -348,15 +346,14 @@ export const approveComplaintResolution = asyncHandler(async (req, res) => {
     data: { title: updatedComplaint.subject }
   }).catch(err => console.error('[Notification Error]:', err));
 
-  await createLogDb({
-    action: 'Approved Complaint Resolution',
-    entityType: 'System',
-    entityId: null,
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Approved resolution for complaint ID: ${req.params.id}`,
-    status: 'success'
-  });
+  await createLog(
+    req,
+    'Approved Complaint Resolution',
+    'System',
+    null,
+    `Approved resolution for complaint ID: ${req.params.id}`,
+    'success'
+  );
 
   getIo()?.emit('complaintUpdated', { id: req.params.id });
 
@@ -384,15 +381,14 @@ export const rejectComplaintResolution = asyncHandler(async (req, res) => {
     }).catch(err => console.error('[Notification Error]:', err));
   }
 
-  await createLogDb({
-    action: 'Rejected Complaint Resolution',
-    entityType: 'System',
-    entityId: null,
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Rejected resolution for complaint ID: ${req.params.id}. Reason: ${rejectNote || 'None'}`,
-    status: 'success'
-  });
+  await createLog(
+    req,
+    'Rejected Complaint Resolution',
+    'System',
+    null,
+    `Rejected resolution for complaint ID: ${req.params.id}. Reason: ${rejectNote || 'None'}`,
+    'success'
+  );
 
   getIo()?.emit('complaintUpdated', { id: req.params.id });
 
@@ -455,15 +451,14 @@ export const addInternalNote = asyncHandler(async (req, res) => {
 
   const updatedComplaint = await complaintService.addInternalNoteDb(req.params.id, userRole, addedBy, note);
 
-  await createLogDb({
-    action: 'Added Internal Note',
-    entityType: 'System',
-    entityId: null,
-    user: req.user.id,
-    userRole: req.user.role,
-    details: `Added internal note to complaint ID: ${req.params.id}`,
-    status: 'success'
-  });
+  await createLog(
+    req,
+    'Added Internal Note',
+    'System',
+    null,
+    `Added internal note to complaint ID: ${req.params.id}`,
+    'success'
+  );
 
   getIo()?.emit('complaintUpdated', { id: req.params.id });
 

@@ -771,7 +771,7 @@ export const getVisitDetails = async (visitId, user, explicitStudentId = null) =
 
     const visitor = await prisma.visitor.findUnique({
         where: { id: visit.visitorRefId },
-        include: { createdBy: { select: { relationship: true } } }
+        include: { createdBy: { select: { parentName: true } } }
     });
 
     const visitStudentIds = visit.visitStudents.map(vs => vs.student.id);
@@ -785,7 +785,7 @@ export const getVisitDetails = async (visitId, user, explicitStudentId = null) =
         }
     } else if (user.role === ROLES.WARDEN) {
         const wardenHostels = await prisma.hostel.findMany({
-            where: { wardens: { some: { id: user.id } } },
+            where: { wardens: { some: { userId: user.id } } },
             select: { id: true }
         });
         const wardenHostelIds = wardenHostels.map(h => h.id);

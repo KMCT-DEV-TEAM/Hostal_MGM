@@ -1,6 +1,8 @@
 import asyncHandler from '../../utils/asyncHandler.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
 import { prisma } from '../../config/prisma.js';
+import { createLog } from '../../utils/log.util.js';
+import { getIo } from '../../config/socket.js';
 
 export const createHostel = asyncHandler(async (req, res) => {
   const { name, code, email, phone, location, capacity, hostelType, type, hosteltype, adminId } = req.body;
@@ -32,6 +34,17 @@ export const createHostel = asyncHandler(async (req, res) => {
       adminId: adminId || null,
     }
   });
+
+  await createLog(
+    req,
+    "Created Hostel",
+    "Hostel",
+    newHostel.id,
+    `Created hostel: ${newHostel.name} (${newHostel.code})`,
+    "success"
+  );
+
+  getIo()?.emit('hostelUpdated');
 
   return sendSuccess(res, 201, 'Hostel created successfully', newHostel);
 });
@@ -153,6 +166,17 @@ export const updateHostel = asyncHandler(async (req, res) => {
     }
   });
 
+  await createLog(
+    req,
+    "Updated Hostel",
+    "Hostel",
+    updatedHostel.id,
+    `Updated hostel: ${updatedHostel.name} (${updatedHostel.code})`,
+    "success"
+  );
+
+  getIo()?.emit('hostelUpdated');
+
   return sendSuccess(res, 200, 'Hostel updated successfully', updatedHostel);
 });
 
@@ -173,6 +197,8 @@ export const deleteHostel = asyncHandler(async (req, res) => {
   await prisma.hostel.delete({
     where: { id }
   });
+
+  getIo()?.emit('hostelUpdated');
 
   return sendSuccess(res, 200, 'Hostel deleted successfully');
 });
@@ -213,6 +239,17 @@ export const toggleHostelStatus = asyncHandler(async (req, res) => {
     ? "Hostel activated successfully" 
     : "Hostel deactivated successfully";
 
+  await createLog(
+    req,
+    "Toggled Hostel Status",
+    "Hostel",
+    updatedHostel.id,
+    `Status changed to ${updatedHostel.isActive ? 'Active' : 'Inactive'} for hostel ${updatedHostel.name}`,
+    "success"
+  );
+
+  getIo()?.emit('hostelUpdated');
+
   return sendSuccess(res, 200, message, updatedHostel);
 });
 
@@ -235,6 +272,17 @@ export const bulkToggleHostelStatus = asyncHandler(async (req, res) => {
       isActive
     }
   });
+
+  await createLog(
+    req,
+    "Bulk Status Update (Hostels)",
+    "Hostel",
+    null,
+    `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${ids.length} hostels`,
+    "success"
+  );
+
+  getIo()?.emit('hostelUpdated');
 
   return sendSuccess(res, 200, "Bulk hostel status updated successfully");
 });

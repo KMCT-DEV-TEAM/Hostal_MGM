@@ -24,7 +24,13 @@ const CourseFormModal = ({
         const newErrors = {};
         
         if (!formData.organizationId) {
-            newErrors.organizationId = t('org_not_selected', 'Organization is not selected');
+            newErrors.organizationId = 'Organization is not selected';
+        }
+        if (!formData.name || !formData.name.trim()) {
+            newErrors.name = 'Course Name is required';
+        }
+        if (!formData.code || !formData.code.trim()) {
+            newErrors.code = 'Course Code is required';
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -105,7 +111,6 @@ const CourseFormModal = ({
                                     }
                                     handleInputChange({ target: { name: 'name', value: cleanVal } });
                                 }}
-                                required
                                 className={`w-full px-3 py-2 bg-gray-50/50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg text-xs focus:outline-none focus:border-[#0A437A]`}
                                 placeholder="Enter Course name"
                             />
@@ -121,17 +126,18 @@ const CourseFormModal = ({
                                 )}
                                 <input
                                     name="code"
-                                    value={formData.code}
+                                    value={formData.code || ''}
                                     onChange={(e) => {
                                         const val = e.target.value.toUpperCase();
                                         handleInputChange({ target: { name: 'code', value: val } });
+                                        if (errors.code) setErrors(prev => ({ ...prev, code: undefined }));
                                     }}
-                                    required
                                     disabled={isEditMode}
-                                    className={`flex-1 w-full px-3 py-2 bg-gray-50/50 border border-gray-200 text-xs focus:outline-none focus:border-[#0A437A] ${isEditMode ? 'text-gray-500 cursor-not-allowed' : ''}`}
+                                    className={`flex-1 w-full px-3 py-2 bg-gray-50/50 border ${errors.code ? 'border-red-500' : 'border-gray-200'} text-xs focus:outline-none focus:border-[#0A437A] ${isEditMode ? 'text-gray-500 cursor-not-allowed' : ''}`}
                                     placeholder="CS101"
                                 />
                             </div>
+                            {errors.code && <p className="text-red-500 text-[10px] mt-1">{errors.code}</p>}
                         </div>
                         
                         {isEditMode && (

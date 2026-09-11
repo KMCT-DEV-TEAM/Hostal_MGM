@@ -8,10 +8,21 @@ import {
   toggleBatchStatusService, 
   bulkToggleBatchStatusService 
 } from './batch.service.js';
+import { createLog } from '../../utils/log.util.js';
 
 export const createBatch = asyncHandler(async (req, res) => {
   try {
     const newBatch = await createBatchService(req.body, req.user);
+
+    await createLog(
+      req,
+      "Created Batch",
+      "Batch",
+      newBatch.id,
+      `Created batch: ${newBatch.name} (${newBatch.code})`,
+      "success"
+    );
+
     return sendSuccess(res, 201, 'Batch created successfully', newBatch);
   } catch (error) {
     if (error.message === 'Batch with this code already exists' || error.message === 'Department not found') {
@@ -57,6 +68,16 @@ export const updateBatch = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
     const updatedBatch = await updateBatchService(id, req.body, req.user);
+
+    await createLog(
+      req,
+      "Updated Batch",
+      "Batch",
+      updatedBatch.id,
+      `Updated batch: ${updatedBatch.name} (${updatedBatch.code})`,
+      "success"
+    );
+
     return sendSuccess(res, 200, 'Batch updated successfully', updatedBatch);
   } catch (error) {
     if (error.message === 'Batch not found' || error.message === 'Department not found' || error.message === 'Batch with this code already exists') {
@@ -79,6 +100,16 @@ export const toggleBatchStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   try {
     const updatedBatch = await toggleBatchStatusService(id, req.user, req.body);
+
+    await createLog(
+      req,
+      "Toggled Batch Status",
+      "Batch",
+      updatedBatch.id,
+      `Status changed to ${updatedBatch.isActive ? 'Active' : 'Inactive'} for batch ${updatedBatch.name}`,
+      "success"
+    );
+
     return sendSuccess(res, 200, 'Batch status updated successfully', updatedBatch);
   } catch (error) {
     if (error.message === 'Batch not found' || error.message === 'Unauthorized') {
@@ -95,5 +126,15 @@ export const bulkToggleBatchStatus = asyncHandler(async (req, res) => {
   }
   
   const result = await bulkToggleBatchStatusService(ids, isActive, req.user);
+
+  await createLog(
+    req,
+    "Bulk Status Update (Batches)",
+    "Batch",
+    null,
+    `Updated status to ${isActive ? 'Active' : 'Inactive'} for ${result.count} batches`,
+    "success"
+  );
+
   return sendSuccess(res, 200, `Successfully updated ${result.count} batches`);
 });

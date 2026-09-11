@@ -182,9 +182,9 @@ const DepartmentManagement = () => {
             setEditingId(Department.id);
 
             // Extract suffix code
-            const courseIdValue = Department.courseId?.id || Department.courseId;
-            const course = courses.find(c => c.id === courseIdValue);
-            const prefix = course ? `${course.code}-` : '';
+            const courseIdValue = Department.course?.id || Department.courseId;
+            const courseCode = Department.course?.code || (courses.find(c => c.id === courseIdValue)?.code);
+            const prefix = courseCode ? `${courseCode}-` : '';
             const suffixCode = Department.code?.startsWith(prefix) ? Department.code.substring(prefix.length) : Department.code;
 
             setFormData({
@@ -236,7 +236,10 @@ const DepartmentManagement = () => {
             if (isEditMode && editingId) {
                 await DepartmentService.updateDepartment(editingId, finalData);
                 if (formData.isActive !== formData.originalIsActive) {
-                    await DepartmentService.toggleStatus(editingId);
+                    await DepartmentService.toggleStatus(editingId, {
+                        status: formData.isActive ? 'Active' : 'Inactive',
+                        isActive: formData.isActive
+                    });
                 }
                 showSuccessToast('Department Updated', 'Department details saved successfully');
             } else {
@@ -340,6 +343,7 @@ const DepartmentManagement = () => {
                     "S.No": index + 1,
                     "Department Name": Department.name,
                     "Department Code": Department.code,
+                    "Course Name": Department.course?.name || 'N/A',
                     "Number of Batches": Department.batchesCount || 0,
                     "Status": Department.isActive ? "Active" : "Inactive",
                     "Created At": new Date(Department.createdAt).toLocaleDateString()

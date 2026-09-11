@@ -6,7 +6,7 @@ import { VISITOR_STATUS, VISIT_REQUEST_STATUS, VISIT_STATUS } from './visitor.co
  */
 export const findWardenHostelIds = async (wardenId, tx = prisma) => {
     const wardenHostels = await tx.hostel.findMany({
-        where: { wardens: { some: { id: wardenId } } },
+        where: { wardens: { some: { userId: wardenId } } },
         select: { id: true }
     });
     return wardenHostels.map(h => h.id);

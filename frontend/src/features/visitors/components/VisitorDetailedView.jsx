@@ -72,7 +72,18 @@ const VisitorDetailedView = ({ visitors, loading, searchQuery, filters, onSearch
         avatar: (visitor) => visitor.visitorName ? visitor.visitorName.split(' ').map(n => n[0]).join('').toUpperCase() : 'V',
         title: (visitor) => visitor.visitorName || 'Unknown',
         subtitle: (visitor) => formatDateReadable(visitor.checkInTime),
-        status: (visitor) => ({ text: visitor.status || 'Unknown', color: "green" }),
+        status: (visitor) => {
+            const currentStatus = visitor.status ? visitor.status.toUpperCase() : 'UNKNOWN';
+            let color = "gray";
+            if (['CHECKED_IN', 'COMPLETED'].includes(currentStatus)) color = "green";
+            else if (['CHECKED_OUT', 'OVERSTAYED'].includes(currentStatus)) color = "red";
+            else if (['EXTENDED', 'PENDING'].includes(currentStatus)) color = "yellow";
+
+            return {
+                text: visitor.status ? visitor.status.replace(/_/g, ' ') : 'Unknown',
+                color
+            };
+        },
         fields: [
             { icon: LogIn, label: "In", accessor: (visitor) => formatTime(visitor.checkInTime) },
             { icon: LogOut, label: "Out", accessor: (visitor) => visitor.checkOutTime ? formatTime(visitor.checkOutTime) : '---' },
