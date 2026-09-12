@@ -142,7 +142,7 @@ const scheduleMediumHighReport = () => {
 
         if (!reportRecipient) {
           console.error(
-            "[CRON] No REPORT_EMAIL or EMAIL_USER set — cannot send log report."
+            "[CRON] No REPORT_EMAIL or EMAIL_USER set — cannot send log report. Logs will NOT be deleted."
           );
         } else {
           const html = buildLogEmailHtml(logs, periodLabel);
@@ -161,21 +161,20 @@ const scheduleMediumHighReport = () => {
             ]
           );
           console.log(`[CRON] Report email with CSV sent to ${reportRecipient}.`);
+
+          // ── Delete ONLY after confirmed email delivery ─────────────────────
+          const deleteResult = await prisma.auditLog.deleteMany({
+            where: {
+              priority: { in: ["MEDIUM", "HIGH"] },
+              createdAt: { lt: periodEnd },
+            },
+          });
+
+          console.log(
+            `[CRON] Deleted ${deleteResult.count} MEDIUM/HIGH logs older than ${periodEnd.toISOString()}.`
+          );
         }
       }
-
-      // ── Delete MEDIUM & HIGH logs that were just reported ──────────────────────
-      // Delete everything older than periodEnd (which is the exact cut-off for the email)
-      const deleteResult = await prisma.auditLog.deleteMany({
-        where: {
-          priority: { in: ["MEDIUM", "HIGH"] },
-          createdAt: { lt: periodEnd },
-        },
-      });
-
-      console.log(
-        `[CRON] Deleted ${deleteResult.count} MEDIUM/HIGH logs older than ${periodEnd.toISOString()}.`
-      );
     } catch (error) {
       console.error(
         "[CRON] Error during MEDIUM/HIGH log report & cleanup:",
