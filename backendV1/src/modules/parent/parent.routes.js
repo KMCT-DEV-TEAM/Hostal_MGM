@@ -22,9 +22,9 @@ import {
   exportParentsByAdmin,
   exportParentsBySuperAdmin,
   getParentStudents,
-  getParentById
+  getParentById,
+  toggleParentStatus
 } from "./parent.controller.js";
-import { toggleParentStatusDb } from "./parent.service.js";
 
 const router = express.Router();
 
@@ -123,7 +123,7 @@ router.patch(
   authMiddleware,
   roleMiddleware(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.MENTOR),
   validateParentIdParam,
-  toggleParentStatusDb
+  toggleParentStatus
 );
 
 router.patch(

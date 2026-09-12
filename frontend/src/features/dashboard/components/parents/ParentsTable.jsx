@@ -6,6 +6,8 @@ import Dropdown from '@/components/ui/Dropdown';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ROLES } from '@/constants/roles';
 
+import AssignedStudentsDisplay from '@/components/AssignedStudentsDisplay';
+
 export default function ParentsTable({
     onSearch,
     onFilterChange,
@@ -73,11 +75,15 @@ export default function ParentsTable({
             icon: Phone,
             accessor: (p) => p.phone,
         },
+
+
+
+
         {
             key: 'student',
             header: t('student'),
             icon: Users,
-            accessor: (p) => p.student?.name || p.student || "-",
+            renderCell: (p) => <AssignedStudentsDisplay students={p.students || []} />,
         },
         ...(role === ROLES.SUPER_ADMIN || role === ROLES.WARDEN ? [{
             key: 'organization',
@@ -135,7 +141,11 @@ export default function ParentsTable({
             };
         },
         fields: [
-            { icon: Users, accessor: (p) => p.student?.name || "No Student" },
+        { icon: Users, accessor: (p) => {
+          if (!p.students || p.students.length === 0) return "No Student";
+          if (p.students.length === 1) return p.students[0].name;
+          return `${p.students[0].name} +${p.students.length - 1}`;
+        } },
             ...(role === ROLES.SUPER_ADMIN || role === ROLES.WARDEN ? [{
                 icon: Building, accessor: (p) => p.organization?.name || "N/A",
             }] : [])

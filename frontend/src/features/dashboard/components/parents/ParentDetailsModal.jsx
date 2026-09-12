@@ -12,26 +12,9 @@ export default function ParentDetailsModal({ parent: initialParent, onClose, onU
     const role = useAuthStore((s) => s.user?.role);
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [parent, setParent] = useState(initialParent);
-    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const fetchParentDetails = async () => {
-            const parentId = initialParent?.id || initialParent?._id;
-            if (parentId) {
-                setLoading(true);
-                try {
-                    const data = await getParentById(parentId);
-                    if (data?.parent) {
-                        setParent(data.parent);
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch parent details:", error);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        };
-        fetchParentDetails();
+        setParent(initialParent);
     }, [initialParent]);
 
     const handleEmailChange = async ({ oldEmail, newEmail, otp }) => {
@@ -40,7 +23,7 @@ export default function ParentDetailsModal({ parent: initialParent, onClose, onU
             throw new Error("Current email does not match");
         }
 
-        const parentId = parent.id || parent.id || parent.parentId;
+        const parentId = parent.id || parent._id || parent.parentId;
         await changeParentEmail(role, parentId, {
             oldEmail,
             newEmail,
@@ -51,14 +34,13 @@ export default function ParentDetailsModal({ parent: initialParent, onClose, onU
         onUpdate?.({ ...parent, email: newEmail });
     };
 
-    if (!parent || loading) return null;
-    console.log("parent object:", parent.status);
+    if (!parent) return null;
 
     return (
         <Modal bottomSheetOnMobile={true} isOpen={true}
             avatar={parent.parentName}
             title={parent.parentName}
-            subtitle={`Parent - ${parent.student?.name}`}
+            subtitle={`Parent - ${parent.students?.map(s => s.name).join(', ')}`}
             onClose={onClose}
             maxWidth="max-w-5xl"
         >
@@ -93,20 +75,23 @@ export default function ParentDetailsModal({ parent: initialParent, onClose, onU
                     </DetailCard>
 
                     {/* Linked Student Info */}
-                    <DetailCard title="Linked Student Information" subtitle="Information of the linked Student">
-                        <DetailRow label="Full Name" value={parent.student.name} />
-                        <DetailRow label="Assigned Hostel" value="Kmct Engineering Hostel" />
-                        <DetailRow label="Email" value={typeof parent.student === 'object' ? parent.student?.email || 'N/A' : 'student@gmail.com'} />
-                        <DetailRow label="Full Address" value="Abc street, saojini nagar india" />
-                    </DetailCard>
+                    {parent.students?.map((student, idx) => (
+                        <DetailCard key={student._id || idx} title={`Linked Student Information ${parent.students.length > 1 ? `(${idx + 1})` : ''}`} subtitle="Information of the linked Student">
+                            <DetailRow label="Full Name" value={student.name} />
+                            <DetailRow label="Assigned Hostel" value="Kmct Engineering Hostel" />
+                            <DetailRow label="Email" value={student.email || 'N/A'} />
+                            <DetailRow label="Relation" value={student.relationship} />
+                            <DetailRow label="Full Address" value="Abc street, saojini nagar india" />
+                        </DetailCard>
+                    ))}
                 </div>
 
                 {/* Right Summary Sidebar */}
                 <div className='lg:col-span-2 space-y-6'>
                     <DetailCard title="Parent Summary" className="h-fit">
                         <DetailRow label="Full Name" value={parent.parentName} />
-                        <DetailRow label="Relation" value={parent.relationship} />
-                        <DetailRow label="Student Name" value={typeof parent.student === 'object' ? parent.student?.name : parent.student} />
+                        {/* <DetailRow label="Relation" value={parent.students?.map(s => s.relationship).join(', ')} />
+                        <DetailRow label="Student Name" value={parent.students?.map(s => s.name).join(', ')} /> */}
                         <DetailRow label="Hostel" value="Kmct Engineering Hostel" />
                         <DetailRow label="Status" value={
                             <span className="flex items-center">
