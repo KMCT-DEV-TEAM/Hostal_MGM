@@ -25,6 +25,7 @@ const LogsViewer = ({ entityType }) => {
     const [isExportFilterModalOpen, setIsExportFilterModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [priorityFilter, setPriorityFilter] = useState('All');
     const [limit, setLimit] = useState(10);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, totalDocs: 0 });
 
@@ -39,10 +40,12 @@ const LogsViewer = ({ entityType }) => {
         setIsLoading(true);
         try {
             const apiStatus = statusFilter === 'All' ? 'all' : statusFilter.toLowerCase();
+            const apiPriority = priorityFilter === 'All' ? 'all' : priorityFilter;
             const res = await logApi.getLogs({
                 page,
                 limit: limit,
                 status: apiStatus,
+                priority: apiPriority,
                 search: debouncedSearch,
                 startDate,
                 endDate
@@ -70,7 +73,7 @@ const LogsViewer = ({ entityType }) => {
 
     useEffect(() => {
         fetchLogs(1);
-    }, [statusFilter, debouncedSearch, entityType, startDate, endDate]);
+    }, [statusFilter, priorityFilter, debouncedSearch, entityType, startDate, endDate]);
 
     useEffect(() => {
         const socket = initSocket();
@@ -94,10 +97,12 @@ const LogsViewer = ({ entityType }) => {
 
             // Fetch all logs matching filter
             const apiStatus = statusFilter === 'All' ? 'all' : statusFilter.toLowerCase();
+            const apiPriority = priorityFilter === 'All' ? 'all' : priorityFilter;
             const res = await logApi.getLogs({
                 limit: 100000,
                 page: 1,
                 status: apiStatus,
+                priority: apiPriority,
                 search: debouncedSearch,
                 startDate: exportStartDate,
                 endDate: exportEndDate
@@ -120,10 +125,13 @@ const LogsViewer = ({ entityType }) => {
                 "SL No": index + 1,
                 "Timestamp": `${new Date(log.createdAt).toLocaleDateString()} ${new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
                 "Action": log.action,
+                "Module": log.entityType || 'N/A',
                 "User": log.user?.name || log.user?.email || 'Unknown',
                 "Role": log.userRole || 'N/A',
                 "Priority": log.priority || 'MEDIUM',
                 "Status": log.status,
+                "IP Address": log.ipAddress || 'Unknown',
+                "Device/Browser": log.userAgent || 'Unknown',
                 "Details": log.details
             }));
 
@@ -320,6 +328,7 @@ const LogsViewer = ({ entityType }) => {
                         setStartDate(filters.startDate);
                         setEndDate(filters.endDate);
                         setStatusFilter(filters.statusFilter);
+                        setPriorityFilter(filters.priority || 'All');
                         setIsFilterModalOpen(false);
                     }}
                 />
