@@ -159,7 +159,14 @@ const ProfileDesktopView = ({
                                 </>
                             )}
                         </div>
-                        {errors.phone && <p className="text-danger text-[10px] m-0 leading-none">{errors.phone}</p>}
+                        {editingField === 'phone' && (
+                            <p className={`text-[10px] m-0 leading-none ${errors.phone ? 'text-danger font-medium' : 'text-gray-400'}`}>
+                                {errors.phone || `Only numbers allowed · ${editValue.length}/10 digits`}
+                            </p>
+                        )}
+                        {!editingField && errors.phone && (
+                            <p className="text-danger text-[10px] m-0 leading-none">{errors.phone}</p>
+                        )}
 
                     </div>
                 </div>
