@@ -214,7 +214,7 @@ export const getComplaintSummary = asyncHandler(async (req, res) => {
     });
     const hostelIds = hostelWardens.map(hw => hw.hostelId);
     if (hostelIds.length > 0) {
-      query.hostelId = { $in: hostelIds };
+      query.hostelId = { in: hostelIds };
     } else {
       query._id = null;
     }
