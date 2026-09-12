@@ -133,6 +133,8 @@ const resolveUserContext = (reqOrUser) => {
       reqOrUser.ip ||
       null;
 
+    const userAgent = reqOrUser.headers?.['user-agent'] || null;
+
     const orgId =
       user.organizationId ||
       user.organization?.id ||
@@ -147,6 +149,7 @@ const resolveUserContext = (reqOrUser) => {
       userRole: user.role || null,
       organizationId: orgId,
       ipAddress,
+      userAgent,
     };
   }
 
@@ -156,6 +159,7 @@ const resolveUserContext = (reqOrUser) => {
     userRole: reqOrUser.role || reqOrUser.userRole || null,
     organizationId: reqOrUser.organizationId || reqOrUser.organization?.id || reqOrUser.organization || null,
     ipAddress: reqOrUser.ipAddress || null,
+    userAgent: reqOrUser.userAgent || null,
   };
 };
 
@@ -183,7 +187,7 @@ export const createLog = async (
 ) => {
   try {
     const db = tx || prisma;
-    const { userId, userRole, organizationId, ipAddress } = resolveUserContext(reqOrUser);
+    const { userId, userRole, organizationId, ipAddress, userAgent } = resolveUserContext(reqOrUser);
 
     const normalizedStatus =
       status?.toLowerCase() === 'error' ? 'ERROR' :
@@ -198,6 +202,15 @@ export const createLog = async (
     const isStaffUser = ['super_admin', 'admin', 'warden', 'assistant_warden', 'maintenance_staff', 'mentor'].includes(canonicalRole);
     const validUserId = isStaffUser ? userId : null;
 
+    // Merge system info into newData for deeper tracking
+    let mergedNewData = extraOptions.newData ? { ...extraOptions.newData } : null;
+    if (userAgent) {
+      if (!mergedNewData || typeof mergedNewData !== 'object' || Array.isArray(mergedNewData)) {
+        mergedNewData = { _originalData: mergedNewData };
+      }
+      mergedNewData._systemInfo = { userAgent };
+    }
+
     // 1. AuditLog
     try {
       await db.auditLog.create({
@@ -208,7 +221,7 @@ export const createLog = async (
           userId: validUserId,
           organizationId: resolvedOrgId,
           oldData: extraOptions.oldData || null,
-          newData: extraOptions.newData || null,
+          newData: mergedNewData,
           ipAddress: extraOptions.ipAddress || ipAddress || null,
           priority,
         },
