@@ -230,26 +230,24 @@ export const createLog = async (
       console.error('[createLog] AuditLog write error:', auditErr.message);
     }
 
-    // 2. ActivityLog (if userId is valid user)
-    if (validUserId) {
-      try {
-        await db.activityLog.create({
-          data: {
-            action: action || 'Action',
-            entityType: entityType || 'System',
-            entityId: entityId || null,
-            userId: validUserId,
-            userRole: userRole || 'unknown',
-            details: details || action || '',
-            status: normalizedStatus,
-            priority,
-            ipAddress: extraOptions.ipAddress || ipAddress || null,
-            userAgent: userAgent || null,
-          },
-        });
-      } catch (actErr) {
-        console.error('[createLog] ActivityLog write error:', actErr.message);
-      }
+    // 2. ActivityLog
+    try {
+      await db.activityLog.create({
+        data: {
+          action: action || 'Action',
+          entityType: entityType || 'System',
+          entityId: entityId || null,
+          userId: validUserId, // Will be null for students/parents, UUID for staff
+          userRole: userRole || 'unknown',
+          details: details || action || '',
+          status: normalizedStatus,
+          priority,
+          ipAddress: extraOptions.ipAddress || ipAddress || null,
+          userAgent: userAgent || null,
+        },
+      });
+    } catch (actErr) {
+      console.error('[createLog] ActivityLog write error:', actErr.message);
     }
   } catch (err) {
     // Never allow logging failures to break HTTP responses

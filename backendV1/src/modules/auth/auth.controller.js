@@ -409,8 +409,9 @@ export const resetPassword = asyncHandler(async (req, res) => {
         where: { id: user.id },
         data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
       });
+      req.user = { id: user.id, role: user.role, organizationId: user.organizationId };
       await createLog(
-        { ...user, id: user.id, role: user.role, organizationId: user.organizationId },
+        req,
         "Reset Password",
         "Password",
         user.id,
@@ -426,8 +427,9 @@ export const resetPassword = asyncHandler(async (req, res) => {
         where: { id: student.id },
         data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
       });
+      req.user = { id: student.id, role: 'student', organizationId: student.organizationId };
       await createLog(
-        { id: student.id, role: 'student' },
+        req,
         "Reset Password",
         "Password",
         student.id,
@@ -443,8 +445,9 @@ export const resetPassword = asyncHandler(async (req, res) => {
         where: { id: parent.id },
         data: { password: hashedPassword, tempPassword: false, failedLoginAttempts: 0, lockUntil: null }
       });
+      req.user = { id: parent.id, role: 'parent', organizationId: parent.organizationId || null };
       await createLog(
-        { id: parent.id, role: 'parent' },
+        req,
         "Reset Password",
         "Password",
         parent.id,

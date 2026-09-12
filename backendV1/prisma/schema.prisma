@@ -952,7 +952,7 @@ model ActivityLog {
   action     String       @db.VarChar(100)
   entityType String       @map("entity_type") @db.VarChar(50)
   entityId   String?      @map("entity_id") @db.Uuid
-  userId     String       @map("user_id") @db.Uuid
+  userId     String?      @map("user_id") @db.Uuid
   userRole   String       @map("user_role") @db.VarChar(50)
   details    String
   status     ActionStatus @default(SUCCESS)
@@ -961,7 +961,7 @@ model ActivityLog {
   userAgent  String?      @map("user_agent")
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([entityType, entityId])
   @@index([userId])
