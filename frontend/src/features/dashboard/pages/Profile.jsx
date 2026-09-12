@@ -81,12 +81,15 @@ export default function Profile() {
 
         if (field === 'phone') {
             if (!editValue || editValue.trim() === '') {
-                showErrorToast('Error', 'Phone number cannot be empty');
+                setErrors(prev => ({ ...prev, phone: 'Phone number is required' }));
                 return;
             }
-            const phoneRegex = /^\d{10}$/;
-            if (!phoneRegex.test(editValue)) {
-                showErrorToast('Invalid Phone', 'Phone number must be exactly 10 digits');
+            if (!/^\d+$/.test(editValue)) {
+                setErrors(prev => ({ ...prev, phone: 'Only numbers are allowed' }));
+                return;
+            }
+            if (editValue.length !== 10) {
+                setErrors(prev => ({ ...prev, phone: `Must be exactly 10 digits (currently ${editValue.length})` }));
                 return;
             }
         }
