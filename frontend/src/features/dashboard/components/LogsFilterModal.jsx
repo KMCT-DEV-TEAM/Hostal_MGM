@@ -14,6 +14,7 @@ export default function LogsFilterModal({
     const [startDate, setStartDate] = useState(initialStartDate || '');
     const [endDate, setEndDate] = useState(initialEndDate || '');
     const [status, setStatus] = useState(initialStatus || 'All');
+    const [priority, setPriority] = useState('All');
     const [showConfirmReset, setShowConfirmReset] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -21,13 +22,14 @@ export default function LogsFilterModal({
         setStartDate('');
         setEndDate('');
         setStatus('All');
+        setPriority('All');
         setShowConfirmReset(false);
         setErrors({});
-        onApply({ startDate: '', endDate: '', statusFilter: 'All' });
+        onApply({ startDate: '', endDate: '', statusFilter: 'All', priority: 'All' });
     };
 
     const handleFilterClick = () => {
-        const isNothingApplied = !startDate && !endDate && status === 'All';
+        const isNothingApplied = !startDate && !endDate && status === 'All' && priority === 'All';
         
         if (isNothingApplied) {
             setErrors({});
@@ -36,10 +38,6 @@ export default function LogsFilterModal({
         }
 
         const newErrors = {};
-        if (!startDate) newErrors.startDate = 'From date is required';
-        if (!endDate) newErrors.endDate = 'To date is required';
-        if (status === 'All') newErrors.status = 'Status is required';
-
         if (startDate && endDate) {
             const start = new Date(startDate).setHours(0,0,0,0);
             const end = new Date(endDate).setHours(0,0,0,0);
@@ -57,7 +55,7 @@ export default function LogsFilterModal({
     };
 
     const handleApply = () => {
-        onApply({ startDate, endDate, statusFilter: status });
+        onApply({ startDate, endDate, statusFilter: status, priority });
     };
 
     const statusOptions = [
@@ -65,6 +63,13 @@ export default function LogsFilterModal({
         { label: 'Success', value: 'Success' },
         { label: 'Error', value: 'Error' },
         { label: 'Warning', value: 'Warning' }
+    ];
+
+    const priorityOptions = [
+        { label: 'All Priorities', value: 'All' },
+        { label: 'High', value: 'HIGH' },
+        { label: 'Medium', value: 'MEDIUM' },
+        { label: 'Low', value: 'LOW' }
     ];
 
     return (
@@ -115,6 +120,27 @@ export default function LogsFilterModal({
                             className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#0A437A] transition-colors"
                         />
                         {errors.endDate && <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{errors.endDate}</p>}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm mb-1.5 font-medium text-gray-700">Status</label>
+                        <Dropdown
+                            options={statusOptions}
+                            value={status}
+                            onChange={(val) => { setStatus(val); setErrors(prev => ({ ...prev, status: null })); }}
+                            placeholder="Select status"
+                        />
+                        {errors.status && <p className="text-red-500 text-[10px] mt-1 ml-1 font-medium animate-in fade-in">{errors.status}</p>}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm mb-1.5 font-medium text-gray-700">Priority</label>
+                        <Dropdown
+                            options={priorityOptions}
+                            value={priority}
+                            onChange={(val) => setPriority(val)}
+                            placeholder="Select priority"
+                        />
                     </div>
                 </div>
             </Modal>
