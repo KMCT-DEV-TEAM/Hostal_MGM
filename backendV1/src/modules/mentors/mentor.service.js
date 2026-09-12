@@ -462,7 +462,7 @@ export const deleteMentorDb = async (mentorId, requesterUser) => {
 /**
  * Gets organizations that have at least one mentor
  */
-export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, search }) => {
+export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, search, status, isActive, organizationId }) => {
   const skip = (page - 1) * limit;
 
   const where = {
@@ -470,6 +470,19 @@ export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, sear
       some: { role: ROLES.MENTOR },
     },
   };
+
+  if (organizationId && organizationId !== "undefined" && organizationId !== "all") {
+    where.id = organizationId;
+  }
+
+  const activeFilter = isActive !== undefined ? isActive : status;
+  if (activeFilter !== undefined && activeFilter !== "All" && activeFilter !== "all" && activeFilter !== "") {
+    if (activeFilter === "true" || activeFilter === true || activeFilter === "Active") {
+      where.isActive = true;
+    } else if (activeFilter === "false" || activeFilter === false || activeFilter === "Inactive") {
+      where.isActive = false;
+    }
+  }
 
   if (search) {
     where.OR = [
@@ -486,12 +499,22 @@ export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, sear
         name: true,
         code: true,
         email: true,
+        users: {
+          where: { role: ROLES.MENTOR },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            isActive: true,
+          },
+        },
         _count: {
           select: { users: { where: { role: ROLES.MENTOR } } },
         },
       },
-      skip,
-      take: limit,
+      skip: limit > 0 ? skip : undefined,
+      take: limit > 0 ? limit : undefined,
       orderBy: { name: "asc" },
     }),
     prisma.organization.count({ where }),
@@ -499,10 +522,12 @@ export const getOrganizationsWithMentorsDb = async ({ page = 1, limit = 10, sear
 
   const formattedData = organizations.map((org) => ({
     _id: org.id,
+    id: org.id,
     name: org.name,
     code: org.code,
     email: org.email,
     mentorCount: org._count.users,
+    mentors: org.users || [],
   }));
 
   return {

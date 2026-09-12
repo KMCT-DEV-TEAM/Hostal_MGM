@@ -28,7 +28,10 @@ export default function MentorTable({
     setLimit,
     totalItems,
     totalPages,
-    searchQuery
+    searchQuery,
+    organizations = [],
+    selectedOrgId = '',
+    isDrilledDown = false
 }) {
     const { t } = useTranslation();
 
@@ -141,8 +144,24 @@ export default function MentorTable({
         </button>
     );
 
+    const isSuperAdmin = role === ROLES.SUPER_ADMIN || role === 'SUPER_ADMIN';
+
     const toolbarEndSlot = (
         <>
+            {isSuperAdmin && !isDrilledDown && (
+                <Dropdown
+                    options={[
+                        { label: 'All Organizations', value: '' },
+                        ...(organizations || []).map((org) => ({ label: org.name || org.label, value: org.id || org.value }))
+                    ]}
+                    value={selectedOrgId}
+                    onChange={(val) => onFilterChange?.('organizationId', val)}
+                    placeholder="All Organizations"
+                    minWidth="w-44"
+                    triggerClassName="w-full px-3 py-2 bg-white border border-gray-100 md:border-gray-200 rounded-lg text-sm text-[#777777] font-medium shadow-sm md:shadow-none focus:border-[#0A437A] cursor-pointer h-full"
+                />
+            )}
+
             {canEdit && (
                 <Dropdown
                     className=" "
