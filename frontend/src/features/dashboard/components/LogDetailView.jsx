@@ -1,7 +1,8 @@
 import React from 'react';
-import { AlignLeft, Calendar, Info, Clock, User, Activity } from 'lucide-react';
+import { AlignLeft, Calendar, Info, Clock, User, Activity, Monitor, Globe } from 'lucide-react';
 import InfoRow from '@/components/ui/InfoRow';
 import Modal from '@/components/ui/Modal';
+import { UAParser } from 'ua-parser-js';
 
 export default function LogDetailView({ log, onClose }) {
     if (!log) return null;
@@ -17,6 +18,32 @@ export default function LogDetailView({ log, onClose }) {
             default:
                 return 'bg-gray-500';
         }
+    };
+
+    const getParsedUserAgent = (uaString) => {
+        if (!uaString) return 'Unknown Device';
+        try {
+            const parser = new UAParser(uaString);
+            const browser = parser.getBrowser();
+            const os = parser.getOS();
+            const device = parser.getDevice();
+
+            const browserName = browser.name ? `${browser.name} ${browser.version || ''}` : 'Unknown Browser';
+            const osName = os.name ? `${os.name} ${os.version || ''}` : 'Unknown OS';
+            const deviceName = device.vendor ? `${device.vendor} ${device.model || ''}` : '';
+
+            return [deviceName, browserName, `on ${osName}`].filter(Boolean).join(' ').trim();
+        } catch (e) {
+            return uaString;
+        }
+    };
+
+    const formatIpAddress = (ip) => {
+        if (!ip) return 'Unknown';
+        if (ip === '::1' || ip === '127.0.0.1' || ip === '::ffff:127.0.0.1') {
+            return '127.0.0.1 (Localhost)';
+        }
+        return ip;
     };
 
     return (
@@ -67,6 +94,18 @@ export default function LogDetailView({ log, onClose }) {
                         </InfoRow>
                         <InfoRow label={<><Clock className="w-4 h-4 text-gray-400" /> Time</>}>
                             {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </InfoRow>
+                    </div>
+
+                    <h3 className="text-sm font-semibold text-[#0A437A] mb-3 md:mb-4 mt-6">System Information</h3>
+                    <div className="space-y-2">
+                        <InfoRow label={<><Globe className="w-4 h-4 text-gray-400" /> IP Address</>}>
+                            {formatIpAddress(log.ipAddress)}
+                        </InfoRow>
+                        <InfoRow label={<><Monitor className="w-4 h-4 text-gray-400" /> Device/Browser</>}>
+                            <div className="text-sm font-medium text-gray-900" title={log.userAgent || 'Unknown'}>
+                                {getParsedUserAgent(log.userAgent)}
+                            </div>
                         </InfoRow>
                     </div>
                 </div>

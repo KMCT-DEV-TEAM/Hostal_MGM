@@ -7,10 +7,11 @@ export const getLogs = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const { status, search, startDate, endDate } = req.query;
+  const { status, search, startDate, endDate, priority } = req.query;
 
   const where = {};
 
+  // Scope admin to their org
   if (req.user.role === 'admin') {
     if (!req.user.organizationId) {
       return sendError(res, 403, 'Admin user has no organization ID');
@@ -18,39 +19,49 @@ export const getLogs = asyncHandler(async (req, res) => {
     where.user = { organizationId: req.user.organizationId };
   }
 
+  // Status filter
   if (status && status !== 'all') {
     where.status = status.toUpperCase();
   }
 
-  if (startDate && endDate) {
-    where.createdAt = {
-      gte: new Date(startDate),
-      lte: new Date(endDate)
-    };
-  } else if (startDate) {
-    where.createdAt = {
-      gte: new Date(startDate)
-    };
-  } else if (endDate) {
-    where.createdAt = {
-      lte: new Date(endDate)
-    };
+  // Priority filter
+  if (priority && priority !== 'all') {
+    where.priority = priority.toUpperCase();
   }
 
+  // Date filter — include full end day
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) {
+      where.createdAt.gte = new Date(startDate + 'T00:00:00.000Z');
+    }
+    if (endDate) {
+      where.createdAt.lte = new Date(endDate + 'T23:59:59.999Z');
+    }
+  }
+
+  // Search filter — must not conflict with admin org user filter
   if (search) {
-    where.OR = [
+    const searchCondition = [
       { action: { contains: search, mode: 'insensitive' } },
       { details: { contains: search, mode: 'insensitive' } },
       { userRole: { contains: search, mode: 'insensitive' } },
-      {
+      { ipAddress: { contains: search, mode: 'insensitive' } },
+    ];
+
+    // Only add user-based search if no org filter is already scoping users
+    if (!where.user) {
+      searchCondition.push({
         user: {
           OR: [
             { name: { contains: search, mode: 'insensitive' } },
             { email: { contains: search, mode: 'insensitive' } }
           ]
         }
-      }
-    ];
+      });
+    }
+
+    where.OR = searchCondition;
   }
 
   const [logs, totalCount] = await Promise.all([
