@@ -243,6 +243,8 @@ export const createLog = async (
             details: details || action || '',
             status: normalizedStatus,
             priority,
+            ipAddress: extraOptions.ipAddress || ipAddress || null,
+            userAgent: userAgent || null,
           },
         });
       } catch (actErr) {

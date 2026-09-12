@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlignLeft, Calendar, Info, Clock, User, Activity } from 'lucide-react';
+import { AlignLeft, Calendar, Info, Clock, User, Activity, Monitor, Globe } from 'lucide-react';
 import InfoRow from '@/components/ui/InfoRow';
 import Modal from '@/components/ui/Modal';
 
@@ -67,6 +67,18 @@ export default function LogDetailView({ log, onClose }) {
                         </InfoRow>
                         <InfoRow label={<><Clock className="w-4 h-4 text-gray-400" /> Time</>}>
                             {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </InfoRow>
+                    </div>
+
+                    <h3 className="text-sm font-semibold text-[#0A437A] mb-3 md:mb-4 mt-6">System Information</h3>
+                    <div className="space-y-2">
+                        <InfoRow label={<><Globe className="w-4 h-4 text-gray-400" /> IP Address</>}>
+                            {log.ipAddress || 'Unknown'}
+                        </InfoRow>
+                        <InfoRow label={<><Monitor className="w-4 h-4 text-gray-400" /> Device/Browser</>}>
+                            <div className="text-xs text-text-secondary truncate w-full" title={log.userAgent || 'Unknown'}>
+                                {log.userAgent || 'Unknown'}
+                            </div>
                         </InfoRow>
                     </div>
                 </div>

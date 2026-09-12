@@ -957,6 +957,8 @@ model ActivityLog {
   details    String
   status     ActionStatus @default(SUCCESS)
   priority   LogPriority  @default(MEDIUM)
+  ipAddress  String?      @map("ip_address") @db.VarChar(50)
+  userAgent  String?      @map("user_agent")
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
