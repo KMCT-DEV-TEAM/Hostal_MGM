@@ -383,92 +383,101 @@ export const getParentsService = async ({ organizationId, hostelIds, batchIds, q
   const limitNumber = Number(limit);
   const skip = (pageNumber - 1) * limitNumber;
 
+  // Base where clause for Parent fields
   const where = {};
 
-  if (relationship) {
-    where.relationship = relationship;
-  }
-
-  if (typeof defaultGuardian !== "undefined") {
-    where.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
-  }
-
   if (typeof isActive !== "undefined") {
-    where.parent = { isActive: isActive === "true" };
+    where.isActive = isActive === "true" || isActive === true;
   }
 
+  // Build filters for StudentParent relationship and defaultGuardian
+  const studentParentWhere = {};
+  if (relationship) studentParentWhere.relationship = relationship;
+  if (typeof defaultGuardian !== "undefined") {
+    studentParentWhere.defaultGuardian = defaultGuardian === "true" || defaultGuardian === true;
+  }
+
+  // Student level filters
   const studentFilters = {};
-
-  if (studentId) {
-    studentFilters.id = studentId;
-  }
-
-  if (organizationId) {
-    studentFilters.organizationId = organizationId;
-  }
-
+  if (studentId) studentFilters.id = studentId;
+  if (organizationId) studentFilters.organizationId = organizationId;
   if (hostelIds && Array.isArray(hostelIds) && hostelIds.length > 0) {
     studentFilters.studentHostels = {
-      some: { hostelId: { in: hostelIds }, status: "active" }
+      some: { hostelId: { in: hostelIds }, status: "active" },
     };
   }
-
   if (batchIds && Array.isArray(batchIds) && batchIds.length > 0) {
     studentFilters.batchId = { in: batchIds };
   }
 
-  if (Object.keys(studentFilters).length > 0) {
-    where.student = studentFilters;
+  if (Object.keys(studentFilters).length) {
+    studentParentWhere.student = studentFilters;
   }
 
+  if (Object.keys(studentParentWhere).length) {
+    where.studentParents = { some: studentParentWhere };
+  }
+
+  // Search across parent fields and nested student fields
   if (search) {
+    const si = { contains: search, mode: "insensitive" };
     where.OR = [
-      { parent: { parentName: { contains: search, mode: "insensitive" } } },
-      { parent: { email: { contains: search, mode: "insensitive" } } },
-      { parent: { phone: { contains: search, mode: "insensitive" } } },
-      { student: { name: { contains: search, mode: "insensitive" } } },
-      { student: { email: { contains: search, mode: "insensitive" } } },
-      { student: { admissionNo: { contains: search, mode: "insensitive" } } },
+      { parentName: si },
+      { email: si },
+      { phone: si },
+      {
+        studentParents: {
+          some: {
+            OR: [
+              { student: { name: si } },
+              { student: { email: si } },
+              { student: { admissionNo: si } },
+            ],
+          },
+        },
+      },
     ];
   }
 
-  const studentParents = await prisma.studentParent.findMany({
+  // Query parents with linked studentParents and organization
+  const parentsData = await prisma.parent.findMany({
     where,
     include: {
-      parent: true,
-      student: {
+      studentParents: {
         include: {
-          organization: true,
-        }
-      }
+          student: {
+            include: { organization: true },
+          },
+        },
+      },
+
     },
     orderBy: { createdAt: "desc" },
     skip,
     take: limitNumber,
   });
 
-  const totalRecords = await prisma.studentParent.count({ where });
+  const totalRecords = await prisma.parent.count({ where });
 
-  const parents = studentParents.map(sp => ({
-    _id: sp.parent.id,
-    parentName: sp.parent.parentName,
-    relationship: sp.relationship,
-    phone: sp.parent.phone,
-    email: sp.parent.email,
-    defaultGuardian: sp.defaultGuardian,
-    isActive: sp.parent.isActive,
-    createdAt: sp.parent.createdAt,
-    student: {
+  // Transform to UI‑friendly shape with an array of linked students
+  const parents = parentsData.map(p => ({
+    _id: p.id,
+    parentName: p.parentName,
+    phone: p.phone,
+    email: p.email,
+    isActive: p.isActive,
+    createdAt: p.createdAt,
+    organization: p.studentParents[0]?.student?.organization ? { _id: p.studentParents[0].student.organization.id, name: p.studentParents[0].student.organization.name } : null,
+    students: p.studentParents.map(sp => ({
       _id: sp.student.id,
       admissionNo: sp.student.admissionNo,
       name: sp.student.name,
       email: sp.student.email,
       organizationId: sp.student.organizationId,
-    },
-    organization: sp.student.organization ? {
-      _id: sp.student.organization.id,
-      name: sp.student.organization.name,
-    } : null,
+      organization: sp.student.organization ? { _id: sp.student.organization.id, name: sp.student.organization.name } : null,
+      relationship: sp.relationship,
+      defaultGuardian: sp.defaultGuardian,
+    })),
   }));
 
   return {

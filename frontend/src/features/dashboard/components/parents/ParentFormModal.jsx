@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { addParentSchema, editParentSchema } from "@/features/dashboard/validation/parentSchema";
 import { useTranslation } from "@/hooks/useTranslation";
 import Dropdown from "@/components/ui/Dropdown";
+import AsyncDropdown from "@/components/ui/AsyncDropdown";
 import EmailVerificationModal from "@/components/ui/EmailVerificationModal";
 
 export default function ParentFormModal({
@@ -19,8 +20,7 @@ export default function ParentFormModal({
   const { t } = useTranslation();
   const isEdit = !!editingParent;
   const role = useAuthStore((s) => s.user?.role);
-  const [students, setStudents] = useState([]);
-  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [initialStudentOptions, setInitialStudentOptions] = useState([]);
 
   // OTP State
   const [parentOtp, setParentOtp] = useState("");
@@ -50,21 +50,23 @@ export default function ParentFormModal({
 
   const watchEmail = useWatch({ control, name: "email" });
 
-  useEffect(() => {
-    if (!isEdit && role && !studentId) {
-      setLoadingStudents(true);
-      import("@/services/student.service").then(({ getStudents }) => {
-        getStudents(role, { limit: 1000 })
-          .then((data) => {
-            setStudents(data.students || []);
-          })
-          .catch((err) => {
-            console.error("Failed to load students", err);
-          })
-          .finally(() => setLoadingStudents(false));
-      });
+  const fetchStudents = async ({ page, search }) => {
+    if (!role) return { options: [], hasMore: false };
+    try {
+      const { getStudents } = await import("@/services/student.service");
+      const data = await getStudents(role, { page, limit: 20, search });
+      return {
+        options: data.students?.map(student => ({
+          label: `${student.name} (${student.admissionNo})`,
+          value: student.id || student._id
+        })) || [],
+        hasMore: data.pagination?.page < data.pagination?.totalPages
+      };
+    } catch (err) {
+      console.error("Failed to fetch students:", err);
+      return { options: [], hasMore: false };
     }
-  }, [isEdit, role, studentId]);
+  };
 
   const sendEmailOtp = async () => {
     if (!watchEmail) {
@@ -105,16 +107,16 @@ export default function ParentFormModal({
     const payload = {
       parentName: data.name,
       phone: data.phone,
-      relationship: data.relation,
     };
+
+    if (!isEdit) {
+      payload.relationship = data.relation;
+      payload.email = data.email;
+      payload.studentId = data.studentId;
+    }
 
     if (parentOtp) {
       payload.parentOtp = parentOtp;
-    }
-
-    if (!isEdit) {
-      payload.email = data.email;
-      payload.studentId = data.studentId;
     }
 
     onSave?.(payload);
@@ -200,32 +202,34 @@ export default function ParentFormModal({
           <ErrorMessage error={errors.phone} />
         </div>
 
-        {/* Relation */}
-        <div>
-          <label className="block mb-1.5 text-xs font-medium">
-            Relation <span className="text-red-500">*</span>
-          </label>
+        {/* Relation - Add only */}
+        {!isEdit && (
+          <div>
+            <label className="block mb-1.5 text-xs font-medium">
+              Relation <span className="text-red-500">*</span>
+            </label>
 
-          <Controller
-            name="relation"
-            control={control}
-            render={({ field }) => (
-              <Dropdown
-                options={[
-                  { value: "father", label: "Father" },
-                  { value: "mother", label: "Mother" },
-                  { value: "guardian", label: "Guardian" }
-                ]}
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="Select Relation"
-                triggerClassName={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${errors.relation ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
-                  }`}
-              />
-            )}
-          />
-          <ErrorMessage error={errors.relation} />
-        </div>
+            <Controller
+              name="relation"
+              control={control}
+              render={({ field }) => (
+                <Dropdown
+                  options={[
+                    { value: "father", label: "Father" },
+                    { value: "mother", label: "Mother" },
+                    { value: "guardian", label: "Guardian" }
+                  ]}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Select Relation"
+                  triggerClassName={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${errors.relation ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
+                    }`}
+                />
+              )}
+            />
+            <ErrorMessage error={errors.relation} />
+          </div>
+        )}
 
         {/* Student Selection - Add only */}
         {!isEdit && !studentId && (
@@ -238,16 +242,13 @@ export default function ParentFormModal({
               name="studentId"
               control={control}
               render={({ field }) => (
-                <Dropdown
-                  options={students.map(student => ({
-                    value: student.id || student.id,
-                    label: `${student.name} (${student.admissionNo})`
-                  }))}
+                <AsyncDropdown
+                  fetchOptions={fetchStudents}
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder={loadingStudents ? "Loading students..." : "Select Student"}
+                  placeholder="Search and Select Student..."
                   triggerClassName={`w-full h-10 px-3 border rounded-md text-xs outline-none transition-colors cursor-pointer bg-white ${errors.studentId ? "border-red-300 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-secondary"
-                    } ${loadingStudents ? "opacity-50 pointer-events-none" : ""}`}
+                    }`}
                 />
               )}
             />

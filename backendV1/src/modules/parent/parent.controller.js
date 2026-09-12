@@ -220,6 +220,40 @@ export const updateParent = asyncHandler(async (req, res) => {
   });
 });
 
+export const toggleParentStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await checkParentAccess(req.user, id);
+  } catch (error) {
+    return sendError(res, error.statusCode || 403, error.message);
+  }
+
+  const result = await toggleParentStatusDb(id);
+
+  if (!result) {
+    return sendError(res, 404, "Parent not found");
+  }
+
+  const newStatus = result.parentProfile.isActive ? "activated" : "deactivated";
+
+  await createLog(
+    req,
+    "Toggled Parent Status",
+    "Parent",
+    id,
+    `Parent status ${newStatus}`,
+    "success"
+  );
+
+  return sendSuccess(res, 200, `Parent ${newStatus} successfully`, {
+    data: {
+      parentId: result.parentProfile._id,
+      isActive: result.parentProfile.isActive,
+    }
+  });
+});
+
 export const changeParentEmail = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { oldEmail, newEmail, otp } = req.body;

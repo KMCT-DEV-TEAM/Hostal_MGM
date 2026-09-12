@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { getParentPermissions } from '@/features/dashboard/config/parentPermissions';
 import { useParents } from '@/features/dashboard/hooks/parent/useParents';
 import { useDebounce } from '@/hooks/useDebounce';
-import { createParent, toggleParentStatus, updateParent, updateParentByRole, exportParents } from '@/services/parent.service';
+import { createParent, toggleParentStatus, updateParent, updateParentByRole, exportParents, resolveParentConflict } from '@/services/parent.service';
 import { getOrganizations } from '@/services/organization.service';
 import { ROLES } from '@/constants/roles';
 import ParentsHeader from '../components/parents/ParentsHeader';
@@ -14,6 +14,7 @@ import ParentFormModal from '../components/parents/ParentFormModal';
 import ParentDetailsModal from '../components/parents/ParentDetailsModal';
 import ExportFilterModal from '@/components/ui/ExportFilterModal';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import ParentConflictModal from '@/components/ui/ParentConflictModal';
 import Pagination from '@/components/ui/Pagination';
 import { showSuccessToast, showErrorToast } from '@/utils/toast';
 import { exportToExcel } from '@/utils/exportUtils';
@@ -36,6 +37,12 @@ export default function Parents() {
     const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
     const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+
+    // Conflict Modal State
+    const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+    const [conflictData, setConflictData] = useState(null);
+    const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+
     const [pendingPayload, setPendingPayload] = useState(null);
     const [isConfirming, setIsConfirming] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,8 +133,8 @@ export default function Parents() {
     };
 
     const handleSaveParent = async (payload) => {
+        setPendingPayload(payload);
         if (editingParent) {
-            setPendingPayload(payload);
             setIsEditConfirmOpen(true);
         } else {
             executeSave(payload);
@@ -151,9 +158,45 @@ export default function Parents() {
             refetch();
         } catch (err) {
             console.error("Failed to save parent", err);
-            showErrorToast('Error saving parent', err.response?.data?.message || err.message);
+            // Handle both raw Axios errors and the ApiError wrapper class structure
+            const errorCode = err?.code || err?.data?.code || err?.response?.data?.code;
+            const conflictInfo = err?.data?.data || err?.response?.data?.data;
+            
+            // Handle Parent Conflict Error
+            if (errorCode === 'PARENT_EXISTS_WITH_DIFFERENT_DATA' || errorCode === 'PARENT_ALREADY_LINKED' || err?.status === 409 || err?.response?.status === 409) {
+                setConflictData(conflictInfo || err?.data);
+                setIsConflictModalOpen(true);
+                setActiveModal(null);
+            } else {
+                showErrorToast('Error saving parent', err?.message || 'Failed to save parent');
+            }
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleResolveConflict = async (resolutionAction) => {
+        setIsResolvingConflict(true);
+        try {
+            const payload = {
+                ...pendingPayload,
+                resolutionAction
+            };
+
+            await resolveParentConflict(role, payload);
+            showSuccessToast('Parent conflict resolved successfully');
+            
+            setIsConflictModalOpen(false);
+            setConflictData(null);
+            setActiveModal(null);
+            setEditingParent(null);
+            setPendingPayload(null);
+            refetch();
+        } catch (err) {
+            console.error("Failed to resolve conflict", err);
+            showErrorToast('Error resolving conflict', err.response?.data?.message || err.message);
+        } finally {
+            setIsResolvingConflict(false);
         }
     };
 
@@ -337,6 +380,14 @@ export default function Parents() {
                     isExporting={isExporting}
                     title="Export Parents Data"
                     fields={exportFields}
+                />
+
+                <ParentConflictModal
+                    isOpen={isConflictModalOpen}
+                    onClose={() => setIsConflictModalOpen(false)}
+                    conflictData={conflictData}
+                    isResolvingConflict={isResolvingConflict}
+                    onResolve={handleResolveConflict}
                 />
             </div>
         </div>
