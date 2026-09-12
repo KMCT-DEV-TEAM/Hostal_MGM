@@ -509,6 +509,16 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   getIo()?.emit('profileUpdated', { id: userId });
 
+  const updatedFields = Object.keys(updateData).filter(k => k !== 'settings').join(', ') || 'settings';
+  createLog(
+    req,
+    "Updated Profile",
+    "User",
+    userId,
+    `${req.user.role || 'User'} updated their profile (fields: ${updatedFields})`,
+    "success"
+  ).catch(err => console.error("[Log Error] Update Profile:", err));
+
   return sendSuccess(res, 200, "Profile updated successfully", { user: updatedUser });
 });
 
@@ -541,6 +551,15 @@ export const requestEmailChange = asyncHandler(async (req, res) => {
   await sendMail(newEmail, subject, text, html).catch((err) => {
     console.error("Failed to send OTP mail:", err);
   });
+
+  createLog(
+    req,
+    "Requested Email Change",
+    "User",
+    req.user.id,
+    `OTP sent for email change request to ${newEmail}`,
+    "success"
+  ).catch(err => console.error("[Log Error] Request Email Change:", err));
 
   return sendSuccess(res, 200, "OTP sent to new email address");
 });
