@@ -63,6 +63,7 @@ export default function AssistantWardenTable({
     const columns = [
         {
             key: "assistantWardenName",
+            
             header: t("name"),
             type: "user",
             truncate: true,
