@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { prisma } from "../config/prisma.js";
 import { sendMail } from "./mailer.js";
+import { cleanupExpiredOtps } from "../modules/otps/otp.service.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Build an HTML email table from audit log records
@@ -185,10 +186,25 @@ const scheduleMediumHighReport = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Job 3: Clean up expired OTPs (runs every 5 minutes)
+// ─────────────────────────────────────────────────────────────────────────────
+const scheduleOtpCleanup = () => {
+  cron.schedule("*/5 * * * *", async () => {
+    try {
+      console.log("[CRON] Running expired OTP cleanup...");
+      await cleanupExpiredOtps();
+    } catch (error) {
+      console.error("[CRON] Error during OTP cleanup:", error);
+    }
+  });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main export
 // ─────────────────────────────────────────────────────────────────────────────
 export const initCronJobs = () => {
   scheduleLowPriorityCleanup();
   scheduleMediumHighReport();
+  scheduleOtpCleanup();
   console.log("[CRON] All cron jobs initialized.");
 };

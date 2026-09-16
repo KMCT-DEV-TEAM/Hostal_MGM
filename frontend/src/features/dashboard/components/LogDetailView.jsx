@@ -66,7 +66,17 @@ export default function LogDetailView({ log, onClose }) {
                         <div className="space-y-1">
                             <InfoRow label={<><Activity className="w-4 h-4 text-gray-400" /> Action</>}>{log.action}</InfoRow>
                             <InfoRow label={<><User className="w-4 h-4 text-gray-400" /> User</>}>
-                                {log.user?.name || log.user?.email || 'System'} <span className="text-gray-400 ml-1">({log.userRole})</span>
+                                <div className="flex flex-col">
+                                    <span>
+                                        {log.user?.name || log.user?.email || 'System'} 
+                                        <span className="text-gray-400 ml-1">({log.userRole})</span>
+                                    </span>
+                                    {(log.userId || log.user?.id) && (
+                                        <span className="text-[11px] text-gray-400 font-mono mt-0.5">
+                                            ID: {log.userId || log.user?.id}
+                                        </span>
+                                    )}
+                                </div>
                             </InfoRow>
                             <InfoRow label={<><AlignLeft className="w-4 h-4 text-gray-400" /> Details</>}>
                                 <div className="break-words max-w-full whitespace-pre-wrap mt-1 text-[#444444]">

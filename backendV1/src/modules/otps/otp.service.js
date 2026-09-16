@@ -24,6 +24,7 @@ const cleanupExpiredOtps = async () => {
         expiresAt: {
           lt: new Date(),
         },
+        isVerified: false,
       },
     });
   } catch (error) {
@@ -143,8 +144,41 @@ const verifyOtpDb = async (
     },
   });
 
+  if (otpRecord) {
+    await prisma.otp.update({
+      where: { id: otpRecord.id },
+      data: { isVerified: true },
+    });
+    return true;
+  }
+
+  return false;
+};
+
+const isOtpVerified = async (email, purpose = null) => {
+  const normalizedPurpose = purpose
+    ? purpose.toString().toUpperCase()
+    : null;
+
+  const whereClause = {
+    email,
+    isVerified: true,
+  };
+
+  if (normalizedPurpose) {
+    whereClause.purpose = normalizedPurpose;
+  }
+
+  const otpRecord = await prisma.otp.findFirst({
+    where: whereClause,
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
   return !!otpRecord;
 };
+
 
 const deleteOtpDb = async (email, purpose = null) => {
   const whereClause = {
@@ -167,4 +201,5 @@ export {
   verifyOtpDb,
   deleteOtpDb,
   cleanupExpiredOtps,
+  isOtpVerified,
 };

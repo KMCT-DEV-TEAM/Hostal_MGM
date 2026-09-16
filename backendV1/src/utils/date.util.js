@@ -30,5 +30,5 @@ export const getISTTimeStr = (date) => {
   if (!date) return undefined;
   const istStr = date.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour12: false });
   // Ensure it's in the format "HH:mm"
-  return istStr.substring(0, 5); 
+  return istStr.substring(0, 5);
 };

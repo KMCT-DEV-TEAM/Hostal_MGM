@@ -4,7 +4,7 @@ import { prisma } from '../../config/prisma.js';
 import { hashPassword } from '../../utils/hash.js';
 import { sendMail } from '../../utils/mailer.js';
 import { getIo } from '../../config/socket.js';
-import { deleteOtpDb } from '../otps/otp.service.js';
+import { deleteOtpDb, isOtpVerified } from '../otps/otp.service.js';
 import { createLog } from '../../utils/log.util.js';
 
 
@@ -225,6 +225,10 @@ export const getAssistantWardenById = asyncHandler(async (req, res) => {
 
 export const createAssistantWarden = asyncHandler(async (req, res) => {
   const { name, email, phone, hostelId } = req.body;
+
+  if (!(await isOtpVerified(email))) {
+    return sendError(res, 400, "Email must be verified before proceeding");
+  }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
@@ -459,6 +463,10 @@ export const createAdmin = asyncHandler(async (req, res) => {
   );
   if (hasExistingAdmin) {
     return sendError(res, 400, "This organization already has an assigned administrator. Each organization can have only one admin.");
+  }
+
+  if (!(await isOtpVerified(email))) {
+    return sendError(res, 400, "Email must be verified before proceeding");
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -804,6 +812,10 @@ export const updateUserEmail = asyncHandler(async (req, res) => {
     return sendError(res, 400, "Old email does not match");
   }
 
+  if (!(await isOtpVerified(newEmail))) {
+    return sendError(res, 400, "New email must be verified before proceeding");
+  }
+
   const existingNewEmail = await prisma.user.findUnique({
     where: { email: newEmail },
   });
@@ -843,6 +855,10 @@ export const updateUserEmail = asyncHandler(async (req, res) => {
 
 export const createWarden = asyncHandler(async (req, res) => {
   const { name, email, phone, hostelId } = req.body;
+
+  if (!(await isOtpVerified(email))) {
+    return sendError(res, 400, "Email must be verified before proceeding");
+  }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
@@ -958,6 +974,10 @@ export const updateWarden = asyncHandler(async (req, res) => {
 export const updateEmail = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { oldEmail, newEmail, password } = req.body;
+
+  if (!(await isOtpVerified(newEmail))) {
+    return sendError(res, 400, "New email must be verified before proceeding");
+  }
 
   const existingUser = await prisma.user.findUnique({ where: { email: newEmail } });
   if (existingUser) {

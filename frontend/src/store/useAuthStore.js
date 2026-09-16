@@ -3,6 +3,18 @@ import authService from '@/services/auth.service';
 import { authEventBus } from '@/services/eventBus';
 import { tokenStorage } from '@/features/auth/storage/tokenStorage';
 
+const handleRedirect = (lastRole) => {
+  let redirectUrl = '/user/login';
+  if (lastRole) {
+    const role = lastRole.toLowerCase();
+    if (role === 'super_admin') redirectUrl = '/super-admin/login';
+    else if (['admin', 'warden', 'assistant_warden', 'mentor'].includes(role)) redirectUrl = '/admin/login';
+    else if (role === 'maintenance_staff') redirectUrl = '/m-user/login';
+    else redirectUrl = '/user/login';
+  }
+  window.location.href = redirectUrl;
+};
+
 export const useAuthStore = create((set) => ({
   user: null,
   loading: true,
@@ -39,23 +51,32 @@ export const useAuthStore = create((set) => ({
   login: async (credentials) => {
     const data = await authService.login(credentials);
     const profile = await authService.getProfile();
+    const role = profile.user?.role?.toLowerCase() || '';
+    if (role) {
+      localStorage.setItem('lastLoginRole', role);
+    }
     set({ user: profile.user, authenticated: true });
     return data;
   },
 
   logout: async () => {
+    let lastRole = null;
     try {
+      lastRole = useAuthStore.getState().user?.role || localStorage.getItem('lastLoginRole');
       const response = await authService.logout();
       console.log('logout response:', response);
     } finally {
       set({ user: null, authenticated: false });
+      handleRedirect(lastRole);
     }
   },
 }));
 
 // Listen to global logout event from Axios interceptor
 authEventBus.addEventListener('logout', () => {
+  const lastRole = localStorage.getItem('lastLoginRole');
   useAuthStore.setState({ user: null, authenticated: false });
+  handleRedirect(lastRole);
 });
 
 // Initialize the store immediately

@@ -53,6 +53,23 @@ export const updateComplaint = asyncHandler(async (req, res) => {
   const updatedComplaint = await complaintService.updateComplaintDb(req.params.id, req.user, req.body);
   getIo()?.emit('complaintUpdated', { id: req.params.id });
 
+  let updateDetails = [];
+  if (req.body.priority) updateDetails.push(`Priority: ${req.body.priority}`);
+  if (req.body.category) updateDetails.push(`Category changed`);
+  if (req.body.subject) updateDetails.push(`Subject changed`);
+  if (req.body.description) updateDetails.push(`Description changed`);
+  
+  const detailStr = updateDetails.length > 0 ? ` (${updateDetails.join(', ')})` : '';
+
+  createLog(
+    req,
+    'Updated Complaint',
+    'Complaint',
+    req.params.id,
+    `Complaint ${req.params.id} updated${detailStr}`,
+    'success'
+  ).catch(err => console.error('[Log Error] Update Complaint:', err));
+
   return sendSuccess(res, 200, 'Complaint updated successfully.', updatedComplaint);
 });
 
